@@ -1,13 +1,21 @@
 {
-  "name": "@pistis/source",
-  "version": "0.0.0",
+  "name": "@pistis/s5-components",
+  "version": "1.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "prepare": "husky install"
+  },
   "private": true,
-  "dependencies": {},
   "devDependencies": {
+    "@commitlint/cli": "^18.6.1",
+    "@commitlint/config-conventional": "^18.6.2",
+    "@nestjs/schematics": "^10.0.1",
     "@nx/js": "18.0.5",
+    "@nx/nest": "18.0.5",
     "@nx/workspace": "18.0.5",
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.2",
     "nx": "18.0.5"
-  }
+  },
+  "dependencies": {}
 }
