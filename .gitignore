@@ -39,3 +39,9 @@ testem.log
 Thumbs.db
 
 .nx/cache
+
+# Application Environmental Variables
+apps/**/*/.env
+
+# Stored Data
+data/*

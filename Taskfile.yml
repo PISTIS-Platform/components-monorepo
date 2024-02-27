@@ -1,0 +1,37 @@
+# https://taskfile.dev
+
+version: '3'
+
+tasks:
+    lint:
+        desc: Lint all libraries and applications
+        cmds:
+            - nx run-many -t lint --all --parallel
+        silent: true
+
+    test:
+        desc: Test all libraries and applications
+        cmds:
+            - nx run-many -t test --all --parallel
+        silent: true
+
+    up:
+        desc: Start services in docker
+        dir: scripts
+        cmds:
+            - docker compose -p pistis up -d
+        silent: true
+
+    down:
+        desc: Stop running services
+        dir: scripts
+        cmds:
+            - docker compose -p pistis down
+        silent: true
+
+    status:
+        desc: Display status of docker services
+        dir: scripts
+        cmds:
+            - docker compose -p pistis ps --all --format 'table {{"{{.Service}}"}}\t{{"{{.Name}}"}}\t{{"{{.Image}}"}}\t{{"{{.RunningFor}}"}}\t{{"{{.Status}}"}}\t{{"{{.Ports}}"}}'
+        silent: true
