@@ -15,7 +15,8 @@
         "skipDefaultLibCheck": true,
         "baseUrl": ".",
         "paths": {
-            "@pistis/notifications": ["libs/notifications/src/index.ts"]
+            "@pistis/notifications": ["libs/notifications/src/index.ts"],
+            "@pistis/shared": ["libs/shared/src/index.ts"]
         }
     },
     "exclude": ["node_modules", "tmp"]
