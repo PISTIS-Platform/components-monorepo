@@ -2,11 +2,19 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { consoleTransport } from '@pistis/shared';
+import { WinstonModule } from 'nest-winston';
 
 import { AppModule } from './app/app.module';
 
 async function bootstrap() {
-    const app = await NestFactory.create(AppModule, { cors: true });
+    const app = await NestFactory.create(AppModule, {
+        cors: true,
+        logger: WinstonModule.createLogger({
+            level: 'debug',
+            transports: [consoleTransport],
+        }),
+    });
     app.setGlobalPrefix('api');
     app.useGlobalPipes(new ValidationPipe());
 

@@ -1,8 +1,9 @@
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { PostgreSqlDriver } from '@mikro-orm/postgresql';
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { NotificationsModule } from '@pistis/notifications';
+import { MorganMiddleware } from '@pistis/shared';
 
 import { AppConfig, IAppConfig } from './app.config';
 
@@ -24,4 +25,8 @@ import { AppConfig, IAppConfig } from './app.config';
     controllers: [],
     providers: [],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+    configure(consumer: MiddlewareConsumer) {
+        consumer.apply(MorganMiddleware).forRoutes('*');
+    }
+}
