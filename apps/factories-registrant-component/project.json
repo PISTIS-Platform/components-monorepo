@@ -1,0 +1,52 @@
+{
+    "name": "factories-registrant-component",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "apps/factories-registrant-component/src",
+    "projectType": "application",
+    "targets": {
+        "serve": {
+            "executor": "@nx/js:node",
+            "defaultConfiguration": "development",
+            "options": {
+                "buildTarget": "factories-registrant-component:build"
+            },
+            "configurations": {
+                "development": {
+                    "buildTarget": "factories-registrant-component:build:development"
+                },
+                "production": {
+                    "buildTarget": "factories-registrant-component:build:production"
+                }
+            }
+        },
+        "migration": {
+            "executor": "nx:run-commands",
+            "options": {
+                "cwd": "apps/factories-registrant-component",
+                "command": "npx mikro-orm {args.action}"
+            },
+            "defaultConfiguration": "pending",
+            "configurations": {
+                "check": {
+                    "args": "--action=migration:check"
+                },
+                "pending": {
+                    "args": "--action=migration:pending"
+                },
+                "list": {
+                    "args": "--action=migration:list"
+                },
+                "up": {
+                    "args": "--action=migration:up"
+                },
+                "down": {
+                    "args": "--action=migration:down"
+                },
+                "create": {
+                    "args": "--action=migration:create"
+                }
+            }
+        }
+    },
+    "tags": []
+}

@@ -15,6 +15,7 @@
         "skipDefaultLibCheck": true,
         "baseUrl": ".",
         "paths": {
+            "@pistis/factories-registrant": ["libs/factories-registrant/src/index.ts"],
             "@pistis/notifications": ["libs/notifications/src/index.ts"],
             "@pistis/shared": ["libs/shared/src/index.ts"]
         }
