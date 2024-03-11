@@ -1,0 +1,52 @@
+{
+    "name": "intention-analytics-component",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "apps/intention-analytics-component/src",
+    "projectType": "application",
+    "targets": {
+        "serve": {
+            "executor": "@nx/js:node",
+            "defaultConfiguration": "development",
+            "options": {
+                "buildTarget": "intention-analytics-component:build"
+            },
+            "configurations": {
+                "development": {
+                    "buildTarget": "intention-analytics-component:build:development"
+                },
+                "production": {
+                    "buildTarget": "intention-analytics-component:build:production"
+                }
+            }
+        },
+        "migration": {
+            "executor": "nx:run-commands",
+            "options": {
+                "cwd": "apps/intention-analytics-component",
+                "command": "npx mikro-orm {args.action}"
+            },
+            "defaultConfiguration": "pending",
+            "configurations": {
+                "check": {
+                    "args": "--action=migration:check"
+                },
+                "pending": {
+                    "args": "--action=migration:pending"
+                },
+                "list": {
+                    "args": "--action=migration:list"
+                },
+                "up": {
+                    "args": "--action=migration:up"
+                },
+                "down": {
+                    "args": "--action=migration:down"
+                },
+                "create": {
+                    "args": "--action=migration:create"
+                }
+            }
+        }
+    },
+    "tags": []
+}
