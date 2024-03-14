@@ -3,9 +3,9 @@ import { PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { MiddlewareConsumer, Module, NestModule, NotFoundException } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { IntentionAnalyticsModule } from '@pistis/intention-analytics';
-import { MorganMiddleware } from '@pistis/shared';
+import { IAppConfig, MorganMiddleware } from '@pistis/shared';
 
-import { AppConfig, IAppConfig } from './app.config';
+import { AppConfig } from './app.config';
 
 @Module({
     imports: [

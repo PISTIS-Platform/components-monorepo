@@ -1,16 +1,5 @@
 import { registerAs } from '@nestjs/config';
-
-export interface IAppConfig {
-    name: string;
-    port: number;
-    database: {
-        host: string;
-        port: number;
-        username?: string;
-        password?: string;
-        dbName: string;
-    };
-}
+import { IAppConfig } from '@pistis/shared';
 
 export const AppConfig = registerAs(
     'app',
