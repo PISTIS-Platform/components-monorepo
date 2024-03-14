@@ -2,6 +2,7 @@ import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityRepository, wrap } from '@mikro-orm/postgresql';
 import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
+import { getHeaders } from '@pistis/shared';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import { catchError, firstValueFrom, map, of } from 'rxjs';
@@ -19,14 +20,6 @@ export class FactoriesRegistrantService {
         private readonly httpService: HttpService,
     ) {}
 
-    private getHeaders = async (token: any) => {
-        return {
-            Accept: 'application/json',
-            'content-type': 'application/json',
-            Authorization: `Bearer ${token}`, //TODO: Discuss how we will authenticate and retrieve token for external calls
-        };
-    };
-
     async acceptFactory(factoryId: string, data: boolean): Promise<{ message: string } | { error: string }> {
         const factory = await this.repo.findOneOrFail({ id: factoryId });
         factory.isAccepted = data;
@@ -41,7 +34,7 @@ export class FactoriesRegistrantService {
         return firstValueFrom(
             this.httpService
                 .post(`${this.NOTIFICATIONS_URL}/notifications`, notification, {
-                    headers: await this.getHeaders(''),
+                    headers: getHeaders(''),
                 })
                 .pipe(
                     //If not an error from call admin receive the message below
@@ -85,7 +78,7 @@ export class FactoriesRegistrantService {
         await firstValueFrom(
             this.httpService
                 .post(`${this.NOTIFICATIONS_URL}/notifications`, notification, {
-                    headers: await this.getHeaders(''),
+                    headers: getHeaders(''),
                 })
                 .pipe(
                     //If not an error from call admin receive the message below
