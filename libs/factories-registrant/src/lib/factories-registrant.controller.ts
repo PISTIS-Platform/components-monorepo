@@ -15,7 +15,7 @@ export class FactoriesRegistrantController {
 
     @Get(':factoryId')
     async findFactoryInfo(@Param('factoryId', new ParseUUIDPipe({ version: '4' })) factoryId: string) {
-        return this.factoriesService.retireveFactory(factoryId);
+        return this.factoriesService.retrieveFactory(factoryId);
     }
 
     @Put(':factoryId')

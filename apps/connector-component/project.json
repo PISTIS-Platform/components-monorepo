@@ -1,0 +1,52 @@
+{
+    "name": "connector-component",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "apps/connector-component/src",
+    "projectType": "application",
+    "targets": {
+        "serve": {
+            "executor": "@nx/js:node",
+            "defaultConfiguration": "development",
+            "options": {
+                "buildTarget": "connector-component:build"
+            },
+            "configurations": {
+                "development": {
+                    "buildTarget": "connector-component:build:development"
+                },
+                "production": {
+                    "buildTarget": "connector-component:build:production"
+                }
+            }
+        },
+        "migration": {
+            "executor": "nx:run-commands",
+            "options": {
+                "cwd": "apps/connector-component",
+                "command": "npx mikro-orm {args.action}"
+            },
+            "defaultConfiguration": "pending",
+            "configurations": {
+                "check": {
+                    "args": "--action=migration:check"
+                },
+                "pending": {
+                    "args": "--action=migration:pending"
+                },
+                "list": {
+                    "args": "--action=migration:list"
+                },
+                "up": {
+                    "args": "--action=migration:up"
+                },
+                "down": {
+                    "args": "--action=migration:down"
+                },
+                "create": {
+                    "args": "--action=migration:create"
+                }
+            }
+        }
+    },
+    "tags": []
+}

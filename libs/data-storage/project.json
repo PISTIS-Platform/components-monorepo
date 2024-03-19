@@ -1,0 +1,8 @@
+{
+    "name": "data-storage",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/data-storage/src",
+    "projectType": "library",
+    "targets": {},
+    "tags": []
+}

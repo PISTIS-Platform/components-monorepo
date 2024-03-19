@@ -1,0 +1,8 @@
+{
+    "name": "consumer",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/consumer/src",
+    "projectType": "library",
+    "targets": {},
+    "tags": []
+}

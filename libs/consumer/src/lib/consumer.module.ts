@@ -1,0 +1,47 @@
+import { MikroOrmModule } from '@mikro-orm/nestjs';
+import { HttpModule } from '@nestjs/axios';
+import { DynamicModule, Module } from '@nestjs/common';
+import { DataStorageModule } from '@pistis/data-storage';
+
+import { AssetRetrievalInfo } from './asset-retrieval-info.entity';
+import { ConsumerController } from './consumer.controller';
+import {
+    ConfigurableModuleClass,
+    CONSUMER_ASYNC_OPTIONS_TYPE,
+    CONSUMER_OPTIONS_TYPE,
+} from './consumer.module-definition';
+import { ConsumerService } from './consumer.service';
+
+@Module({
+    imports: [MikroOrmModule.forFeature([AssetRetrievalInfo]), HttpModule],
+    controllers: [ConsumerController],
+    providers: [ConsumerService],
+    exports: [],
+})
+export class ConsumerModule extends ConfigurableModuleClass {
+    static register(options: typeof CONSUMER_OPTIONS_TYPE): DynamicModule {
+        return {
+            imports: [DataStorageModule.register({ url: options.dataStorageUrl })],
+            ...super.register(options),
+        };
+    }
+
+    static registerAsync(asyncOptions: typeof CONSUMER_ASYNC_OPTIONS_TYPE): DynamicModule {
+        const parent = super.registerAsync(asyncOptions);
+
+        parent.imports = [
+            ...(parent.imports ?? []),
+            DataStorageModule.registerAsync({ 
+                imports: asyncOptions?.imports, 
+                inject: asyncOptions?.inject, 
+                useFactory: (config: typeof asyncOptions.inject) => {
+                   const options : any = asyncOptions.useFactory ? asyncOptions.useFactory(config) : {};
+
+                   return { url: options.dataStorageUrl }
+                }
+            }),
+        ];
+
+        return { ...parent };
+    }
+}

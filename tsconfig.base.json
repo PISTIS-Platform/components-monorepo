@@ -15,9 +15,15 @@
         "skipDefaultLibCheck": true,
         "baseUrl": ".",
         "paths": {
+            "@pistis/blockchain": ["libs/blockchain/src/index.ts"],
+            "@pistis/consumer": ["libs/consumer/src/index.ts"],
+            "@pistis/contracts": ["libs/contracts/src/index.ts"],
+            "@pistis/data-storage": ["libs/data-storage/src/index.ts"],
             "@pistis/factories-registrant": ["libs/factories-registrant/src/index.ts"],
             "@pistis/intention-analytics": ["libs/intention-analytics/src/index.ts"],
+            "@pistis/metadata-repository": ["libs/metadata-repository/src/index.ts"],
             "@pistis/notifications": ["libs/notifications/src/index.ts"],
+            "@pistis/provider": ["libs/provider/src/index.ts"],
             "@pistis/shared": ["libs/shared/src/index.ts"]
         }
     },

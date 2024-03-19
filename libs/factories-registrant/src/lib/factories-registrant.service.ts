@@ -55,7 +55,7 @@ export class FactoriesRegistrantService {
         return this.repo.findAll();
     }
 
-    async retireveFactory(factoryId: string): Promise<FactoriesRegistrant> {
+    async retrieveFactory(factoryId: string): Promise<FactoriesRegistrant> {
         return this.repo.findOneOrFail({ id: factoryId });
     }
 
