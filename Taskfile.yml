@@ -3,47 +3,68 @@
 version: '3'
 
 tasks:
-    lint:
-        desc: Lint all libraries and applications
-        cmds:
-            - nx run-many -t lint --all --parallel
-        silent: true
+  lint:
+    desc: Lint all libraries and applications
+    cmds:
+      - nx run-many -t lint --all --parallel
+    silent: true
 
-    test:
-        desc: Test all libraries and applications
-        cmds:
-            - nx run-many -t test --all --parallel
-        silent: true
+  test:
+    desc: Test all libraries and applications
+    cmds:
+      - nx run-many -t test --all --parallel
+    silent: true
 
-    up:
-        desc: Start services in docker
-        dir: scripts
-        cmds:
-            - docker compose -p pistis up -d
-        silent: true
+  up:
+    desc: Start services in docker
+    dir: scripts
+    cmds:
+      - docker compose -p pistis up -d
+    silent: true
 
-    down:
-        desc: Stop running services
-        dir: scripts
-        cmds:
-            - docker compose -p pistis down
-        silent: true
+  down:
+    desc: Stop running services
+    dir: scripts
+    cmds:
+      - docker compose -p pistis down
+    silent: true
 
-    status:
-        desc: Display status of docker services
-        dir: scripts
-        cmds:
-            - docker compose -p pistis ps --all --format 'table {{"{{.Service}}"}}\t{{"{{.Name}}"}}\t{{"{{.Image}}"}}\t{{"{{.RunningFor}}"}}\t{{"{{.Status}}"}}\t{{"{{.Ports}}"}}'
-        silent: true
+  status:
+    desc: Display status of docker services
+    dir: scripts
+    cmds:
+        - docker compose -p pistis ps --all --format 'table {{"{{.Service}}"}}\t{{"{{.Name}}"}}\t{{"{{.Image}}"}}\t{{"{{.RunningFor}}"}}\t{{"{{.Status}}"}}\t{{"{{.Ports}}"}}'
+    silent: true
 
-    login:
-        desc: Login with Keycloak and get a user token
-        silent: true
-        cmds:
-            - |
-                curl --location 'http://localhost:9090/realms/pistis-heu/protocol/openid-connect/token' \
-                --header 'Content-Type: application/x-www-form-urlencoded' \
-                --data-urlencode 'grant_type=password' \
-                --data-urlencode 'client_id=local-notifications-component' \
-                --data-urlencode 'username=localtester' \
-                --data-urlencode 'password=password'
+  login:
+    desc: Login with Keycloak and get a user token
+    silent: true
+    vars:
+      USERNAME: admin.tester
+      PASSWORD: password
+      CLIENT_ID: local-cli # Created just to support generating these keys
+    cmds:
+      - curl -s --data "username={{.USERNAME}}&password={{.PASSWORD}}&grant_type=password&client_id={{.CLIENT_ID}}" http://localhost:9090/realms/pistis-heu/protocol/openid-connect/token  | jq -r '.access_token'
+
+  init-users:
+    silent: true
+    vars:
+      USERNAME: admin
+      PASSWORD: admin
+      TOKEN:
+        sh: curl -s --data "username={{.USERNAME}}&password={{.PASSWORD}}&grant_type=password&client_id=admin-cli" http://localhost:9090/realms/master/protocol/openid-connect/token | jq -r '.access_token'
+    cmds:
+      - for: [
+          '{"firstName":"Local","lastName":"Tester","email":"local.tester@example.com","username":"local.tester","enabled":"true","emailVerified":"true","credentials":[{"type":"password","value":"password","temporary":false}]}',
+          '{"firstName":"Admin","lastName":"Tester","email":"admin.tester@example.com","username":"admin.tester","enabled":"true","emailVerified":"true","credentials":[{"type":"password","value":"password","temporary":false}],"realmRoles":["admin"]}',
+        ]
+        cmd: |
+          curl -s --location 'http://localhost:9090/admin/realms/pistis-heu/users' \
+            --header 'Content-Type: application/json' \
+            --header 'Authorization: Bearer {{.TOKEN}}' \
+            --data '{{.ITEM}}'
+
+  dockerize:
+    desc: Build docker images for all components
+    cmds:
+      - nx affected -t container
