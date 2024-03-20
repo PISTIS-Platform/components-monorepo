@@ -7,6 +7,11 @@ export class ResponseDto {
     @ApiProperty()
     questionId?: string;
 
+    @IsNotEmpty()
+    @IsString()
+    @ApiProperty()
+    questionTitle!: string;
+
     @IsOptional()
     @IsString()
     @MaxLength(255, { message: 'Text is too long, it should not be longer than 255 characters' })
@@ -15,6 +20,6 @@ export class ResponseDto {
 
     @IsOptional()
     @IsArray()
-    @ApiProperty({ type : Array<string>})
+    @ApiProperty({ type: Array<string> })
     options?: string[];
 }

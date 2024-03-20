@@ -13,5 +13,11 @@ export const AppConfig = registerAs(
             password: process.env.DB_PASSWORD,
             dbName: process.env.DB_NAME,
         },
+        keycloak: {
+            url: process.env.KC_URL,
+            realm: process.env.KC_REALM,
+            clientId: process.env.KC_CLIENT_ID,
+            clientSecret: process.env.KC_CLIENT_SECRET,
+        },
     }),
 );

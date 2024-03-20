@@ -25,6 +25,7 @@ async function bootstrap() {
         .setTitle(config.get('app.name'))
         .setVersion('1.0')
         .addTag('consumer', 'provider')
+        .addBearerAuth()
         .build();
     const document = SwaggerModule.createDocument(app, swaggerConfig);
     SwaggerModule.setup('api', app, document);

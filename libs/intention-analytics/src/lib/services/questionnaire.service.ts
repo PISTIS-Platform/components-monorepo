@@ -1,10 +1,10 @@
 import { InjectRepository } from '@mikro-orm/nestjs';
-import { EntityData, EntityRepository, Loaded } from '@mikro-orm/postgresql';
+import { EntityRepository, Loaded } from '@mikro-orm/postgresql';
 import { BadRequestException, Injectable } from '@nestjs/common';
 
 import { CreateQuestionnaireDto } from '../dto/create-questionnaire.dto';
 import { QuestionDto } from '../dto/question.dto';
-import { Answer, Question, Questionnaire } from '../entities';
+import { Question, Questionnaire } from '../entities';
 import { LoadedQuestionnaire } from '../interfaces';
 
 @Injectable()
@@ -12,7 +12,6 @@ export class QuestionnaireService {
     constructor(
         @InjectRepository(Questionnaire) private readonly questionnaireRepo: EntityRepository<Questionnaire>,
         @InjectRepository(Question) private readonly questionRepo: EntityRepository<Question>,
-        @InjectRepository(Answer) private readonly answersRepo: EntityRepository<Answer>,
     ) {}
 
     async getVersions(): Promise<{

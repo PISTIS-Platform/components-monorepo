@@ -40,7 +40,7 @@ export class AnswersService {
         );
     }
 
-    async submitAnswers(id: string, version: number, dto: CreateAnswerDto): Promise<void> {
+    async submitAnswers(id: string, version: number, data: CreateAnswerDto, userId: string): Promise<Answer> {
         const questionnaire = await this.questionnaireRepo.findOneOrFail({
             id,
             version,
@@ -48,12 +48,26 @@ export class AnswersService {
         });
 
         const answer = this.answersRepo.create({
-            userId: dto.userId,
-            assetId: dto.assetId,
-            responses: dto.responses,
+            userId,
+            assetId: data.assetId,
+            responses: data.responses,
             questionnaire: questionnaire,
         });
 
-        return await this.answersRepo.getEntityManager().persistAndFlush(answer);
+        await this.answersRepo.getEntityManager().persistAndFlush(answer);
+        return answer;
+    }
+
+    async getAnswers(assetId: string): Promise<Loaded<Answer, never, 'responses', never>[]> {
+        const answers = this.answersRepo.find(
+            {
+                assetId,
+            },
+            {
+                fields: ['responses'],
+            },
+        );
+
+        return answers;
     }
 }

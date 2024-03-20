@@ -35,3 +35,15 @@ tasks:
         cmds:
             - docker compose -p pistis ps --all --format 'table {{"{{.Service}}"}}\t{{"{{.Name}}"}}\t{{"{{.Image}}"}}\t{{"{{.RunningFor}}"}}\t{{"{{.Status}}"}}\t{{"{{.Ports}}"}}'
         silent: true
+
+    login:
+        desc: Login with Keycloak and get a user token
+        silent: true
+        cmds:
+            - |
+                curl --location 'http://localhost:9090/realms/pistis-heu/protocol/openid-connect/token' \
+                --header 'Content-Type: application/x-www-form-urlencoded' \
+                --data-urlencode 'grant_type=password' \
+                --data-urlencode 'client_id=local-notifications-component' \
+                --data-urlencode 'username=localtester' \
+                --data-urlencode 'password=password'

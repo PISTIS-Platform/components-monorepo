@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsBoolean, IsNotEmpty, IsOptional, IsString, MaxLength, ValidateNested } from 'class-validator';
+import { IsArray, IsBoolean, IsNotEmpty, IsOptional, IsString, MaxLength, ValidateNested } from 'class-validator';
 
 import { QuestionDto } from './question.dto';
 
@@ -33,8 +33,9 @@ export class CreateQuestionnaireDto {
     isActive!: boolean;
 
     @IsNotEmpty()
+    @IsArray()
     @ValidateNested({ each: true })
     @Type(() => QuestionDto)
-    @ApiProperty({ type: QuestionDto })
+    @ApiProperty({ type: [QuestionDto] })
     questions!: QuestionDto[];
 }

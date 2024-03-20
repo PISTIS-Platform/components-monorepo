@@ -8,11 +8,6 @@ export class CreateAnswerDto {
     @IsNotEmpty()
     @IsString()
     @ApiProperty()
-    userId!: string;
-
-    @IsNotEmpty()
-    @IsString()
-    @ApiProperty()
     assetId!: string;
 
     @IsNotEmpty()

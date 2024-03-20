@@ -66,11 +66,11 @@ export class FactoriesRegistrantService {
         return factory;
     }
 
-    async createFactory(data: CreateFactoryDTO): Promise<FactoriesRegistrant> {
+    async createFactory(data: CreateFactoryDTO, userId: string): Promise<FactoriesRegistrant> {
         const factory = this.repo.create(data);
         await this.repo.getEntityManager().persistAndFlush(factory);
         const notification = {
-            userId: '', //FIXME: This will replaced with actual user id
+            userId,
             organizationId: data.organizationId, //This will replaced with actual organization id
             type: 'new_factory_registered',
             message: 'New factory registered',

@@ -12,7 +12,7 @@ export class Answer {
     id: string = uuidV4();
 
     @Property({ type: 'json' })
-    responses!: Record<string, any>;
+    responses!: Record<string, any>[];
 
     @Property()
     @Index()

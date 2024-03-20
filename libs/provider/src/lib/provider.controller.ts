@@ -1,11 +1,12 @@
 import { Body, Controller, Param, Post } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { PaginationDto } from './dto/pagination.dto';
 import { ProviderService } from './provider.service';
 
 @Controller('provider')
 @ApiTags('provider')
+@ApiBearerAuth()
 export class ProviderController {
     constructor(private readonly providerService: ProviderService) {}
 

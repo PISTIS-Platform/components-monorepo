@@ -6,7 +6,7 @@ services:
         environment:
             POSTGRES_USER: postgres
             POSTGRES_PASSWORD: root
-            POSTGRES_MULTIPLE_DATABASES: factory_connector,factory_registrant,intention_analytics
+            POSTGRES_MULTIPLE_DATABASES: keycloak,factory_connector,factory_registrant,intention_analytics
         ports:
             - 5432:5432
         volumes:
@@ -18,3 +18,22 @@ services:
             timeout: 1m
             retries: 5
             start_period: 10s
+
+    keycloak:
+        image: quay.io/keycloak/keycloak:24.0.1
+        ports:
+            - 9090:8080
+        environment:
+            KEYCLOAK_ADMIN: admin
+            KEYCLOAK_ADMIN_PASSWORD: admin
+            KC_DB: postgres
+            KC_DB_URL: jdbc:postgresql://db/keycloak
+            KC_DB_USERNAME: postgres
+            KC_DB_PASSWORD: root
+        command:
+            - start-dev
+            - --import-realm
+        volumes:
+            - ./keycloak/realm.json:/opt/keycloak/data/import/realm.json
+        depends_on:
+            - db

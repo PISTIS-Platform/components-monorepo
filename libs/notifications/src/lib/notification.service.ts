@@ -21,14 +21,14 @@ export class NotificationService {
         return this.repo.findAndCount({ userId, readAt: includeRead ? undefined : null });
     }
 
-    async markAsRead(id: string): Promise<void> {
-        const notification = await this.repo.findOneOrFail({ id });
+    async markAsRead(id: string, userId: string): Promise<void> {
+        const notification = await this.repo.findOneOrFail({ id, userId });
         notification.readAt = new Date();
         return this.repo.getEntityManager().flush();
     }
 
-    async hide(id: string): Promise<void> {
-        const notification = await this.repo.findOneOrFail({ id });
+    async hide(id: string, userId: string): Promise<void> {
+        const notification = await this.repo.findOneOrFail({ id, userId });
         notification.isHidden = true;
         return this.repo.getEntityManager().flush();
     }

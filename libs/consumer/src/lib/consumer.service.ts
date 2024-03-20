@@ -22,7 +22,7 @@ export class ConsumerService {
         @Inject(CONSUMER_MODULE_OPTIONS) private options: ConsumerModuleOptions,
     ) {}
 
-    async retrieveData(contractId: string, assetId: string, user: any, token: string) {
+    async retrieveData(contractId: string, assetId: string, userId: string, token: string) {
         //FIXME: change types in variables when we have actual results
 
         const factoryId = ''; //FIXME we need to specify what we should use to find provider factory
@@ -112,7 +112,7 @@ export class ConsumerService {
         }
 
         const notification = {
-            userId: '', //FIXME:This will replaced with actual user id
+            userId,
             organizationId: '', //FIXME: Replace this with actual organization id,
             type: 'asset_retrieved',
             message: 'Asset retrieval finished',

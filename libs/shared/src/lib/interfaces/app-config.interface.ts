@@ -1,3 +1,5 @@
+import { IKeycloakConfig } from './keycloak.interface';
+
 export interface IAppConfig {
     name: string;
     port: number;
@@ -8,4 +10,5 @@ export interface IAppConfig {
         password?: string;
         dbName: string;
     };
+    keycloak: IKeycloakConfig;
 }

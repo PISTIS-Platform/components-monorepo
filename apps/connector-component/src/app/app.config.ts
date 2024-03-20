@@ -7,7 +7,7 @@ export type IConnectorConfig = IAppConfig & {
     factoryRegistryUrl: string;
     blockchainUrl: string;
     metadataRepositoryUrl: string;
-    downloadBatchSize: number
+    downloadBatchSize: number;
 };
 
 export const AppConfig = registerAs(
@@ -21,6 +21,12 @@ export const AppConfig = registerAs(
             username: process.env.DB_USERNAME,
             password: process.env.DB_PASSWORD,
             dbName: process.env.DB_NAME,
+        },
+        keycloak: {
+            url: process.env.KC_URL,
+            realm: process.env.KC_REALM,
+            clientId: process.env.KC_CLIENT_ID,
+            clientSecret: process.env.KC_CLIENT_SECRET,
         },
         dataStorageUrl: process.env.DATA_STORE_URL,
         notificationsUrl: process.env.NOTIFICATIONS_URL,
