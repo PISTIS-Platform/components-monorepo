@@ -1,3 +1,3 @@
-import { FactoriesRegistrant } from '@pistis/factories-registrant';
+import { ClientInfo, FactoriesRegistrant } from '@pistis/factories-registrant';
 
-export default [FactoriesRegistrant];
+export default [FactoriesRegistrant, ClientInfo];

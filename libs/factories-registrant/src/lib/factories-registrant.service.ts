@@ -8,7 +8,8 @@ import isBetween from 'dayjs/plugin/isBetween';
 import { catchError, firstValueFrom, map, of } from 'rxjs';
 
 import { CreateFactoryDTO, UpdateFactoryDTO } from './dto';
-import { FactoriesRegistrant } from './factories-registrant.entity';
+import { ClientInfo } from './entities';
+import { FactoriesRegistrant } from './entities/factories-registrant.entity';
 
 @Injectable()
 export class FactoriesRegistrantService {
@@ -17,8 +18,34 @@ export class FactoriesRegistrantService {
     constructor(
         @InjectRepository(FactoriesRegistrant)
         private readonly repo: EntityRepository<FactoriesRegistrant>,
+        @InjectRepository(ClientInfo)
+        private readonly clientRepo: EntityRepository<ClientInfo>,
         private readonly httpService: HttpService,
     ) {}
+
+    async checkClient(organizationId: string) {
+        // check if the information already exist in our database
+        const client = await this.clientRepo.findOne({ organizationId: organizationId });
+        
+        // return clients info if it exists and do not proceed further
+        if (client) {
+            return client?.clientsIds;
+        }
+
+        //TODO: call keycloak to retrieve info and save it in db
+        //TODO: replace the above dummy data
+        const jsonContent = [
+            {
+                clientId: 'Client 1',
+                clientSecret: '1234',
+            },
+            {
+                clientId: 'Client 2',
+                clientSecret: '7890',
+            },
+        ];
+        return jsonContent;
+    }
 
     async acceptFactory(factoryId: string, data: boolean): Promise<{ message: string } | { error: string }> {
         const factory = await this.repo.findOneOrFail({ id: factoryId });
