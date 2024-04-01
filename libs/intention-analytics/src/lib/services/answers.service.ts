@@ -1,5 +1,5 @@
 import { InjectRepository } from '@mikro-orm/nestjs';
-import { EntityRepository, Loaded } from '@mikro-orm/postgresql';
+import { EntityRepository } from '@mikro-orm/postgresql';
 import { Injectable } from '@nestjs/common';
 
 import { CreateAnswerDto } from '../dto/create-answer.dto';
@@ -12,16 +12,7 @@ export class AnswersService {
         @InjectRepository(Questionnaire) private readonly questionnaireRepo: EntityRepository<Questionnaire>,
     ) {}
 
-    async findActiveVersion(
-        isForVerifiedBuyers: boolean,
-    ): Promise<
-        Loaded<
-            Questionnaire,
-            'questions.id' | 'questions.title' | 'questions.type' | 'questions.options' | 'questions.isRequired',
-            'title' | 'description',
-            never
-        >
-    > {
+    async findActiveVersion(isForVerifiedBuyers: boolean) {
         return await this.questionnaireRepo.findOneOrFail(
             {
                 isActive: true,
@@ -40,7 +31,7 @@ export class AnswersService {
         );
     }
 
-    async submitAnswers(id: string, version: number, data: CreateAnswerDto, userId: string): Promise<Answer> {
+    async submitAnswers(id: string, version: number, data: CreateAnswerDto, userId: string) {
         const questionnaire = await this.questionnaireRepo.findOneOrFail({
             id,
             version,
@@ -58,7 +49,7 @@ export class AnswersService {
         return answer;
     }
 
-    async getAnswers(assetId: string): Promise<Loaded<Answer, never, 'responses', never>[]> {
+    async getAnswers(assetId: string) {
         const answers = this.answersRepo.find(
             {
                 assetId,

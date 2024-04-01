@@ -1,11 +1,10 @@
 import { InjectRepository } from '@mikro-orm/nestjs';
-import { EntityRepository, Loaded } from '@mikro-orm/postgresql';
+import { EntityRepository } from '@mikro-orm/postgresql';
 import { BadRequestException, Injectable } from '@nestjs/common';
 
 import { CreateQuestionnaireDto } from '../dto/create-questionnaire.dto';
 import { QuestionDto } from '../dto/question.dto';
 import { Question, Questionnaire } from '../entities';
-import { LoadedQuestionnaire } from '../interfaces';
 
 @Injectable()
 export class QuestionnaireService {
@@ -14,31 +13,13 @@ export class QuestionnaireService {
         @InjectRepository(Question) private readonly questionRepo: EntityRepository<Question>,
     ) {}
 
-    async getVersions(): Promise<{
-        forGeneralUsers: LoadedQuestionnaire[];
-        forVerifiedBuyers: LoadedQuestionnaire[];
-    }> {
-        const questionnaires = await this.questionnaireRepo.findAll({
-            fields: ['id', 'version', 'isForVerifiedBuyers', 'title', 'publicationDate'],
+    async getVersions() {
+        return await this.questionnaireRepo.findAll({
+            fields: ['id', 'version', 'isForVerifiedBuyers', 'isActive', 'title', 'publicationDate'],
         });
-
-        // questionnaire for general users
-        const forGeneralUsers = questionnaires.filter((questionnaire: LoadedQuestionnaire) => {
-            return !questionnaire.isForVerifiedBuyers;
-        });
-
-        // questionnaire for assets, for verified buyers
-        const forVerifiedBuyers = questionnaires.filter((questionnaire: LoadedQuestionnaire) => {
-            return questionnaire.isForVerifiedBuyers;
-        });
-
-        return {
-            forGeneralUsers: forGeneralUsers,
-            forVerifiedBuyers: forVerifiedBuyers,
-        };
     }
 
-    async create(dto: CreateQuestionnaireDto): Promise<Questionnaire> {
+    async create(dto: CreateQuestionnaireDto) {
         //find the latest version for this type of questionnaire
         //(based on whether it's for verified buyers or not)
         const latestVersion = await this.questionnaireRepo.findOne(
@@ -88,8 +69,11 @@ export class QuestionnaireService {
         return questionnaire;
     }
 
-    async activate(id: string, version: number): Promise<void> {
-        const questionnaire = await this.questionnaireRepo.findOneOrFail({ id, version });
+    async activate(id: string, version: number) {
+        const questionnaire = await this.questionnaireRepo.findOneOrFail(
+            { id, version },
+            { fields: ['id', 'version', 'isActive', 'isForVerifiedBuyers', 'publicationDate'] },
+        );
 
         // deactivate all other versions
         await this.questionnaireRepo.nativeUpdate(
@@ -103,19 +87,26 @@ export class QuestionnaireService {
         questionnaire.publicationDate = new Date();
         questionnaire.isActive = true;
 
-        return await this.questionnaireRepo.getEntityManager().flush();
+        await this.questionnaireRepo.getEntityManager().flush();
+
+        return questionnaire;
     }
 
-    async deactivate(id: string, version: number): Promise<void> {
-        const questionnaire = await this.questionnaireRepo.findOneOrFail({ id, version });
+    async deactivate(id: string, version: number) {
+        const questionnaire = await this.questionnaireRepo.findOneOrFail(
+            { id, version },
+            { fields: ['id', 'version', 'isActive'] },
+        );
 
         //deactivate version
         questionnaire.isActive = false;
 
-        return await this.questionnaireRepo.getEntityManager().flush();
+        await this.questionnaireRepo.getEntityManager().flush();
+
+        return questionnaire;
     }
 
-    async delete(id: string, version: number): Promise<void> {
+    async delete(id: string, version: number) {
         // find potential connected answers
         const questionnaire = await this.questionnaireRepo.findOneOrFail(
             { id, version },
@@ -125,7 +116,7 @@ export class QuestionnaireService {
         // throw exception if version has connected answers with it
         if (questionnaire.answers.length) {
             throw new BadRequestException(
-                'You cant delete the questionnaire, as there are already responses collected',
+                'You cannot delete the questionnaire, as there are already responses collected',
             );
         }
 
@@ -133,24 +124,20 @@ export class QuestionnaireService {
         return await this.questionnaireRepo.getEntityManager().removeAndFlush(questionnaire);
     }
 
-    async find(
-        id: string,
-        version: number,
-    ): Promise<
-        Loaded<
-            Questionnaire,
-            'questions.id' | 'questions.title' | 'questions.type' | 'questions.options',
-            'isForVerifiedBuyers' | 'title' | 'description' | 'isActive',
-            never
-        >
-    > {
+    async find(id: string, version: number) {
         return await this.questionnaireRepo.findOneOrFail(
             {
                 id,
                 version,
             },
             {
-                populate: ['questions.id', 'questions.title', 'questions.type', 'questions.options'],
+                populate: [
+                    'questions.id',
+                    'questions.title',
+                    'questions.isRequired',
+                    'questions.type',
+                    'questions.options',
+                ],
                 fields: ['isForVerifiedBuyers', 'title', 'description', 'isActive'],
             },
         );
