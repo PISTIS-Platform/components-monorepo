@@ -15,6 +15,7 @@ import { FactoriesRegistrant } from './entities/factories-registrant.entity';
 export class FactoriesRegistrantService {
     private readonly logger = new Logger(FactoriesRegistrantService.name);
     private readonly NOTIFICATIONS_URL = 'http://localhost:3001/api';
+    private readonly KEYCLOAK_URL = 'https://iam.pistis.isi.gr/api/v1/factory';
     constructor(
         @InjectRepository(FactoriesRegistrant)
         private readonly repo: EntityRepository<FactoriesRegistrant>,
@@ -26,25 +27,29 @@ export class FactoriesRegistrantService {
     async checkClient(organizationId: string) {
         // check if the information already exist in our database
         const client = await this.clientRepo.findOne({ organizationId: organizationId });
-        
+
         // return clients info if it exists and do not proceed further
         if (client) {
             return client?.clientsIds;
         }
 
-        //TODO: call keycloak to retrieve info and save it in db
-        //TODO: replace the above dummy data
-        const jsonContent = [
-            {
-                clientId: 'Client 1',
-                clientSecret: '1234',
-            },
-            {
-                clientId: 'Client 2',
-                clientSecret: '7890',
-            },
-        ];
-        return jsonContent;
+        return await firstValueFrom(
+            this.httpService
+                .get(`${this.KEYCLOAK_URL}/${organizationId}`, {
+                    headers: getHeaders(''),
+                })
+                .pipe(
+                    //If not an error from call admin receive the message below
+                    map(async (res) => {
+                        return res.data;
+                    }),
+                    // Catch any error occurred during the notification creation
+                    catchError((error) => {
+                        this.logger.error('Notification creation error:', error);
+                        return of({ error: 'Error occurred during notification creation' });
+                    }),
+                ),
+        );
     }
 
     async acceptFactory(factoryId: string, data: boolean): Promise<{ message: string } | { error: string }> {
@@ -58,6 +63,28 @@ export class FactoriesRegistrantService {
             type: data === true ? 'factory_accepted' : 'factory_denied',
             message: data === true ? 'New factory registration accepted' : 'New factory registration denied',
         };
+        const acceptance = data === true ? 'enable' : 'disable';
+        await firstValueFrom(
+            this.httpService
+                .put(
+                    `${this.KEYCLOAK_URL}/${factory.organizationId}/${acceptance}`,
+                    {},
+                    {
+                        headers: getHeaders(''),
+                    },
+                )
+                .pipe(
+                    //If not an error from call admin receive the message below
+                    map(async (res) => {
+                        return res.data;
+                    }),
+                    // Catch any error occurred during the notification creation
+                    catchError((error) => {
+                        this.logger.error('Notification creation error:', error);
+                        return of({ error: 'Error occurred during notification creation' });
+                    }),
+                ),
+        );
         return firstValueFrom(
             this.httpService
                 .post(`${this.NOTIFICATIONS_URL}/notifications`, notification, {
@@ -96,12 +123,43 @@ export class FactoriesRegistrantService {
     async createFactory(data: CreateFactoryDTO, userId: string): Promise<FactoriesRegistrant> {
         const factory = this.repo.create(data);
         await this.repo.getEntityManager().persistAndFlush(factory);
+        const factoryKeycloak = {
+            clientId: data.organizationId,
+            name: data.organizationName,
+            description: data.country, //FIXME: Do we need something specific in description?
+            redirect: true, //TODO: Is there any that we need to send false in redirect?
+            redirectUris: [
+                'http://localhost:8080', //FIXME: We add this url according to name of factory e.g. s5.pistis.eu?
+            ],
+            webOrigins: ['*'],
+        };
         const notification = {
             userId,
             organizationId: data.organizationId, //This will replaced with actual organization id
             type: 'new_factory_registered',
             message: 'New factory registered',
         };
+        const newFactory = await firstValueFrom(
+            this.httpService
+                .post(`${this.KEYCLOAK_URL}/`, factoryKeycloak, {
+                    headers: getHeaders(''),
+                })
+                .pipe(
+                    //If not an error from call admin receive the message below
+                    map(async (res) => {
+                        return res.data;
+                    }),
+                    // Catch any error occurred during the notification creation
+                    catchError((error) => {
+                        this.logger.error('Notification creation error:', error);
+                        return of({ error: 'Error occurred during notification creation' });
+                    }),
+                ),
+        );
+        await this.clientRepo.create({
+            clientsIds: [newFactory.id],
+            organizationId: factory.organizationId,
+        });
         await firstValueFrom(
             this.httpService
                 .post(`${this.NOTIFICATIONS_URL}/notifications`, notification, {
