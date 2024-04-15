@@ -23,12 +23,12 @@ export class ProviderService {
 
         //TODO:: maybe change this if according to what info the contract will contain
         if (!contract.isValid) {
-          throw new ForbiddenException('Contract is not valid, you cannot download the data from this asset');
+            throw new ForbiddenException('Contract is not valid, you cannot download the data from this asset');
         }
 
         let columnsInfo: Column[] = paginationData.columns || [];
         let metadata: Record<string, any> = {};
-   
+
         // In case the consumer asked for columns and metadata
         // (if columns were not send in dto (during first retrieval), the provider needs to retrieve them below)
         if (!columnsInfo.length && paginationData.offset === 0) {
@@ -51,7 +51,16 @@ export class ProviderService {
             columnsForPagination,
         );
 
-        //TODO: call Blockchain to inform that download finished if needed
+        //FIXME: Send any necessary params depending on what Blockchain needs (consumer id, transaction date etc..)
+        await this.blockchainService.updateBlockchain(
+            {
+                assetId,
+                consumerId: '123',
+                providerId: '234',
+                dateTime: '2024-04-15 00:00:00',
+            },
+            'token',
+        );
 
         return {
             ...data,
