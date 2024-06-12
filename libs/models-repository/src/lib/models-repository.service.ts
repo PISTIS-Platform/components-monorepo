@@ -1,4 +1,4 @@
-import { EntityRepository, wrap } from '@mikro-orm/core';
+import { EntityRepository } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { Injectable } from '@nestjs/common';
 import { Response } from 'express';
@@ -34,8 +34,11 @@ export class ModelsRepositoryService {
 
     async updateModel(modelId: string, data: UpdateModelDTO) {
         const model = await this.repo.findOneOrFail({ id: modelId });
-        wrap(model).assign(data);
-        await this.repo.getEntityManager().flush();
+        model.description = data.description;
+        model.title = data.title;
+        model.version = data.version;
+        model.type = data.type;
+        await this.repo.getEntityManager().persistAndFlush(data);
         return model;
     }
 
