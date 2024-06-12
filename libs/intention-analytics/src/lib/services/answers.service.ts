@@ -13,7 +13,7 @@ export class AnswersService {
     ) {}
 
     async findActiveVersion(isForVerifiedBuyers: boolean) {
-        return await this.questionnaireRepo.findOneOrFail(
+        return this.questionnaireRepo.findOneOrFail(
             {
                 isActive: true,
                 isForVerifiedBuyers,
@@ -50,7 +50,7 @@ export class AnswersService {
     }
 
     async getAnswers(assetId: string) {
-        const answers = this.answersRepo.find(
+        return this.answersRepo.find(
             {
                 assetId,
             },
@@ -58,7 +58,5 @@ export class AnswersService {
                 fields: ['responses'],
             },
         );
-
-        return answers;
     }
 }

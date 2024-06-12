@@ -14,7 +14,7 @@ export class QuestionnaireService {
     ) {}
 
     async getVersions() {
-        return await this.questionnaireRepo.findAll({
+        return this.questionnaireRepo.findAll({
             fields: ['id', 'version', 'isForVerifiedBuyers', 'isActive', 'title', 'publicationDate'],
         });
     }
@@ -125,7 +125,7 @@ export class QuestionnaireService {
     }
 
     async find(id: string, version: number) {
-        return await this.questionnaireRepo.findOneOrFail(
+        return this.questionnaireRepo.findOneOrFail(
             {
                 id,
                 version,

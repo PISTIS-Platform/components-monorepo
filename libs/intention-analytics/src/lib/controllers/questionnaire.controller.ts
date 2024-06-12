@@ -31,32 +31,32 @@ export class QuestionnaireController {
 
     @Get()
     async getVersions() {
-        return await this.questionnairesService.getVersions();
+        return this.questionnairesService.getVersions();
     }
 
     @Get('active-version/verified-buyers')
     @Roles({ roles: [ADMIN_ROLE] })
     async findActiveVersionForVerifiedBuyers() {
-        return await this.answersService.findActiveVersion(true);
+        return this.answersService.findActiveVersion(true);
     }
 
     @Get('active-version/general-users')
     @Roles({ roles: [ADMIN_ROLE] })
     async findActiveVersionForGeneralUsers() {
-        return await this.answersService.findActiveVersion(false);
+        return this.answersService.findActiveVersion(false);
     }
 
     @Get(':assetId/answers')
     @UseInterceptors(TransformAnswersInterceptor)
     async getAnswers(@Param('assetId') assetId: string) {
-        return await this.answersService.getAnswers(assetId);
+        return this.answersService.getAnswers(assetId);
     }
 
     @Post()
     @Roles({ roles: [ADMIN_ROLE] })
     @ApiBody({ type: CreateQuestionnaireDto })
     async create(@Body() data: CreateQuestionnaireDto) {
-        return await this.questionnairesService.create(data);
+        return this.questionnairesService.create(data);
     }
 
     @Patch(':id/:version/activate')
@@ -65,7 +65,7 @@ export class QuestionnaireController {
         @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
         @Param('version', new ParseIntPipe()) version: number,
     ) {
-        return await this.questionnairesService.activate(id, version);
+        return this.questionnairesService.activate(id, version);
     }
 
     @Patch(':id/:version/deactivate')
@@ -74,7 +74,7 @@ export class QuestionnaireController {
         @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
         @Param('version', new ParseIntPipe()) version: number,
     ) {
-        return await this.questionnairesService.deactivate(id, version);
+        return this.questionnairesService.deactivate(id, version);
     }
 
     @Get(':id/:version')
@@ -83,7 +83,7 @@ export class QuestionnaireController {
         @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
         @Param('version', new ParseIntPipe()) version: number,
     ) {
-        return await this.questionnairesService.find(id, version);
+        return this.questionnairesService.find(id, version);
     }
 
     @Delete(':id/:version')
@@ -92,7 +92,7 @@ export class QuestionnaireController {
         @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
         @Param('version', new ParseIntPipe()) version: number,
     ) {
-        return await this.questionnairesService.delete(id, version);
+        return this.questionnairesService.delete(id, version);
     }
 
     @Post(':id/:version/answers')
