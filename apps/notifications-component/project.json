@@ -54,7 +54,7 @@
                 "engine": "docker",
                 "platforms": ["linux/amd64"],
                 "metadata": {
-                    "images": ["pistis-heu/notifications-component"],
+                    "images": ["registry.pistis-market.eu/pistis/notifications-component"],
                     "load": true,
                     "labels": [
                         "org.opencontainers.image.authors=Suite5 Information Technology Solutions",

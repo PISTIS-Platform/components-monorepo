@@ -54,7 +54,7 @@
                 "engine": "docker",
                 "platforms": ["linux/amd64"],
                 "metadata": {
-                    "images": ["pistis-heu/factories-registry-component"],
+                    "images": ["registry.pistis-market.eu/pistis/factories-registry-component"],
                     "load": true,
                     "labels": [
                         "org.opencontainers.image.authors=Suite5 Information Technology Solutions",

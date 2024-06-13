@@ -3,9 +3,10 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { getHeaders } from '@pistis/shared';
 import { catchError, firstValueFrom, map, of } from 'rxjs';
 
+import { TransactionInfo } from '../interfaces';
 import { MODULE_OPTIONS_TOKEN } from './blockchain.module-definition';
 import { BlockchainModuleOptions } from './blockchain-module-options.interface';
-import { TransactionInfo } from '../interfaces';
+
 @Injectable()
 export class BlockchainService {
     private readonly logger = new Logger(BlockchainService.name);

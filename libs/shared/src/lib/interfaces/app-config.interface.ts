@@ -6,7 +6,7 @@ export interface IAppConfig {
     database: {
         host: string;
         port: number;
-        username?: string;
+        user?: string;
         password?: string;
         dbName: string;
     };
