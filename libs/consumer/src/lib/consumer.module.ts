@@ -31,14 +31,14 @@ export class ConsumerModule extends ConfigurableModuleClass {
 
         parent.imports = [
             ...(parent.imports ?? []),
-            DataStorageModule.registerAsync({ 
-                imports: asyncOptions?.imports, 
-                inject: asyncOptions?.inject, 
+            DataStorageModule.registerAsync({
+                imports: asyncOptions?.imports,
+                inject: asyncOptions?.inject,
                 useFactory: (config: typeof asyncOptions.inject) => {
-                   const options : any = asyncOptions.useFactory ? asyncOptions.useFactory(config) : {};
+                    const options: any = asyncOptions.useFactory ? asyncOptions.useFactory(config) : {};
 
-                   return { url: options.dataStorageUrl }
-                }
+                    return { url: options.dataStorageUrl };
+                },
             }),
         ];
 

@@ -11,7 +11,7 @@ import {
     UseInterceptors,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiTags } from '@nestjs/swagger';
-import { ADMIN_ROLE, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
+import { ADMIN_ROLE, AuthToken, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
 import { AuthenticatedUser, Roles } from 'nest-keycloak-connect';
 
 import { CreateAnswerDto } from '../dto/create-answer.dto';
@@ -32,6 +32,15 @@ export class QuestionnaireController {
     @Get()
     async getVersions() {
         return this.questionnairesService.getVersions();
+    }
+
+    @Get(':assetId/active-questionnaire')
+    async getUserQuestionnaires(
+        @Param('assetId') assetId: string,
+        @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
+        @AuthToken() token: string,
+    ) {
+        return await this.answersService.getUserQuestionnaire(assetId, token, user.id);
     }
 
     @Get('active-version/verified-buyers')

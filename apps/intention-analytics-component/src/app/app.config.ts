@@ -1,9 +1,13 @@
 import { registerAs } from '@nestjs/config';
 import { IAppConfig } from '@pistis/shared';
 
+export type IAnalyticsConfig = IAppConfig & {
+    blockchainUrl: string;
+};
+
 export const AppConfig = registerAs(
     'app',
-    (): IAppConfig => ({
+    (): IAnalyticsConfig => ({
         name: process.env.APP_NAME,
         port: +process.env.APP_PORT,
         database: {
@@ -19,5 +23,6 @@ export const AppConfig = registerAs(
             clientId: process.env.KC_CLIENT_ID,
             clientSecret: process.env.KC_CLIENT_SECRET,
         },
+        blockchainUrl: process.env.BLOCKCHAIN_URL,
     }),
 );

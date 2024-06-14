@@ -6,7 +6,6 @@ import { catchError, firstValueFrom, map, of } from 'rxjs';
 import { TransactionInfo } from '../interfaces';
 import { MODULE_OPTIONS_TOKEN } from './blockchain.module-definition';
 import { BlockchainModuleOptions } from './blockchain-module-options.interface';
-
 @Injectable()
 export class BlockchainService {
     private readonly logger = new Logger(BlockchainService.name);

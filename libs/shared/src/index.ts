@@ -1,4 +1,5 @@
 export * from './lib/constants';
+export * from './lib/decorators/';
 export * from './lib/interfaces';
 export * from './lib/logger/morgan.middleware';
 export * from './lib/logger/morgan.middleware';

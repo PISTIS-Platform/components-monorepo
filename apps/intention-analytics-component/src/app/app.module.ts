@@ -13,7 +13,7 @@ import {
     TokenValidation,
 } from 'nest-keycloak-connect';
 
-import { AppConfig } from './app.config';
+import { AppConfig, IAnalyticsConfig } from './app.config';
 
 @Module({
     imports: [
@@ -31,7 +31,13 @@ import { AppConfig } from './app.config';
             }),
             inject: [AppConfig.KEY],
         }),
-        IntentionAnalyticsModule,
+        IntentionAnalyticsModule.registerAsync({
+            imports: [ConfigModule.forFeature(AppConfig)],
+            useFactory: async (options: IAnalyticsConfig) => ({
+                blockchainUrl: options.blockchainUrl,
+            }),
+            inject: [AppConfig.KEY],
+        }),
         KeycloakConnectModule.registerAsync({
             imports: [ConfigModule.forFeature(AppConfig)],
             inject: [AppConfig.KEY],
