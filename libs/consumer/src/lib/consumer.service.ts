@@ -29,7 +29,7 @@ export class ConsumerService {
         const providerFactory = await firstValueFrom(
             this.httpService
                 .get(`${this.options.factoryRegistryUrl}/${factoryId}`, {
-                    headers: getHeaders(''),
+                    headers: getHeaders(token),
                 })
                 .pipe(
                     map(async (res) => {
@@ -61,6 +61,7 @@ export class ConsumerService {
             },
             providerUrl,
             assetId,
+            token,
         );
 
         if (offset === 0 && 'data' in results) {
@@ -90,6 +91,7 @@ export class ConsumerService {
                     },
                     providerUrl,
                     assetId,
+                    token,
                 );
             }
 
@@ -120,7 +122,7 @@ export class ConsumerService {
         return await firstValueFrom(
             this.httpService
                 .post(`${this.options.notificationsUrl}/notifications`, notification, {
-                    headers: getHeaders(''),
+                    headers: getHeaders(token),
                 })
                 .pipe(
                     //If not an error from call admin receive the message below
@@ -144,17 +146,20 @@ export class ConsumerService {
         },
         providerUrl: string,
         assetId: string,
+        token: string,
     ): Promise<IResults | { error: string | undefined }> {
         return await firstValueFrom(
-            this.httpService.post(`${providerUrl}/provider/${assetId}`, { ...bodyObject }).pipe(
-                map(async (res) => {
-                    return res.data;
-                }),
-                catchError((error) => {
-                    this.logger.error('Provider download dataset error:', error);
-                    return of({ error: 'Error occurred during retrieving data from provider' });
-                }),
-            ),
+            this.httpService
+                .post(`${providerUrl}/provider/${assetId}`, { ...bodyObject }, { headers: getHeaders(token) })
+                .pipe(
+                    map(async (res) => {
+                        return res.data;
+                    }),
+                    catchError((error) => {
+                        this.logger.error('Provider download dataset error:', error);
+                        return of({ error: 'Error occurred during retrieving data from provider' });
+                    }),
+                ),
         );
     }
 }

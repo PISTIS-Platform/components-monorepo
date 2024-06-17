@@ -1,6 +1,6 @@
 import { Controller, Get, Param } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ParseUserInfoPipe, UserInfo } from '@pistis/shared';
+import { AuthToken, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
 import { AuthenticatedUser } from 'nest-keycloak-connect';
 
 import { ConsumerService } from './consumer.service';
@@ -16,8 +16,9 @@ export class ConsumerController {
         @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
         @Param('contractId') contractId: string,
         @Param('assetId') assetId: string,
+        @AuthToken() token: string,
     ) {
         //FIXME: change types in variables when we have actual results
-        return await this.consumerService.retrieveData(contractId, assetId, user.id, 'token');
+        return await this.consumerService.retrieveData(contractId, assetId, user.id, token);
     }
 }

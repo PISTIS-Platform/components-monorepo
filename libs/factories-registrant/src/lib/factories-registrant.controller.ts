@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Put, Res, StreamableFile } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ADMIN_ROLE, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
+import { ADMIN_ROLE, AuthToken, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
 import type { Response } from 'express';
 import { createReadStream } from 'fs';
 import { AuthenticatedUser, Roles } from 'nest-keycloak-connect';
@@ -66,19 +66,26 @@ export class FactoriesRegistrantController {
     async createFactory(
         @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
         @Body() data: CreateFactoryDTO,
+        @AuthToken() token: string,
     ): Promise<FactoriesRegistrant> {
-        return this.factoriesService.createFactory(data, user.id);
+        return this.factoriesService.createFactory(data, user.id, token);
     }
 
     @Patch(':factoryId/accept')
     @Roles({ roles: [ADMIN_ROLE] })
-    async acceptFactory(@Param('factoryId', new ParseUUIDPipe({ version: '4' })) factoryId: string) {
-        return this.factoriesService.acceptFactory(factoryId, true);
+    async acceptFactory(
+        @Param('factoryId', new ParseUUIDPipe({ version: '4' })) factoryId: string,
+        @AuthToken() token: string,
+    ) {
+        return this.factoriesService.acceptFactory(factoryId, true, token);
     }
 
     @Patch(':factoryId/deny')
     @Roles({ roles: [ADMIN_ROLE] })
-    async denyFactory(@Param('factoryId', new ParseUUIDPipe({ version: '4' })) factoryId: string) {
-        return this.factoriesService.acceptFactory(factoryId, false);
+    async denyFactory(
+        @Param('factoryId', new ParseUUIDPipe({ version: '4' })) factoryId: string,
+        @AuthToken() token: string,
+    ) {
+        return this.factoriesService.acceptFactory(factoryId, false, token);
     }
 }

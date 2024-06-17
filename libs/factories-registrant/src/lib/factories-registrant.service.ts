@@ -52,7 +52,11 @@ export class FactoriesRegistrantService {
         );
     }
 
-    async acceptFactory(factoryId: string, data: boolean): Promise<{ message: string } | { error: string }> {
+    async acceptFactory(
+        factoryId: string,
+        data: boolean,
+        token: string,
+    ): Promise<{ message: string } | { error: string }> {
         const factory = await this.repo.findOneOrFail({ id: factoryId });
         factory.isAccepted = data;
         factory.status = 'live';
@@ -70,7 +74,7 @@ export class FactoriesRegistrantService {
                     `${this.KEYCLOAK_URL}/${factory.organizationId}/${acceptance}`,
                     {},
                     {
-                        headers: getHeaders(''),
+                        headers: getHeaders(token),
                     },
                 )
                 .pipe(
@@ -88,7 +92,7 @@ export class FactoriesRegistrantService {
         return firstValueFrom(
             this.httpService
                 .post(`${this.NOTIFICATIONS_URL}/notifications`, notification, {
-                    headers: getHeaders(''),
+                    headers: getHeaders(token),
                 })
                 .pipe(
                     //If not an error from call admin receive the message below
@@ -120,7 +124,7 @@ export class FactoriesRegistrantService {
         return factory;
     }
 
-    async createFactory(data: CreateFactoryDTO, userId: string): Promise<FactoriesRegistrant> {
+    async createFactory(data: CreateFactoryDTO, userId: string, token: string): Promise<FactoriesRegistrant> {
         const factory = this.repo.create(data);
         await this.repo.getEntityManager().persistAndFlush(factory);
         const factoryKeycloak = {
@@ -142,7 +146,7 @@ export class FactoriesRegistrantService {
         const newFactory = await firstValueFrom(
             this.httpService
                 .post(`${this.KEYCLOAK_URL}/`, factoryKeycloak, {
-                    headers: getHeaders(''),
+                    headers: getHeaders(token),
                 })
                 .pipe(
                     //If not an error from call admin receive the message below
@@ -163,7 +167,7 @@ export class FactoriesRegistrantService {
         await firstValueFrom(
             this.httpService
                 .post(`${this.NOTIFICATIONS_URL}/notifications`, notification, {
-                    headers: getHeaders(''),
+                    headers: getHeaders(token),
                 })
                 .pipe(
                     //If not an error from call admin receive the message below

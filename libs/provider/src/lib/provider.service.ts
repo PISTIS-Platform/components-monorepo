@@ -14,12 +14,12 @@ export class ProviderService {
     ) {}
 
     //TODO:: check what parameters blockchain should get for contract validation
-    async contractValidation(assetId: string) {
-        return await this.blockchainService.isContractValid(assetId, '');
+    async contractValidation(assetId: string, token: string) {
+        return await this.blockchainService.isContractValid(assetId, token);
     }
 
-    async downloadDataset(assetId: string, paginationData: PaginationDto) {
-        const contract = await this.contractValidation(assetId);
+    async downloadDataset(assetId: string, paginationData: PaginationDto, token: string) {
+        const contract = await this.contractValidation(assetId, token);
 
         //TODO:: maybe change this if according to what info the contract will contain
         if (!contract.isValid) {
@@ -45,7 +45,7 @@ export class ProviderService {
         //FIXME: check that this will work with actual assetId (and check if token will be needed)
         const data = await this.dataStorageService.retrievePaginatedData(
             assetId,
-            'token',
+            token,
             paginationData.offset,
             paginationData.batchSize,
             columnsForPagination,
@@ -59,7 +59,7 @@ export class ProviderService {
                 providerId: '234',
                 dateTime: '2024-04-15 00:00:00',
             },
-            'token',
+            token,
         );
 
         return {
