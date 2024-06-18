@@ -1,1 +1,1 @@
-export const ADMIN_ROLE = 'admin';
+export const ADMIN_ROLE = 'PISTIS_ADMIN';
