@@ -1,1 +1,1 @@
-export const ADMIN_ROLE = 'PISTIS_ADMIN';
+export const ADMIN_ROLE = 'realm:PISTIS_ADMIN';
