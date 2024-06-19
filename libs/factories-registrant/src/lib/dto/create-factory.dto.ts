@@ -15,16 +15,16 @@ export class CreateFactoryDTO {
 
     @IsNotEmpty()
     @IsString()
+    factoryPrefix!: string;
+
+    @IsNotEmpty()
+    @IsString()
     country!: string;
 
     @IsNotEmpty()
     @IsBoolean()
     @IsOptional()
     isAccepted!: boolean;
-
-    @IsNotEmpty()
-    @IsString()
-    status!: string;
 
     @IsNotEmpty()
     @IsBoolean()

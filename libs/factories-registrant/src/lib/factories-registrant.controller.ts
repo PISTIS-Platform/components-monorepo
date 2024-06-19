@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Put, Res, StreamableFile } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiTags } from '@nestjs/swagger';
 import { ADMIN_ROLE, AuthToken, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
 import type { Response } from 'express';
 import { createReadStream } from 'fs';
@@ -7,20 +7,72 @@ import { AuthenticatedUser, Roles } from 'nest-keycloak-connect';
 import { join } from 'path';
 
 import { CreateFactoryDTO } from './dto/create-factory.dto';
+import { CreateServiceMappingDTO } from './dto/create-service-mapping.dto';
 import { UpdateFactoryDTO } from './dto/update-factory.dto';
+import { UpdateServiceMappingDTO } from './dto/update-service-mapping.dto';
 import { FactoriesRegistrant } from './entities/factories-registrant.entity';
 import { FactoriesRegistrantService } from './factories-registrant.service';
+import { ServicesMappingService } from './services-mapping.service';
 
 @Controller('factories')
 @ApiTags('factories-registrant')
 @ApiBearerAuth()
 export class FactoriesRegistrantController {
-    constructor(private readonly factoriesService: FactoriesRegistrantService) {}
+    constructor(
+        private readonly factoriesService: FactoriesRegistrantService,
+        private readonly servicesMappingService: ServicesMappingService,
+    ) {}
 
     @Get()
     @Roles({ roles: [ADMIN_ROLE] })
     async findFactories(): Promise<FactoriesRegistrant[]> {
         return this.factoriesService.retrieveFactories();
+    }
+
+    @Get('list')
+    async findAcceptedFactories() {
+        return this.factoriesService.retrieveAcceptedFactories();
+    }
+
+    @Get('services-mapping')
+    async findServicesMappingForGeneralUsers() {
+        return this.servicesMappingService.findServicesMappingForGeneralUsers();
+    }
+
+    @Get('services')
+    @Roles({ roles: [ADMIN_ROLE] })
+    async findServicesMappingForAdmin() {
+        return this.servicesMappingService.findServicesMappingForAdmin();
+    }
+
+    @Get('services/:id')
+    @Roles({ roles: [ADMIN_ROLE] })
+    async findServiceMapping(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
+        return this.servicesMappingService.find(id);
+    }
+
+    @Post('services')
+    @Roles({ roles: [ADMIN_ROLE] })
+    @ApiBody({ type: CreateServiceMappingDTO })
+    async createServiceMapping(@Body() data: CreateServiceMappingDTO) {
+        return await this.servicesMappingService.create(data);
+    }
+
+    @Patch('services/:id')
+    @Roles({ roles: [ADMIN_ROLE] })
+    @ApiBody({ type: UpdateServiceMappingDTO })
+    async updateServiceMapping(
+        @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+        @Body() data: UpdateServiceMappingDTO,
+    ) {
+        return await this.servicesMappingService.update(id, data);
+    }
+
+    @Get(':organizationId/services')
+    async findOrganisationServices(
+        @Param('organizationId', new ParseUUIDPipe({ version: '4' })) organizationId: string,
+    ) {
+        return this.servicesMappingService.findOrganizationServices(organizationId);
     }
 
     @Get('download-instructions')

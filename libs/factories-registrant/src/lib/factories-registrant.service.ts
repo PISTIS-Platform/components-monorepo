@@ -1,5 +1,5 @@
 import { InjectRepository } from '@mikro-orm/nestjs';
-import { EntityRepository, wrap } from '@mikro-orm/postgresql';
+import { EntityRepository, Loaded, wrap } from '@mikro-orm/postgresql';
 import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { getHeaders } from '@pistis/shared';
@@ -59,7 +59,6 @@ export class FactoriesRegistrantService {
     ): Promise<{ message: string } | { error: string }> {
         const factory = await this.repo.findOneOrFail({ id: factoryId });
         factory.isAccepted = data;
-        factory.status = 'live';
         this.repo.getEntityManager().flush();
         const notification = {
             userId: '', //FIXME:This will replaced with actual user id
@@ -111,6 +110,22 @@ export class FactoriesRegistrantService {
 
     async retrieveFactories(): Promise<FactoriesRegistrant[]> {
         return this.repo.findAll();
+    }
+
+    async retrieveAcceptedFactories() {
+        const factories = await this.repo.find(
+            {
+                isAccepted: true,
+            },
+            {
+                fields: ['factoryPrefix'],
+            },
+        );
+
+        return factories.map(
+            (factory: Loaded<FactoriesRegistrant, never, 'factoryPrefix', never>) =>
+                `https://${factory.factoryPrefix}.pistis-market.eu`,
+        );
     }
 
     async retrieveFactory(factoryId: string): Promise<FactoriesRegistrant> {

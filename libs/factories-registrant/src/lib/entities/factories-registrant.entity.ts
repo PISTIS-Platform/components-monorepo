@@ -1,4 +1,4 @@
-import { Entity, OptionalProps, PrimaryKey, Property } from '@mikro-orm/core';
+import { Entity, OptionalProps, PrimaryKey, Property, Unique } from '@mikro-orm/core';
 import { v4 as uuidV4 } from 'uuid';
 
 @Entity({ tableName: 'factories' })
@@ -12,16 +12,18 @@ export class FactoriesRegistrant {
     organizationName!: string;
 
     @Property()
+    @Unique()
     organizationId!: string;
 
     @Property()
     ip!: string;
 
     @Property()
-    country!: string;
+    @Unique()
+    factoryPrefix!: string;
 
     @Property()
-    status!: string;
+    country!: string;
 
     @Property()
     isAccepted = false;
