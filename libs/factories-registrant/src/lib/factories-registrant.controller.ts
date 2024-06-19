@@ -77,7 +77,9 @@ export class FactoriesRegistrantController {
 
     @Get('download-instructions')
     downloadSetUpInstructions(@Res({ passthrough: true }) res: Response): StreamableFile {
-        const file = createReadStream(join(process.cwd(), '/apps/factories-registrant-component/src/assets/test.txt')); //TODO: test.txt is a dummy file we will change it when we have a first example from the actual file
+        const file = createReadStream(
+            join(process.cwd(), '../../apps/factories-registrant-component/src/assets/test.txt'),
+        ); //TODO: test.txt is a dummy file we will change it when we have a first example from the actual file
 
         res.set({
             'Content-Type': 'application/json',

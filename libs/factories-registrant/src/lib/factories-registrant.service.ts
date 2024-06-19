@@ -1,5 +1,5 @@
 import { InjectRepository } from '@mikro-orm/nestjs';
-import { EntityRepository, Loaded, wrap } from '@mikro-orm/postgresql';
+import { EntityRepository, Loaded } from '@mikro-orm/postgresql';
 import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { getHeaders } from '@pistis/shared';
@@ -43,10 +43,10 @@ export class FactoriesRegistrantService {
                     map(async (res) => {
                         return res.data;
                     }),
-                    // Catch any error occurred during the notification creation
+                    // Catch any error occurred during the client checking
                     catchError((error) => {
-                        this.logger.error('Notification creation error:', error);
-                        return of({ error: 'Error occurred during notification creation' });
+                        this.logger.error('Client check error:', error);
+                        return of({ error: 'Error occurred during client check' });
                     }),
                 ),
         );
@@ -134,8 +134,10 @@ export class FactoriesRegistrantService {
 
     async updateFactoryStatus(factoryId: string, data: UpdateFactoryDTO): Promise<FactoriesRegistrant> {
         const factory = await this.repo.findOneOrFail({ id: factoryId });
-        wrap(factory).assign(data);
-        await this.repo.getEntityManager().flush();
+        factory.isAccepted = data.isAccepted;
+        factory.status = data.status;
+        factory.isActive = data.isActive;
+        await this.repo.getEntityManager().persistAndFlush(data);
         return factory;
     }
 
