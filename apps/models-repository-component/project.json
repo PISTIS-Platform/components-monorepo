@@ -19,6 +19,13 @@
                 }
             }
         },
+        "build-migrations": {
+            "executor": "nx:run-commands",
+            "options": {
+                "cwd": "apps/models-repository-component",
+                "command": "tsc --project ./tsconfig.orm.json"
+            }
+        },
         "migration": {
             "executor": "nx:run-commands",
             "options": {
