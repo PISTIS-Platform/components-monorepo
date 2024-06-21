@@ -5,4 +5,6 @@ export enum NotificationType {
     NewFactoryRegistered = 'new_factory_registered',
     AcceptedFactory = 'factory_accepted',
     DeniedFactory = 'factory_denied',
+    FactoryActivated = 'factory_activated',
+    FactorySuspended = 'factory_suspended',
 }

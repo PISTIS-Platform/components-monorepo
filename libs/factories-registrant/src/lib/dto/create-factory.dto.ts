@@ -1,4 +1,6 @@
-import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+
+import { Status } from '../enums';
 
 export class CreateFactoryDTO {
     @IsNotEmpty()
@@ -11,6 +13,7 @@ export class CreateFactoryDTO {
 
     @IsNotEmpty()
     @IsString()
+    @IsOptional()
     ip!: string;
 
     @IsNotEmpty()
@@ -20,6 +23,10 @@ export class CreateFactoryDTO {
     @IsNotEmpty()
     @IsString()
     country!: string;
+
+    @IsNotEmpty()
+    @IsEnum(Status)
+    status!: string;
 
     @IsNotEmpty()
     @IsBoolean()

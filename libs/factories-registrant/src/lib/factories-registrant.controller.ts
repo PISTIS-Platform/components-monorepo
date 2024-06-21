@@ -5,10 +5,11 @@ import type { Response } from 'express';
 import { createReadStream } from 'fs';
 import { AuthenticatedUser, Roles } from 'nest-keycloak-connect';
 import { join } from 'path';
+import YAML from 'yaml';
 
+import { UpdateFactoryDTO, UpdateFactoryIpDTO } from './dto';
 import { CreateFactoryDTO } from './dto/create-factory.dto';
 import { CreateServiceMappingDTO } from './dto/create-service-mapping.dto';
-import { UpdateFactoryDTO } from './dto/update-factory.dto';
 import { UpdateServiceMappingDTO } from './dto/update-service-mapping.dto';
 import { FactoriesRegistrant } from './entities/factories-registrant.entity';
 import { FactoriesRegistrantService } from './factories-registrant.service';
@@ -77,9 +78,7 @@ export class FactoriesRegistrantController {
 
     @Get('download-instructions')
     downloadSetUpInstructions(@Res({ passthrough: true }) res: Response): StreamableFile {
-        const file = createReadStream(
-            join(process.cwd(), '../../apps/factories-registrant-component/src/assets/test.txt'),
-        ); //TODO: test.txt is a dummy file we will change it when we have a first example from the actual file
+        const file = createReadStream(join(process.cwd(), '/apps/factories-registrant-component/src/assets/test.txt')); //TODO: test.txt is a dummy file we will change it when we have a first example from the actual file
 
         res.set({
             'Content-Type': 'application/json',
@@ -89,12 +88,15 @@ export class FactoriesRegistrantController {
     }
 
     @Get('download-keycloak-clients')
-    async downloadKeycloakClients(@Res({ passthrough: true }) res: Response) {
-        const clients = await this.factoriesService.checkClient(''); //FIXME: change empty string with actual organization id when we have the information
+    async downloadKeycloakClients(
+        @Res({ passthrough: true }) res: Response,
+        @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
+    ) {
+        const clients = YAML.stringify(await this.factoriesService.checkClient(user.organizationId));
 
         // Set appropriate headers to indicate JSON content
-        res.setHeader('Content-Type', 'application/json');
-        res.setHeader('Content-Disposition', 'attachment; filename=keycloak-clients.json');
+        res.setHeader('Content-Type', 'application/yaml');
+        res.setHeader('Content-Disposition', 'attachment; filename=keycloak-clients.yaml');
 
         // Send JSON object as response
         res.send(JSON.stringify(clients));
@@ -107,39 +109,52 @@ export class FactoriesRegistrantController {
         return this.factoriesService.retrieveFactory(factoryId);
     }
 
-    @Put(':factoryId')
+    @Put('set-ip')
+    async setFactoryIp(
+        @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
+        @Body() data: UpdateFactoryIpDTO,
+    ): Promise<FactoriesRegistrant> {
+        return this.factoriesService.setFactoryIp(data, user.organizationId);
+    }
+
+    @Put(':factoryId/update')
     @Roles({ roles: [ADMIN_ROLE] })
-    async updateFactoryStatus(
+    async updateFactory(
         @Param('factoryId', new ParseUUIDPipe({ version: '4' })) factoryId: string,
+        @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
+        @AuthToken() token: string,
         @Body() data: UpdateFactoryDTO,
     ): Promise<FactoriesRegistrant> {
-        return this.factoriesService.updateFactoryStatus(factoryId, data);
+        return this.factoriesService.updateFactory(data, token, factoryId, user.id);
     }
 
     @Post()
+    @Roles({ roles: [ADMIN_ROLE] })
     async createFactory(
+        @AuthToken() token: string,
         @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
         @Body() data: CreateFactoryDTO,
-        @AuthToken() token: string,
     ): Promise<FactoriesRegistrant> {
-        return this.factoriesService.createFactory(data, user.id, token);
+        return this.factoriesService.createFactory(data, token);
     }
 
-    @Patch(':factoryId/accept')
+    @Patch(':factoryId/activate')
     @Roles({ roles: [ADMIN_ROLE] })
-    async acceptFactory(
+    async activateFactory(
         @Param('factoryId', new ParseUUIDPipe({ version: '4' })) factoryId: string,
+        @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
         @AuthToken() token: string,
     ) {
-        return this.factoriesService.acceptFactory(factoryId, true, token);
+        return this.factoriesService.activateFactory(factoryId, token, user.id);
     }
 
-    @Patch(':factoryId/deny')
+    @Patch(':factoryId/suspend')
     @Roles({ roles: [ADMIN_ROLE] })
-    async denyFactory(
+    async suspendFactory(
         @Param('factoryId', new ParseUUIDPipe({ version: '4' })) factoryId: string,
+        @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
         @AuthToken() token: string,
     ) {
-        return this.factoriesService.acceptFactory(factoryId, false, token);
+        return this.factoriesService.suspendFactory(factoryId, token, user.id);
     }
 }

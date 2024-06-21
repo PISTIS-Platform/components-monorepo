@@ -15,7 +15,7 @@ export class FactoriesRegistrant {
     @Unique()
     organizationId!: string;
 
-    @Property()
+    @Property({ nullable: true })
     ip!: string;
 
     @Property()
@@ -24,6 +24,9 @@ export class FactoriesRegistrant {
 
     @Property()
     country!: string;
+
+    @Property()
+    status!: string;
 
     @Property()
     isAccepted = false;
