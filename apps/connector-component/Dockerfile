@@ -19,5 +19,5 @@ COPY --from=deps /usr/src/app/package.json ./package.json
 COPY dist/apps/connector-component .
 RUN chown -R node:node .
 USER node
-EXPOSE 3009
+EXPOSE 3000
 CMD ["dumb-init", "node", "main.js"]
