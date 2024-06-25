@@ -3,7 +3,7 @@ FROM docker.io/node:lts-alpine as deps
 # Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
 RUN apk add --no-cache libc6-compat
 WORKDIR /usr/src/app
-RUN corepack enable pnpm
+RUN corepack enable && corepack prepare pnpm@latest-8 --activate
 COPY package.json ./
 COPY pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile --prod
