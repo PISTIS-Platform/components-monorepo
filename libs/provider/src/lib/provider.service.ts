@@ -51,12 +51,10 @@ export class ProviderService {
             columnsForPagination,
         );
 
-        //FIXME: Send any necessary params depending on what Blockchain needs (consumer id, transaction date etc..)
         await this.blockchainService.updateBlockchain(
             {
                 assetId,
-                consumerId: '123',
-                providerId: '234',
+                transactionId: contract.transactionId,
                 dateTime: '2024-04-15 00:00:00',
             },
             token,
