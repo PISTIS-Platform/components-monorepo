@@ -248,13 +248,14 @@ export class FactoriesRegistrantService {
         const clients = {
             clientsIds: services.map(({ serviceName }) => {
                 {
-                    `${factory.organizationId}-${serviceName}`;
+                    return `${factory.organizationId}-${serviceName}`;
                 }
             }),
             organizationId: factory.organizationId,
         };
         //Save in clients information
-        await this.clientRepo.getEntityManager().persistAndFlush(clients);
+        const savedClients = this.clientRepo.create(clients);
+        await this.clientRepo.getEntityManager().persistAndFlush(savedClients);
 
         //Create object of clients upon discovered services
         const keycloakClients = services.map(({ serviceName, serviceUrl }) => ({
