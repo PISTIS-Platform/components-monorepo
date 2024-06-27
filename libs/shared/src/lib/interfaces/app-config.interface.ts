@@ -11,4 +11,5 @@ export interface IAppConfig {
         dbName: string;
     };
     keycloak: IKeycloakConfig;
+    isDevelopment: boolean;
 }

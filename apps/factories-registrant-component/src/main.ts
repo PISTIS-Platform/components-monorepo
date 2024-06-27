@@ -20,15 +20,18 @@ async function bootstrap() {
 
     const config = app.get(ConfigService);
     const port = config.get<number>('app.port', 3005);
+    const isDevelopment = config.get<boolean>('app.isDevelopment');
 
-    const swaggerConfig = new DocumentBuilder()
-        .setTitle(config.get('app.name'))
-        .setVersion('1.0')
-        .addTag('factories-registrant')
-        .addBearerAuth()
-        .build();
-    const document = SwaggerModule.createDocument(app, swaggerConfig);
-    SwaggerModule.setup('api', app, document);
+    if (isDevelopment) {
+        const swaggerConfig = new DocumentBuilder()
+            .setTitle(config.get('app.name'))
+            .setVersion('1.0')
+            .addTag('factories-registrant')
+            .addBearerAuth()
+            .build();
+        const document = SwaggerModule.createDocument(app, swaggerConfig);
+        SwaggerModule.setup('api', app, document);
+    }
 
     await app.listen(port);
     Logger.log(`🚀 Application "${config.get('app.name')}" is running on port ${port}`);

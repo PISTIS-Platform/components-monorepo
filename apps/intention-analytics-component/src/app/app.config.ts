@@ -24,5 +24,6 @@ export const AppConfig = registerAs(
             clientSecret: process.env.KC_CLIENT_SECRET,
         },
         blockchainUrl: process.env.BLOCKCHAIN_URL,
+        isDevelopment: process.env.NODE_ENV !== 'production',
     }),
 );

@@ -19,5 +19,6 @@ export const AppConfig = registerAs(
             clientId: process.env.KC_CLIENT_ID,
             clientSecret: process.env.KC_CLIENT_SECRET,
         },
+        isDevelopment: process.env.NODE_ENV !== 'production',
     }),
 );
