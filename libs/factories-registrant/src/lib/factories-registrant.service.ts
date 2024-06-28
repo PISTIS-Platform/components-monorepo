@@ -1,7 +1,7 @@
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityRepository, Loaded } from '@mikro-orm/postgresql';
 import { HttpService } from '@nestjs/axios';
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
 import { getHeaders } from '@pistis/shared';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
@@ -10,13 +10,14 @@ import { catchError, firstValueFrom, lastValueFrom, map, of } from 'rxjs';
 import { CreateFactoryDTO, UpdateFactoryDTO, UpdateFactoryIpDTO } from './dto';
 import { ClientInfo } from './entities';
 import { FactoriesRegistrant } from './entities/factories-registrant.entity';
+import { MODULE_OPTIONS_TOKEN } from './factories-registrant.module-definition';
+import { FactoryModuleOptions } from './factories-registrant-module-options.interface';
 import { ServicesMappingService } from './services-mapping.service';
 
 @Injectable()
 export class FactoriesRegistrantService {
     private readonly logger = new Logger(FactoriesRegistrantService.name);
-    private readonly NOTIFICATIONS_URL = 'http://localhost:3001/api';
-    private readonly KEYCLOAK_URL = 'https://iam.pistis.isi.gr/api/v1/factory';
+
     constructor(
         @InjectRepository(FactoriesRegistrant)
         private readonly repo: EntityRepository<FactoriesRegistrant>,
@@ -24,6 +25,7 @@ export class FactoriesRegistrantService {
         private readonly clientRepo: EntityRepository<ClientInfo>,
         private readonly httpService: HttpService,
         private readonly servicesMappingService: ServicesMappingService,
+        @Inject(MODULE_OPTIONS_TOKEN) private options: FactoryModuleOptions,
     ) {}
 
     async checkClient(organizationId: string) {
@@ -35,7 +37,7 @@ export class FactoriesRegistrantService {
         for (const clientId of client.clientsIds) {
             await firstValueFrom(
                 this.httpService
-                    .get(`${this.KEYCLOAK_URL}/${clientId}`, {
+                    .get(`${this.options.identityAccessManagementUrl}/${clientId}`, {
                         headers: getHeaders(''),
                     })
                     .pipe(
@@ -85,7 +87,7 @@ export class FactoriesRegistrantService {
         await lastValueFrom(
             of(keycloakClients.clientsIds).pipe(
                 (client: Record<string, any>) =>
-                    this.httpService.put(`${this.KEYCLOAK_URL}/${client}/enable`, client, {
+                    this.httpService.put(`${this.options.identityAccessManagementUrl}/${client}/enable`, client, {
                         headers: getHeaders(token),
                     }),
                 catchError((error: any) => {
@@ -103,7 +105,7 @@ export class FactoriesRegistrantService {
         };
         return firstValueFrom(
             this.httpService
-                .post(`${this.NOTIFICATIONS_URL}/notifications`, notification, {
+                .post(`${this.options.notificationsUrl}/notifications`, notification, {
                     headers: getHeaders(token),
                 })
                 .pipe(
@@ -113,12 +115,11 @@ export class FactoriesRegistrantService {
                     }),
                     // Catch any error occurred during the notification creation
                     catchError((error) => {
-                        this.logger.error('Client creation error:', error);
-                        return of({ error: 'Error occurred during Client creation' });
+                        this.logger.error('Client activation error:', error);
+                        return of({ error: 'Error occurred during Client activation' });
                     }),
                 ),
         );
-        //TODO Call to identity manager to notify for new factory
     }
 
     async suspendFactory(
@@ -139,7 +140,7 @@ export class FactoriesRegistrantService {
         await lastValueFrom(
             of(client.clientsIds).pipe(
                 (client: Record<string, any>) =>
-                    this.httpService.put(`${this.KEYCLOAK_URL}/${client}/disable`, {
+                    this.httpService.put(`${this.options.identityAccessManagementUrl}/${client}/disable`, {
                         headers: getHeaders(token),
                     }),
                 catchError((error: any) => {
@@ -157,7 +158,7 @@ export class FactoriesRegistrantService {
         };
         return firstValueFrom(
             this.httpService
-                .post(`${this.NOTIFICATIONS_URL}/notifications`, notification, {
+                .post(`${this.options.notificationsUrl}/notifications`, notification, {
                     headers: getHeaders(token),
                 })
                 .pipe(
@@ -221,7 +222,7 @@ export class FactoriesRegistrantService {
         };
         await firstValueFrom(
             this.httpService
-                .post(`${this.NOTIFICATIONS_URL}/notifications`, notification, {
+                .post(`${this.options.notificationsUrl}/notifications`, notification, {
                     headers: getHeaders(token),
                 })
                 .pipe(
@@ -271,7 +272,7 @@ export class FactoriesRegistrantService {
         await lastValueFrom(
             of(keycloakClients).pipe(
                 (client: Record<string, any>) =>
-                    this.httpService.post(`${this.KEYCLOAK_URL}`, client, {
+                    this.httpService.post(`${this.options.identityAccessManagementUrl}`, client, {
                         headers: getHeaders(token),
                     }),
                 catchError((error: any) => {

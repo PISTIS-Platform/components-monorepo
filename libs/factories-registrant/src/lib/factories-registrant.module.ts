@@ -4,6 +4,7 @@ import { Module } from '@nestjs/common';
 
 import { ClientInfo, FactoriesRegistrant, RegisteredService } from './entities';
 import { FactoriesRegistrantController } from './factories-registrant.controller';
+import { ConfigurableModuleClass } from './factories-registrant.module-definition';
 import { FactoriesRegistrantService } from './factories-registrant.service';
 import { ServicesMappingService } from './services-mapping.service';
 
@@ -13,4 +14,4 @@ import { ServicesMappingService } from './services-mapping.service';
     providers: [FactoriesRegistrantService, ServicesMappingService],
     exports: [],
 })
-export class FactoriesRegistrantModule {}
+export class FactoriesRegistrantModule extends ConfigurableModuleClass {}

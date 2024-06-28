@@ -13,7 +13,7 @@ import {
     TokenValidation,
 } from 'nest-keycloak-connect';
 
-import { AppConfig } from './app.config';
+import { AppConfig, IFactoryConfig } from './app.config';
 
 @Module({
     imports: [
@@ -28,7 +28,14 @@ import { AppConfig } from './app.config';
             }),
             inject: [AppConfig.KEY],
         }),
-        FactoriesRegistrantModule,
+        FactoriesRegistrantModule.registerAsync({
+            imports: [ConfigModule.forFeature(AppConfig)],
+            useFactory: async (options: IFactoryConfig) => ({
+                notificationsUrl: options.notificationsUrl,
+                identityAccessManagementUrl: options.identityAccessManagementUrl,
+            }),
+            inject: [AppConfig.KEY],
+        }),
         KeycloakConnectModule.registerAsync({
             imports: [ConfigModule.forFeature(AppConfig)],
             inject: [AppConfig.KEY],

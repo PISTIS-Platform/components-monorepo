@@ -1,9 +1,14 @@
 import { registerAs } from '@nestjs/config';
 import { IAppConfig } from '@pistis/shared';
 
+export type IFactoryConfig = IAppConfig & {
+    identityAccessManagementUrl: string;
+    notificationsUrl: string;
+};
+
 export const AppConfig = registerAs(
     'app',
-    (): IAppConfig => ({
+    (): IFactoryConfig => ({
         name: process.env.APP_NAME,
         port: +process.env.APP_PORT,
         database: {
@@ -20,5 +25,7 @@ export const AppConfig = registerAs(
             clientSecret: process.env.KC_CLIENT_SECRET,
         },
         isDevelopment: process.env.NODE_ENV !== 'production',
+        notificationsUrl: process.env.NOTIFICATIONS_URL,
+        identityAccessManagementUrl: process.env.IDENTITY_ACCESS_MANAGEMENT_URL,
     }),
 );
