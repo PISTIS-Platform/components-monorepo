@@ -37,7 +37,7 @@ export class FactoriesRegistrantService {
         for (const clientId of client.clientsIds) {
             await firstValueFrom(
                 this.httpService
-                    .get(`${this.options.identityAccessManagementUrl}/${clientId}`, {
+                    .get(`${this.options.identityAccessManagementUrl}/factory/${clientId}`, {
                         headers: getHeaders(''),
                     })
                     .pipe(
@@ -87,9 +87,13 @@ export class FactoriesRegistrantService {
         await lastValueFrom(
             of(keycloakClients.clientsIds).pipe(
                 (client: Record<string, any>) =>
-                    this.httpService.put(`${this.options.identityAccessManagementUrl}/${client}/enable`, client, {
-                        headers: getHeaders(token),
-                    }),
+                    this.httpService.put(
+                        `${this.options.identityAccessManagementUrl}/factory/${client}/enable`,
+                        client,
+                        {
+                            headers: getHeaders(token),
+                        },
+                    ),
                 catchError((error: any) => {
                     this.logger.error('Client activation error:', error);
                     return of({ error: 'Error occurred during Client activation' });
@@ -140,7 +144,7 @@ export class FactoriesRegistrantService {
         await lastValueFrom(
             of(client.clientsIds).pipe(
                 (client: Record<string, any>) =>
-                    this.httpService.put(`${this.options.identityAccessManagementUrl}/${client}/disable`, {
+                    this.httpService.put(`${this.options.identityAccessManagementUrl}/factory/${client}/disable`, {
                         headers: getHeaders(token),
                     }),
                 catchError((error: any) => {
@@ -213,7 +217,7 @@ export class FactoriesRegistrantService {
         factory.organizationName = data.organizationName;
         factory.ip = data.ip;
         factory.status = data.status;
-        await this.repo.getEntityManager().persistAndFlush(data);
+        await this.repo.getEntityManager().persistAndFlush(factory);
         const notification = {
             userId: userId,
             organizationId: factory.organizationId,
@@ -272,7 +276,7 @@ export class FactoriesRegistrantService {
         await lastValueFrom(
             of(keycloakClients).pipe(
                 (client: Record<string, any>) =>
-                    this.httpService.post(`${this.options.identityAccessManagementUrl}`, client, {
+                    this.httpService.post(`${this.options.identityAccessManagementUrl}/factory`, client, {
                         headers: getHeaders(token),
                     }),
                 catchError((error: any) => {
@@ -288,7 +292,7 @@ export class FactoriesRegistrantService {
     async setFactoryIp(data: UpdateFactoryIpDTO, userOrganizationId: string): Promise<FactoriesRegistrant> {
         const factory = await this.repo.findOneOrFail({ organizationId: userOrganizationId });
         factory.ip = data.ip;
-        await this.repo.getEntityManager().persistAndFlush(data);
+        await this.repo.getEntityManager().persistAndFlush(factory);
 
         return factory;
     }

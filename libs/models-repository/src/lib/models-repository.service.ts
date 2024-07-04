@@ -38,7 +38,7 @@ export class ModelsRepositoryService {
         model.title = data.title;
         model.version = data.version;
         model.type = data.type;
-        await this.repo.getEntityManager().persistAndFlush(data);
+        await this.repo.getEntityManager().persistAndFlush(model);
         return model;
     }
 
