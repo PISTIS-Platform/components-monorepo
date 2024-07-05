@@ -187,7 +187,7 @@ export class FactoriesRegistrantService {
     async retrieveAcceptedFactories() {
         const factories = await this.repo.find(
             {
-                isAccepted: true,
+                status: 'online',
             },
             {
                 fields: ['factoryPrefix'],
@@ -202,6 +202,10 @@ export class FactoriesRegistrantService {
 
     async retrieveFactory(factoryId: string): Promise<FactoriesRegistrant> {
         return this.repo.findOneOrFail({ id: factoryId });
+    }
+
+    async findLoggedInUserFactory(organizationId: string): Promise<FactoriesRegistrant> {
+        return this.repo.findOneOrFail({ organizationId });
     }
 
     async updateFactory(
