@@ -223,14 +223,14 @@ export class FactoriesRegistrantController {
         @Res({ passthrough: true }) res: Response,
         @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
     ) {
-        const clients = YAML.stringify(await this.factoriesService.checkClient(user.organizationId));
+        const clients = await this.factoriesService.checkClient(user.organizationId);
 
         // Set appropriate headers to indicate JSON content
         res.setHeader('Content-Type', 'application/yaml');
         res.setHeader('Content-Disposition', 'attachment; filename=keycloak-clients.yaml');
 
         // Send JSON object as response
-        res.send(JSON.stringify(clients));
+        res.send(YAML.stringify(clients));
     }
 
     @Get(':factoryId')
