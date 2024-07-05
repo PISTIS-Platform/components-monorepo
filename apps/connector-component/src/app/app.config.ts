@@ -35,5 +35,6 @@ export const AppConfig = registerAs(
         metadataRepositoryUrl: process.env.METADATA_REPOSITORY_URL,
         downloadBatchSize: +process.env.DOWNLOAD_BATCH_SIZE,
         isDevelopment: process.env.NODE_ENV !== 'production',
+        swaggerBaseUrl: process.env.SWAGGER_BASE_URL ?? '/',
     }),
 );

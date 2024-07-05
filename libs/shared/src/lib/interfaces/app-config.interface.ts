@@ -12,4 +12,5 @@ export interface IAppConfig {
     };
     keycloak: IKeycloakConfig;
     isDevelopment: boolean;
+    swaggerBaseUrl?: string;
 }

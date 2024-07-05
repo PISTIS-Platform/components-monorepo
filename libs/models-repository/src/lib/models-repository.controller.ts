@@ -7,8 +7,9 @@ import {
     ApiTags,
     ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { ADMIN_ROLE } from '@pistis/shared';
 import { Response } from 'express';
-import { Public } from 'nest-keycloak-connect';
+import { Public, Roles } from 'nest-keycloak-connect';
 import { FormDataRequest } from 'nestjs-form-data';
 
 import { CreateModelDTO, UpdateModelDTO } from './dto';
@@ -21,6 +22,7 @@ export class ModelsRepositoryController {
     constructor(private readonly modelsService: ModelsRepositoryService) {}
 
     @Post()
+    @Roles({ roles: [ADMIN_ROLE] })
     @FormDataRequest()
     @ApiOkResponse({
         description: 'Factories',
@@ -57,6 +59,7 @@ export class ModelsRepositoryController {
     }
 
     @Put(':modelId')
+    @Roles({ roles: [ADMIN_ROLE] })
     @ApiOkResponse({
         description: 'Factories',
         schema: {
@@ -168,6 +171,7 @@ export class ModelsRepositoryController {
     }
 
     @Delete(':modelId')
+    @Roles({ roles: [ADMIN_ROLE] })
     @ApiOkResponse({ description: 'Model delete', schema: { example: 'Model deleted' } })
     @ApiUnauthorizedResponse()
     async deleteModel(@Param('modelId') modelId: string) {

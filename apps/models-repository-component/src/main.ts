@@ -26,11 +26,13 @@ async function bootstrap() {
     const isDevelopment = config.get<boolean>('app.isDevelopment');
 
     if (isDevelopment) {
+        const swaggerBaseUrl = config.get<string>('app.swaggerBaseUrl');
         const swaggerConfig = new DocumentBuilder()
             .setTitle(config.get('app.name'))
             .setVersion('1.0')
             .addTag('models-repository')
             .addBearerAuth()
+            .addServer(swaggerBaseUrl)
             .build();
         const document = SwaggerModule.createDocument(app, swaggerConfig);
         SwaggerModule.setup('api', app, document);

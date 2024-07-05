@@ -27,5 +27,6 @@ export const AppConfig = registerAs(
         isDevelopment: process.env.NODE_ENV !== 'production',
         notificationsUrl: process.env.NOTIFICATIONS_URL,
         identityAccessManagementUrl: process.env.IDENTITY_ACCESS_MANAGEMENT_URL,
+        swaggerBaseUrl: process.env.SWAGGER_BASE_URL ?? '/',
     }),
 );

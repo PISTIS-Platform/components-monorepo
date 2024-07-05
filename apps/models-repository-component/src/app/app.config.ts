@@ -20,5 +20,6 @@ export const AppConfig = registerAs(
             clientSecret: process.env.KC_CLIENT_SECRET,
         },
         isDevelopment: process.env.NODE_ENV !== 'production',
+        swaggerBaseUrl: process.env.SWAGGER_BASE_URL ?? '/',
     }),
 );

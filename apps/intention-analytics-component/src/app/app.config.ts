@@ -25,5 +25,6 @@ export const AppConfig = registerAs(
         },
         blockchainUrl: process.env.BLOCKCHAIN_URL,
         isDevelopment: process.env.NODE_ENV !== 'production',
+        swaggerBaseUrl: process.env.SWAGGER_BASE_URL ?? '/',
     }),
 );
