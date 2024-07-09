@@ -1,5 +1,5 @@
 import { InjectRepository } from '@mikro-orm/nestjs';
-import { EntityRepository, wrap } from '@mikro-orm/postgresql';
+import { EntityRepository } from '@mikro-orm/postgresql';
 import { Injectable } from '@nestjs/common';
 
 import { CreateServiceMappingDTO } from './dto/create-service-mapping.dto';
@@ -54,7 +54,9 @@ export class ServicesMappingService {
     async update(id: string, data: UpdateServiceMappingDTO) {
         const serviceMapping: RegisteredService = await this.servicesMappingRepo.findOneOrFail({ id });
 
-        wrap(serviceMapping).assign(data);
+        if (data.serviceName) serviceMapping.serviceName = data.serviceName;
+        if (data.serviceUrl) serviceMapping.serviceUrl = data.serviceUrl;
+
         await this.servicesMappingRepo.getEntityManager().flush();
 
         return serviceMapping;
