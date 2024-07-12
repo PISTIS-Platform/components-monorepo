@@ -5,7 +5,7 @@ import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common'
 import { getHeaders } from '@pistis/shared';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
-import { catchError, firstValueFrom, lastValueFrom, map, of } from 'rxjs';
+import { catchError, firstValueFrom, lastValueFrom, map, mergeMap, of, toArray } from 'rxjs';
 
 import { CreateFactoryDTO, UpdateFactoryDTO, UpdateFactoryIpDTO } from './dto';
 import { ClientInfo } from './entities';
@@ -28,7 +28,7 @@ export class FactoriesRegistrantService {
         @Inject(MODULE_OPTIONS_TOKEN) private options: FactoryModuleOptions,
     ) {}
 
-    async checkClient(organizationId: string) {
+    async checkClient(organizationId: string, token: string) {
         // check if the information already exist in our database
         const client = await this.clientRepo.findOneOrFail({ organizationId: organizationId });
 
@@ -38,7 +38,7 @@ export class FactoriesRegistrantService {
             await firstValueFrom(
                 this.httpService
                     .get(`${this.options.identityAccessManagementUrl}/factory/${clientId}`, {
-                        headers: getHeaders(''),
+                        headers: getHeaders(token),
                     })
                     .pipe(
                         //If not an error from call admin receive the message below
@@ -48,13 +48,47 @@ export class FactoriesRegistrantService {
                         // Catch any error occurred during the client checking
                         catchError((error) => {
                             this.logger.error('Client retrieval error:', error);
-                            return of({ error: 'Error occurred during client retrieval' });
+                            throw error;
                         }),
                     ),
             );
         }
 
         return clientCredentials;
+    }
+
+    async getClientsSecret(organizationId: string) {
+        // check if the information already exist in our database
+        const { clientsIds } = await this.clientRepo.findOneOrFail({ organizationId: organizationId });
+        const services = await this.servicesMappingService.findServicesMappingForAdmin();
+
+        const data: Record<string, string> = clientsIds.reduce((data, client) => {
+            const [id, secret] = JSON.parse(client);
+            const [_, serviceId] = id.split('--');
+            const service = services.find((service) => service.id === serviceId);
+            if (!service) return data;
+
+            const prefix =
+                service.serviceUrl === '/'
+                    ? 'FACTORY_UI'
+                    : service.serviceUrl.replace('/srv/', '').replace(/-/g, '_').toUpperCase();
+
+            data[`${prefix}_ID`] = id;
+            data[`${prefix}_SECRET`] = secret;
+
+            return data;
+        }, {} as Record<string, string>);
+
+        return {
+            apiVersion: 'v1',
+            kind: 'Secret',
+            metadata: {
+                name: 'keycloak-clients-secret',
+                namespace: 'default',
+            },
+            stringData: data,
+            type: 'Opaque',
+        };
     }
 
     async activateFactory(
@@ -254,42 +288,46 @@ export class FactoriesRegistrantService {
 
         //Find all services that we need to create for factory
         const services = await this.servicesMappingService.findServicesMappingForAdmin();
-        const clients = {
-            clientsIds: services.map(({ serviceName }) => {
-                {
-                    return `${factory.organizationId}-${serviceName}`;
-                }
-            }),
-            organizationId: factory.organizationId,
-        };
-        //Save in clients information
-        const savedClients = this.clientRepo.create(clients);
-        await this.clientRepo.getEntityManager().persistAndFlush(savedClients);
 
         //Create object of clients upon discovered services
-        const keycloakClients = services.map(({ serviceName, serviceUrl }) => ({
-            clientId: `${factory.organizationId}-${serviceName}`,
-            name: factory.organizationName,
-            description: factory.country,
+        const keycloakClients = services.map(({ id, serviceUrl, serviceName }) => ({
+            clientId: `${factory.organizationId}--${id}`,
+            name: `${factory.organizationName}: ${serviceName}`,
+            description: `${factory.organizationName}: ${serviceName}`,
             redirect: true,
-            redirectUris: [`https://${factory.factoryPrefix}.pistis-market.eu/srv/${serviceUrl}`],
+            redirectUris: [`https://${factory.factoryPrefix}.pistis-market.eu${serviceUrl}/*`],
             webOrigins: ['*'],
         }));
 
         //Create clients in keycloak
-        await lastValueFrom(
-            of(keycloakClients).pipe(
-                (client: Record<string, any>) =>
+        const createdClients = await firstValueFrom(
+            of(...keycloakClients).pipe(
+                // Create client
+                mergeMap((client) =>
                     this.httpService.post(`${this.options.identityAccessManagementUrl}/factory`, client, {
                         headers: getHeaders(token),
                     }),
+                ),
+                // Extract data part of response
+                map((res) => res.data),
+                // Pick clientId and clientSecret and serialise them so it can be stored in database
+                map(({ clientId, secret }) => JSON.stringify([clientId, secret])),
+                // Collect responses from all clients into an array
+                toArray(),
                 catchError((error: any) => {
                     this.logger.error('Client creation error:', error);
-                    return of({ error: 'Error occurred during Client creation' });
+                    throw error;
                 }),
             ),
         );
 
+        //Save in clients information
+        const savedClients = this.clientRepo.create({
+            clientsIds: createdClients,
+            organizationId: factory.organizationId,
+        });
+
+        await this.clientRepo.getEntityManager().persistAndFlush(savedClients);
         return factory;
     }
 
