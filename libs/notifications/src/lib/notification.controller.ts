@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
-import { ADMIN_ROLE, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
+import { ADMIN_ROLE, NOTIFICATION_CLIENT, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
 import { AuthenticatedUser, Roles } from 'nest-keycloak-connect';
 
 import { CreateNotificationDto } from './dto/create-notification.dto';
@@ -14,7 +14,7 @@ export class NotificationController {
     constructor(private readonly notificationsService: NotificationService) {}
 
     @Post()
-    @Roles({ roles: [ADMIN_ROLE] }) // FIXME: We need a role for sending notifications
+    @Roles({ roles: [ADMIN_ROLE, NOTIFICATION_CLIENT] })
     @ApiBody({ type: CreateNotificationDto })
     @ApiResponse({
         description: 'Notification',
