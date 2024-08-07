@@ -3,7 +3,7 @@ import { v4 as uuidV4 } from 'uuid';
 
 @Entity({ tableName: 'registeredServices' })
 export class RegisteredService {
-    [OptionalProps]?: 'id' | 'createdAt' | 'updatedAt';
+    [OptionalProps]?: 'id' | 'createdAt' | 'updatedAt' | 'sar';
 
     @PrimaryKey({ type: 'uuid' })
     id: string = uuidV4();
@@ -14,6 +14,9 @@ export class RegisteredService {
     @Property()
     @Unique()
     serviceUrl!: string;
+
+    @Property({ default: false })
+    sar: boolean;
 
     @Property({ type: 'timestamptz' })
     createdAt: Date = new Date();

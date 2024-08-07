@@ -78,20 +78,7 @@ export class FactoriesRegistrantController {
     @ApiOkResponse({
         description: 'Accepted Factory',
         schema: {
-            example: [
-                {
-                    id: '768004e7-33b1-4248-bafe-04688f49f161',
-                    organizationName: 'TestOrg',
-                    organizationId: '8aff8e9b-1322-4395-a53e-c445d159eb80',
-                    ip: '192.168.1.1',
-                    country: 'Greece',
-                    status: 'live',
-                    isAccepted: true,
-                    isActive: false,
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                },
-            ],
+            example: ['https://factory1.pistis-market.eu', 'https://factory2.pistis-market.eu'],
         },
     })
     async findAcceptedFactories() {
@@ -184,6 +171,7 @@ export class FactoriesRegistrantController {
                 id: '60fbe3de-e1de-4bb0-8480-61bb2aa00640',
                 serviceName: 'Test s',
                 serviceUrl: 'A1-B3/C5',
+                sar: true,
                 createdAt: new Date(),
                 updatedAt: new Date(),
             },
@@ -359,6 +347,31 @@ export class FactoriesRegistrantController {
     @Roles({ roles: [ADMIN_ROLE] })
     async createFactory(@AuthToken() token: string, @Body() data: CreateFactoryDTO): Promise<FactoriesRegistrant> {
         return this.factoriesService.createFactory(data, token);
+    }
+
+    @Put('recreate/:organizationId')
+    @ApiOkResponse({
+        description: 'Recreate Client',
+        schema: {
+            example: {
+                clientsIds: [
+                    'ad1027dc-4c05-482b-9d23-815aa7c76d92--488f2661-f8c9-4617-b3eb-43b3b3ae0a3d',
+                    'ad1027dc-4c05-482b-9d23-815aa7c76d92--51e13d77-f4e2-4ef0-a2ae-e4a6e23efa51',
+                    'b5880fa6-1abd-41ca-b477-f85f9ec28696--15ba4f14-90d9-4339-bb25-58321a28a19d',
+                ],
+                organizationId: 'b5880fa6-1abd-41ca-b477-f85f9ec28696',
+                createdAt: '2024-07-31T08:47:53.593Z',
+                updatedAt: '2024-08-01T10:25:57.994Z',
+                id: 'f4bf52e4-3dbb-4902-909b-66cbac5a672e',
+            },
+        },
+    })
+    @Roles({ roles: [ADMIN_ROLE] })
+    async recreateClients(
+        @AuthToken() token: string,
+        @Param('organizationId', new ParseUUIDPipe()) organizationId: string,
+    ): Promise<string[] | undefined> {
+        return this.factoriesService.recreateClients(token, organizationId);
     }
 
     @Patch(':factoryId/activate')

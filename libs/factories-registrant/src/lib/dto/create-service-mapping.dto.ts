@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, Matches } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsString, Matches } from 'class-validator';
 
 export class CreateServiceMappingDTO {
     @IsNotEmpty()
@@ -12,4 +12,8 @@ export class CreateServiceMappingDTO {
     @Matches(/^[a-zA-Z0-9-/]+$/)
     @ApiProperty()
     serviceUrl!: string;
+
+    @IsBoolean()
+    @ApiProperty()
+    sar!: boolean;
 }

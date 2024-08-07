@@ -5,6 +5,7 @@ import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common'
 import { getHeaders } from '@pistis/shared';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import { catchError, firstValueFrom, lastValueFrom, map, mergeMap, of, toArray } from 'rxjs';
 
 import { CreateFactoryDTO, UpdateFactoryDTO, UpdateFactoryIpDTO } from './dto';
@@ -285,32 +286,135 @@ export class FactoriesRegistrantService {
     async createFactory(data: CreateFactoryDTO, token: string): Promise<FactoriesRegistrant> {
         const factory = this.repo.create(data);
         await this.repo.getEntityManager().persistAndFlush(factory);
+        await this.recreateClients(token, factory.organizationId);
 
-        //Find all services that we need to create for factory
+        return factory;
+    }
+
+    async setFactoryIp(data: UpdateFactoryIpDTO, userOrganizationId: string): Promise<FactoriesRegistrant> {
+        const factory = await this.repo.findOneOrFail({ organizationId: userOrganizationId });
+        factory.ip = data.ip;
+        await this.repo.getEntityManager().persistAndFlush(factory);
+
+        return factory;
+    }
+
+    async recreateClients(token: string, organizationId: string) {
+        dayjs.extend(isSameOrBefore);
+        //Find all services
         const services = await this.servicesMappingService.findServicesMappingForAdmin();
+        //Find factory
+        const factory = await this.repo.findOne({ organizationId });
+        //Retrieve client
+        const client = await this.clientRepo.findOne({ organizationId });
+        let clientServices: string[] = [];
+        let createdClients: string[] = [];
+        let newClients: any[] = [];
+        let updatedClients: any[] = [];
 
-        //Create object of clients upon discovered services
-        const keycloakClients = services.map(({ id, serviceUrl, serviceName }) => ({
-            clientId: `${factory.organizationId}--${id}`,
-            name: `${factory.organizationName}: ${serviceName}`,
-            description: `${factory.organizationName}: ${serviceName}`,
-            redirect: true,
-            redirectUris: [`https://${factory.factoryPrefix}.pistis-market.eu${serviceUrl}/*`],
-            webOrigins: ['*'],
-        }));
+        //If client is undefined then we create the clients in keycloak and in DB
+        if (!client) {
+            //Create object of clients upon discovered services
+            newClients = services.map(({ id, serviceUrl, serviceName, sar }) => ({
+                clientId: `${factory?.organizationId}--${id}`,
+                name: `${factory?.organizationName}: ${serviceName}`,
+                description: `${factory?.organizationName}: ${serviceName}`,
+                redirect: true,
+                'service-account': {
+                    enabled: sar,
+                },
+                redirectUris: [`https://${factory?.factoryPrefix}.pistis-market.eu${serviceUrl}/*`],
+                webOrigins: ['*'],
+            }));
 
+            //Create clients in keycloak
+            createdClients = await this.keycloakClients(newClients, token, 'post');
+            //Create and save new clients in db
+            const savedClients = this.clientRepo.create({
+                clientsIds: createdClients,
+                organizationId: organizationId,
+            });
+            await this.clientRepo.getEntityManager().persistAndFlush(savedClients);
+        } else {
+            //If exist in DB we take the services Id's from clients
+            clientServices = client.clientsIds.map((client) => client.split('--')[1]);
+            //Filter services to create clients
+            const servicesToCreate = services.filter((service) => !clientServices.includes(service.id));
+            //Filter services to update clients
+            const servicesToUpdate = services.filter(
+                (service) =>
+                    clientServices.includes(service.id) && dayjs(client.updatedAt).isSameOrBefore(service.updatedAt),
+            );
+
+            for (const service of servicesToCreate) {
+                //We create the payload for keycloak
+                updatedClients = [
+                    {
+                        clientId: `${factory?.organizationId}--${service.id}`,
+                        name: `${factory?.organizationName}: ${service.serviceName}`,
+                        description: `${factory?.organizationName}: ${service.serviceName}`,
+                        redirect: true,
+                        'service-account': {
+                            enabled: service.sar,
+                        },
+                        redirectUris: [`https://${factory?.factoryPrefix}.pistis-market.eu${service.serviceUrl}/*`],
+                        webOrigins: ['*'],
+                    },
+                ];
+                //Call the function to create the new client in keycloak
+                createdClients = await this.keycloakClients(updatedClients, token, 'post');
+                client.clientsIds.push(`${organizationId}--${service.id}`);
+                //Save new clients
+                await this.clientRepo.getEntityManager().persistAndFlush(client);
+                return;
+            }
+
+            for (const service of servicesToUpdate) {
+                //We create the payload for keycloak
+                updatedClients = [
+                    {
+                        clientId: `${factory?.organizationId}--${service.id}`,
+                        name: `${factory?.organizationName}: ${service.serviceName}`,
+                        description: `${factory?.organizationName}: ${service.serviceName}`,
+                        redirect: true,
+                        'service-account': {
+                            enabled: service.sar,
+                        },
+                        redirectUris: [`https://${factory?.factoryPrefix}.pistis-market.eu${service.serviceUrl}/*`],
+                        webOrigins: ['*'],
+                    },
+                ];
+                //Call the function to create the new client in keycloak
+                createdClients = await this.keycloakClients(updatedClients, token, 'patch');
+                //Update client
+                await this.clientRepo.getEntityManager().persistAndFlush(client);
+                return;
+            }
+        }
+        return createdClients;
+    }
+
+    private async keycloakClients(keycloakClients: any, token: string, method: 'post' | 'patch') {
+        let clients: string[];
+        const url =
+            method === 'post'
+                ? `${this.options.identityAccessManagementUrl}/factory`
+                : `${this.options.identityAccessManagementUrl}/factory`; //FIXME Change url for patch
         //Create clients in keycloak
-        const createdClients = await firstValueFrom(
+        return await firstValueFrom(
             of(...keycloakClients).pipe(
                 // Create client
                 mergeMap((client) =>
-                    this.httpService.post(`${this.options.identityAccessManagementUrl}/factory`, client, {
+                    this.httpService.request({
+                        method,
+                        url,
+                        data: client,
                         headers: getHeaders(token),
                     }),
                 ),
                 // Extract data part of response
                 map((res) => res.data),
-                // Pick clientId and clientSecret and serialise them so it can be stored in database
+                // Pick clientId and clientSecret and serialize them so it can be stored in database
                 map(({ clientId, secret }) => JSON.stringify([clientId, secret])),
                 // Collect responses from all clients into an array
                 toArray(),
@@ -321,22 +425,7 @@ export class FactoriesRegistrantService {
             ),
         );
 
-        //Save in clients information
-        const savedClients = this.clientRepo.create({
-            clientsIds: createdClients,
-            organizationId: factory.organizationId,
-        });
-
-        await this.clientRepo.getEntityManager().persistAndFlush(savedClients);
-        return factory;
-    }
-
-    async setFactoryIp(data: UpdateFactoryIpDTO, userOrganizationId: string): Promise<FactoriesRegistrant> {
-        const factory = await this.repo.findOneOrFail({ organizationId: userOrganizationId });
-        factory.ip = data.ip;
-        await this.repo.getEntityManager().persistAndFlush(factory);
-
-        return factory;
+        return clients;
     }
 
     // @Cron('0 01 * * * *')

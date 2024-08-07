@@ -15,7 +15,7 @@ export class ServicesMappingService {
         private readonly factoriesRepo: EntityRepository<FactoriesRegistrant>,
     ) {}
 
-    async findServicesMappingForAdmin() {
+    async findServicesMappingForAdmin(): Promise<RegisteredService[]> {
         return this.servicesMappingRepo.findAll();
     }
 
@@ -56,6 +56,7 @@ export class ServicesMappingService {
 
         if (data.serviceName) serviceMapping.serviceName = data.serviceName;
         if (data.serviceUrl) serviceMapping.serviceUrl = data.serviceUrl;
+        if (data.sar) serviceMapping.sar = data.sar;
 
         await this.servicesMappingRepo.getEntityManager().flush();
 
