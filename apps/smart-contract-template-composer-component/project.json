@@ -1,0 +1,24 @@
+{
+    "name": "smart-contract-template-composer-component",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "apps/smart-contract-template-composer-component/src",
+    "projectType": "application",
+    "targets": {
+        "serve": {
+            "executor": "@nx/js:node",
+            "defaultConfiguration": "development",
+            "options": {
+                "buildTarget": "smart-contract-template-composer-component:build"
+            },
+            "configurations": {
+                "development": {
+                    "buildTarget": "smart-contract-template-composer-component:build:development"
+                },
+                "production": {
+                    "buildTarget": "smart-contract-template-composer-component:build:production"
+                }
+            }
+        }
+    },
+    "tags": []
+}

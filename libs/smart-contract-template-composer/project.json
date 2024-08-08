@@ -1,0 +1,8 @@
+{
+    "name": "smart-contract-template-composer",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/smart-contract-template-composer/src",
+    "projectType": "library",
+    "targets": {},
+    "tags": []
+}
