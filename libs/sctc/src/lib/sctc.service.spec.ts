@@ -1,16 +1,16 @@
 import { DownloadFrequencyType, MonetizationMethod, SubscriptionFrequencyType } from './constants';
 import { ContractComposerDto } from './dto/contract-composer.dto';
-import { SmartContractTemplateComposerService } from './smart-contract-template-composer.service';
+import { SCTCService } from './sctc.service';
 
 jest.mock('@pistis/shared', () => ({
     getHeaders: jest.fn(() => ({})),
 }));
 
-describe('SmartContractTemplateComposerService', () => {
-    let service: SmartContractTemplateComposerService;
+describe('SCTCService', () => {
+    let service: SCTCService;
 
     beforeEach(async () => {
-        service = new SmartContractTemplateComposerService();
+        service = new SCTCService();
     });
 
     afterEach(() => {

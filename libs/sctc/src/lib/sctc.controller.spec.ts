@@ -1,9 +1,9 @@
 import { DownloadFrequencyType, MonetizationMethod } from './constants';
 import { ContractComposerDto } from './dto/contract-composer.dto';
-import { SmartContractTemplateComposerController } from './smart-contract-template-composer.controller';
+import { SCTCController } from './sctc.controller';
 
-describe('SmartContractTemplateComposerController', () => {
-    let controller: SmartContractTemplateComposerController;
+describe('SCTCController', () => {
+    let controller: SCTCController;
     let service: any;
 
     beforeEach(async () => {
@@ -11,7 +11,7 @@ describe('SmartContractTemplateComposerController', () => {
             composeContract: () => jest.fn(),
         };
 
-        controller = new SmartContractTemplateComposerController(service);
+        controller = new SCTCController(service);
     });
 
     afterEach(() => {

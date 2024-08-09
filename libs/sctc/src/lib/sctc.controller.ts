@@ -4,13 +4,13 @@ import { ORGANISATION_MEMBER } from '@pistis/shared';
 import { Roles } from 'nest-keycloak-connect';
 
 import { ContractComposerDto } from './dto/contract-composer.dto';
-import { SmartContractTemplateComposerService } from './smart-contract-template-composer.service';
+import { SCTCService } from './sctc.service';
 
-@Controller('smart-contract-template-composer')
-@ApiTags('smart-contract-template-composer')
+@Controller('sctc')
+@ApiTags('sctc')
 @ApiBearerAuth()
-export class SmartContractTemplateComposerController {
-    constructor(private readonly service: SmartContractTemplateComposerService) {}
+export class SCTCController {
+    constructor(private readonly service: SCTCService) {}
 
     @Post('/compose')
     @ApiOkResponse({

@@ -4,8 +4,8 @@ import { DownloadFrequencyType, MonetizationMethod } from './constants';
 import { ContractComposerDto } from './dto/contract-composer.dto';
 
 @Injectable()
-export class SmartContractTemplateComposerService {
-    private readonly logger = new Logger(SmartContractTemplateComposerService.name);
+export class SCTCService {
+    private readonly logger = new Logger(SCTCService.name);
 
     getFrequencyConstraint = (data: ContractComposerDto) => {
         const constraintArray = [];

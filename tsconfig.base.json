@@ -26,7 +26,7 @@
             "@pistis/notifications": ["libs/notifications/src/index.ts"],
             "@pistis/provider": ["libs/provider/src/index.ts"],
             "@pistis/shared": ["libs/shared/src/index.ts"],
-            "@pistis/smart-contract-template-composer": ["libs/smart-contract-template-composer/src/index.ts"]
+            "@pistis/sctc": ["libs/sctc/src/index.ts"]
         }
     },
     "exclude": ["node_modules", "tmp"]

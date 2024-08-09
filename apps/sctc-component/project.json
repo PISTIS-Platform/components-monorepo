@@ -1,21 +1,21 @@
 {
-    "name": "smart-contract-template-composer-component",
+    "name": "sctc-component",
     "$schema": "../../node_modules/nx/schemas/project-schema.json",
-    "sourceRoot": "apps/smart-contract-template-composer-component/src",
+    "sourceRoot": "apps/sctc-component/src",
     "projectType": "application",
     "targets": {
         "serve": {
             "executor": "@nx/js:node",
             "defaultConfiguration": "development",
             "options": {
-                "buildTarget": "smart-contract-template-composer-component:build"
+                "buildTarget": "sctc-component:build"
             },
             "configurations": {
                 "development": {
-                    "buildTarget": "smart-contract-template-composer-component:build:development"
+                    "buildTarget": "sctc-component:build:development"
                 },
                 "production": {
-                    "buildTarget": "smart-contract-template-composer-component:build:production"
+                    "buildTarget": "sctc-component:build:production"
                 }
             }
         },
@@ -26,7 +26,7 @@
                 "engine": "docker",
                 "platforms": ["linux/amd64"],
                 "metadata": {
-                    "images": ["registry.pistis-market.eu/pistis/smart-contract-template-composer-component"],
+                    "images": ["registry.pistis-market.eu/pistis/sctc-component"],
                     "load": true,
                     "labels": [
                         "org.opencontainers.image.authors=Suite5 Information Technology Solutions",

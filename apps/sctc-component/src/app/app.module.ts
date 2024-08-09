@@ -1,8 +1,8 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
+import { SCTCModule } from '@pistis/sctc';
 import { IAppConfig, MorganMiddleware } from '@pistis/shared';
-import { SmartContractTemplateComposerModule } from '@pistis/smart-contract-template-composer';
 import {
     AuthGuard,
     KeycloakConnectModule,
@@ -17,7 +17,7 @@ import { AppConfig } from './app.config';
     imports: [
         ConfigModule.forRoot({ isGlobal: true }),
         ConfigModule.forFeature(AppConfig),
-        SmartContractTemplateComposerModule,
+        SCTCModule,
         KeycloakConnectModule.registerAsync({
             imports: [ConfigModule.forFeature(AppConfig)],
             inject: [AppConfig.KEY],

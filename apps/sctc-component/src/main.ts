@@ -27,7 +27,7 @@ async function bootstrap() {
         const swaggerConfig = new DocumentBuilder()
             .setTitle(config.get('app.name'))
             .setVersion('1.0')
-            .addTag('smart-contract-template-composer')
+            .addTag('sctc')
             .addBearerAuth()
             .addServer(swaggerBaseUrl)
             .build();

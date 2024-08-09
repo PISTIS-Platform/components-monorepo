@@ -3,7 +3,7 @@ const { join } = require('path');
 
 module.exports = {
     output: {
-        path: join(__dirname, '../../dist/apps/smart-contract-template-composer-component'),
+        path: join(__dirname, '../../dist/apps/sctc-component'),
     },
     plugins: [
         new NxWebpackPlugin({
