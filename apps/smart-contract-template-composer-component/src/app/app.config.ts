@@ -1,7 +1,7 @@
 import { registerAs } from '@nestjs/config';
 import { IAppConfig } from '@pistis/shared';
 
-type ContractComposerConfig = Omit<IAppConfig, 'database'>
+type ContractComposerConfig = Omit<IAppConfig, 'database'>;
 
 export const AppConfig = registerAs(
     'app',
@@ -15,5 +15,6 @@ export const AppConfig = registerAs(
             clientSecret: process.env.KC_CLIENT_SECRET,
         },
         isDevelopment: process.env.NODE_ENV !== 'production',
+        swaggerBaseUrl: process.env.SWAGGER_BASE_URL ?? '/',
     }),
 );

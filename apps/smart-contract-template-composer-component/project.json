@@ -18,6 +18,23 @@
                     "buildTarget": "smart-contract-template-composer-component:build:production"
                 }
             }
+        },
+        "container": {
+            "executor": "@nx-tools/nx-container:build",
+            "dependsOn": ["build"],
+            "options": {
+                "engine": "docker",
+                "platforms": ["linux/amd64"],
+                "metadata": {
+                    "images": ["registry.pistis-market.eu/pistis/smart-contract-template-composer-component"],
+                    "load": true,
+                    "labels": [
+                        "org.opencontainers.image.authors=Suite5 Information Technology Solutions",
+                        "org.opencontainers.image.version=1.0.0"
+                    ],
+                    "tags": ["1.0.0", "1.0", "1", "latest"]
+                }
+            }
         }
     },
     "tags": []
