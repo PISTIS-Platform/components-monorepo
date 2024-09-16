@@ -322,6 +322,7 @@ export class FactoriesRegistrantService {
                 redirect: true,
                 'service-account': {
                     enabled: sar,
+                    roles: ['SRV_NOTIFICATION'],
                 },
                 redirectUris: [`https://${factory?.factoryPrefix}.pistis-market.eu${serviceUrl}/*`],
                 webOrigins: ['*'],
@@ -356,6 +357,7 @@ export class FactoriesRegistrantService {
                         redirect: true,
                         'service-account': {
                             enabled: service.sar,
+                            roles: ['SRV_NOTIFICATION'],
                         },
                         redirectUris: [`https://${factory?.factoryPrefix}.pistis-market.eu${service.serviceUrl}/*`],
                         webOrigins: ['*'],
@@ -379,6 +381,7 @@ export class FactoriesRegistrantService {
                         redirect: true,
                         'service-account': {
                             enabled: service.sar,
+                            roles: ['SRV_NOTIFICATION'],
                         },
                         redirectUris: [`https://${factory?.factoryPrefix}.pistis-market.eu${service.serviceUrl}/*`],
                         webOrigins: ['*'],
