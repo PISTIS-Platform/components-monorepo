@@ -11,8 +11,8 @@ export class Notification {
     @Property()
     userId!: string;
 
-    @Property()
-    organizationId!: string;
+    @Property({ nullable: true })
+    organizationId: string | null = null;
 
     @Property()
     type!: string;

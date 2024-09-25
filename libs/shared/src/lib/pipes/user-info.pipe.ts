@@ -5,7 +5,7 @@ export class ParseUserInfoPipe implements PipeTransform {
     async transform(value: any) {
         return {
             id: value.sub,
-            organizationId: value.pistis.group.id,
+            organizationId: value.pistis?.group?.id || null,
         };
     }
 }

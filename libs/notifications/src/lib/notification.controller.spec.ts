@@ -40,16 +40,21 @@ describe('NotificationController', () => {
         };
 
         jest.spyOn(notificationsService, 'create').mockResolvedValue(notification);
-        expect(await controller.create(createDto)).toBe(notification);
+        expect(
+            await controller.create(createDto, {
+                id: '123',
+                organizationId: '567',
+            }),
+        ).toBe(notification);
 
-        expect(notificationsService.create).toHaveBeenCalledWith(createDto);
+        expect(notificationsService.create).toHaveBeenCalledWith(createDto, '123');
     });
 
     it('should find notification for user', async () => {
         const notifications = [{ id: '1' }, { id: '2' }];
         jest.spyOn(notificationsService, 'findByUserId').mockResolvedValue(notifications);
 
-        expect(await controller.findNotifications({ id: '123' })).toBe(notifications);
+        expect(await controller.findNotifications({ id: '123', organizationId: '567' })).toBe(notifications);
 
         expect(notificationsService.findByUserId).toHaveBeenCalledWith('123');
     });
@@ -57,7 +62,7 @@ describe('NotificationController', () => {
     it('should update read status for notification', async () => {
         jest.spyOn(notificationsService, 'markAsRead').mockResolvedValue(null);
 
-        expect(await controller.updateStatus({ id: '123' }, '1')).toBe(null);
+        expect(await controller.updateStatus({ id: '123', organizationId: '567' }, '1')).toBe(null);
 
         expect(notificationsService.markAsRead).toHaveBeenCalledWith('1', '123');
     });
@@ -65,7 +70,7 @@ describe('NotificationController', () => {
     it('should update appearance status for notification', async () => {
         jest.spyOn(notificationsService, 'hide').mockResolvedValue(null);
 
-        expect(await controller.updateAppearance({ id: '123' }, '1')).toBe(null);
+        expect(await controller.updateAppearance({ id: '123', organizationId: '567' }, '1')).toBe(null);
 
         expect(notificationsService.hide).toHaveBeenCalledWith('1', '123');
     });

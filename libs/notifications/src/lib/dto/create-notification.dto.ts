@@ -9,7 +9,7 @@ export class CreateNotificationDto {
     @ApiProperty()
     userId!: string;
 
-    @IsNotEmpty()
+    @IsOptional()
     @IsUUID(4)
     @ApiProperty()
     organizationId!: string;

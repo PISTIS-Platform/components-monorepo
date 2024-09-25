@@ -25,6 +25,7 @@ import { AppConfig } from './app.config';
                 driver: PostgreSqlDriver,
                 ...options.database,
                 autoLoadEntities: true,
+                allowGlobalContext: false,
             }),
             inject: [AppConfig.KEY],
         }),

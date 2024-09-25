@@ -1,111 +1,115 @@
 {
-    "namespaces": ["public"],
-    "name": "public",
-    "tables": [
-        {
-            "columns": {
-                "id": {
-                    "name": "id",
-                    "type": "uuid",
-                    "unsigned": false,
-                    "autoincrement": false,
-                    "primary": false,
-                    "nullable": false,
-                    "mappedType": "uuid"
-                },
-                "user_id": {
-                    "name": "user_id",
-                    "type": "varchar(255)",
-                    "unsigned": false,
-                    "autoincrement": false,
-                    "primary": false,
-                    "nullable": false,
-                    "mappedType": "string"
-                },
-                "organization_id": {
-                    "name": "organization_id",
-                    "type": "varchar(255)",
-                    "unsigned": false,
-                    "autoincrement": false,
-                    "primary": false,
-                    "nullable": false,
-                    "mappedType": "string"
-                },
-                "type": {
-                    "name": "type",
-                    "type": "varchar(255)",
-                    "unsigned": false,
-                    "autoincrement": false,
-                    "primary": false,
-                    "nullable": false,
-                    "mappedType": "string"
-                },
-                "message": {
-                    "name": "message",
-                    "type": "varchar(255)",
-                    "unsigned": false,
-                    "autoincrement": false,
-                    "primary": false,
-                    "nullable": false,
-                    "mappedType": "string"
-                },
-                "read_at": {
-                    "name": "read_at",
-                    "type": "timestamptz",
-                    "unsigned": false,
-                    "autoincrement": false,
-                    "primary": false,
-                    "nullable": true,
-                    "length": 6,
-                    "mappedType": "datetime"
-                },
-                "is_hidden": {
-                    "name": "is_hidden",
-                    "type": "boolean",
-                    "unsigned": false,
-                    "autoincrement": false,
-                    "primary": false,
-                    "nullable": false,
-                    "default": "false",
-                    "mappedType": "boolean"
-                },
-                "created_at": {
-                    "name": "created_at",
-                    "type": "timestamptz",
-                    "unsigned": false,
-                    "autoincrement": false,
-                    "primary": false,
-                    "nullable": false,
-                    "length": 6,
-                    "mappedType": "datetime"
-                },
-                "updated_at": {
-                    "name": "updated_at",
-                    "type": "timestamptz",
-                    "unsigned": false,
-                    "autoincrement": false,
-                    "primary": false,
-                    "nullable": false,
-                    "length": 6,
-                    "mappedType": "datetime"
-                }
-            },
-            "name": "notifications",
-            "schema": "public",
-            "indexes": [
-                {
-                    "keyName": "notifications_pkey",
-                    "columnNames": ["id"],
-                    "composite": false,
-                    "constraint": true,
-                    "primary": true,
-                    "unique": true
-                }
-            ],
-            "checks": [],
-            "foreignKeys": {},
-            "nativeEnums": {}
+  "namespaces": [
+    "public"
+  ],
+  "name": "public",
+  "tables": [
+    {
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "uuid"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "string"
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "mappedType": "string"
+        },
+        "type": {
+          "name": "type",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "string"
+        },
+        "message": {
+          "name": "message",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "string"
+        },
+        "read_at": {
+          "name": "read_at",
+          "type": "timestamptz",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "length": 6,
+          "mappedType": "datetime"
+        },
+        "is_hidden": {
+          "name": "is_hidden",
+          "type": "boolean",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "default": "false",
+          "mappedType": "boolean"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamptz",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": 6,
+          "mappedType": "datetime"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": 6,
+          "mappedType": "datetime"
         }
-    ],
-    "nativeEnums": {}
+      },
+      "name": "notifications",
+      "schema": "public",
+      "indexes": [
+        {
+          "keyName": "notifications_pkey",
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": true,
+          "primary": true,
+          "unique": true
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {},
+      "nativeEnums": {}
+    }
+  ],
+  "nativeEnums": {}
 }

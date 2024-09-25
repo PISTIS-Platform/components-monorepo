@@ -7,5 +7,6 @@ export enum NotificationType {
     DeniedFactory = 'factory_denied',
     FactoryActivated = 'factory_activated',
     FactorySuspended = 'factory_suspended',
-    DeleteFactory = 'delete_factory'
+    WalletRefund = 'wallet_refund',
+    DeleteFactory = 'delete_factory',
 }

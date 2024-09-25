@@ -1,35 +1,53 @@
-import { InjectRepository } from '@mikro-orm/nestjs';
-import { EntityRepository } from '@mikro-orm/postgresql';
-import { Injectable, Logger } from '@nestjs/common';
+import { EntityManager } from '@mikro-orm/core';
+import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { Notification } from './notification.entity';
+import { Websocket } from './websocket.gateway';
 
 @Injectable()
 export class NotificationService {
     private readonly logger = new Logger(NotificationService.name);
 
-    constructor(@InjectRepository(Notification) private readonly repo: EntityRepository<Notification>) {}
+    constructor(
+        private readonly em: EntityManager,
+        @Inject(forwardRef(() => Websocket)) private readonly gateway: Websocket,
+    ) { }
 
-    async create(data: CreateNotificationDto): Promise<Notification> {
-        const notification = this.repo.create(data);
-        await this.repo.getEntityManager().persistAndFlush(notification);
+    async create(data: CreateNotificationDto, userId: string): Promise<Notification> {
+        const emFork = this.em.fork();
+        const notification = emFork.create(Notification, data);
+        await emFork.persistAndFlush(notification);
+
+        this.gateway.sendNewMessage(userId, notification);
+
         return notification;
     }
 
-    async findByUserId(userId: string, includeRead = true): Promise<[Notification[], number]> {
-        return this.repo.findAndCount({ userId, readAt: includeRead ? undefined : null });
+    async findByUserId(userId: string): Promise<[Notification[], number]> {
+        const emFork = this.em.fork();
+        return emFork.findAndCount(Notification, { userId });
     }
 
     async markAsRead(id: string, userId: string): Promise<void> {
-        const notification = await this.repo.findOneOrFail({ id, userId });
+        const emFork = this.em.fork();
+        const notification = await emFork.findOneOrFail(Notification, { id, userId });
         notification.readAt = new Date();
-        return this.repo.getEntityManager().flush();
+        return emFork.flush();
     }
 
     async hide(id: string, userId: string): Promise<void> {
-        const notification = await this.repo.findOneOrFail({ id, userId });
+        const emFork = this.em.fork();
+        const notification = await emFork.findOneOrFail(Notification, { id, userId });
         notification.isHidden = true;
-        return this.repo.getEntityManager().flush();
+        return emFork.flush();
+    }
+
+    async refund(id: string, userId: string): Promise<void> {
+        const emFork = this.em.fork();
+        const notification = await emFork.findOneOrFail(Notification, { id, userId });
+        notification.readAt = new Date();
+        //TODO: Add logic to communicate with Wallet and refund the amount 
+        return emFork.flush();
     }
 }

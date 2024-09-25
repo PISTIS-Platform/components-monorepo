@@ -2,29 +2,51 @@ import { NotFoundException } from '@nestjs/common';
 
 import { NotificationType } from './constants';
 import { CreateNotificationDto } from './dto/create-notification.dto';
+import { Notification } from './notification.entity';
 import { NotificationService } from './notification.service';
 
 jest.mock('@pistis/shared', () => ({
     getHeaders: jest.fn(() => ({})),
 }));
 
+jest.mock('./websocket.gateway', () => {
+    // will work and let you check for constructor calls:
+    return jest.fn().mockImplementation(function () {
+        return {
+            sendNewMessage: () => jest.fn(),
+            getAllNotifications: () => jest.fn(),
+        };
+    });
+});
+
 describe('NotificationService', () => {
     let service: NotificationService;
 
-    let repo: any;
+    let em: any;
+    let websocket: any;
 
     beforeEach(async () => {
-        repo = {
-            findOneOrFail: jest.fn(),
-            create: jest.fn(),
-            findAndCount: jest.fn(),
-            getEntityManager: jest.fn().mockReturnValue({
-                flush: () => jest.fn(),
+        em = {
+            fork: jest.fn().mockReturnValue({
+                create: () => jest.fn(),
                 persistAndFlush: () => jest.fn(),
+                flush: () => jest.fn(),
+                findOneOrFail: () => jest.fn(),
+                findAndCount: () => jest.fn(),
             }),
         };
 
-        service = new NotificationService(repo);
+        websocket = {
+            sendNewMessage: () => jest.fn(),
+            getAllNotifications: () => jest.fn(),
+            handleDisconnect: () => jest.fn(),
+            getRoomName: () => jest.fn(),
+            markAsRead: () => jest.fn(),
+            hide: () => jest.fn(),
+            updateUserNotifications: () => jest.fn(),
+        };
+
+        service = new NotificationService(em, websocket);
     });
 
     afterEach(() => {
@@ -49,42 +71,27 @@ describe('NotificationService', () => {
             ...createDto,
         };
 
-        jest.spyOn(repo, 'create').mockResolvedValue(notification);
-        jest.spyOn(repo.getEntityManager(), 'persistAndFlush').mockImplementation();
+        jest.spyOn(em.fork(), 'create').mockResolvedValue(notification);
+        jest.spyOn(em.fork(), 'persistAndFlush').mockImplementation();
 
-        expect(await service.create(createDto)).toEqual(notification);
+        expect(await service.create(createDto, '123')).toEqual(notification);
 
-        expect(repo.create).toHaveBeenCalledTimes(1);
-        expect(repo.create).toHaveBeenCalledWith(createDto);
-        expect(repo.getEntityManager().persistAndFlush).toHaveBeenCalledTimes(1);
+        expect(em.fork().create).toHaveBeenCalledTimes(1);
+        expect(em.fork().create).toHaveBeenCalledWith(Notification, createDto);
+        expect(em.fork().persistAndFlush).toHaveBeenCalledTimes(1);
     });
 
-    it('should find and count user notifications with including read notifications', async () => {
+    it('should find and count user notifications', async () => {
         const userId = '123';
-        const includeRead = true;
 
         const notifications = [{ id: '1' }, { id: '2' }];
 
-        jest.spyOn(repo, 'findAndCount').mockResolvedValue([notifications, 2]);
+        jest.spyOn(em.fork(), 'findAndCount').mockResolvedValue([notifications, 2]);
 
-        expect(await service.findByUserId(userId, includeRead)).toEqual([notifications, 2]);
+        expect(await service.findByUserId(userId)).toEqual([notifications, 2]);
 
-        expect(repo.findAndCount).toHaveBeenCalledTimes(1);
-        expect(repo.findAndCount).toHaveBeenCalledWith({ userId, readAt: undefined });
-    });
-
-    it('should find and count user notifications with not including read notifications', async () => {
-        const userId = '123';
-        const includeRead = false;
-
-        const notifications = [{ id: '1' }, { id: '2' }];
-
-        jest.spyOn(repo, 'findAndCount').mockResolvedValue([notifications, 2]);
-
-        expect(await service.findByUserId(userId, includeRead)).toEqual([notifications, 2]);
-
-        expect(repo.findAndCount).toHaveBeenCalledTimes(1);
-        expect(repo.findAndCount).toHaveBeenCalledWith({ userId, readAt: null });
+        expect(em.fork().findAndCount).toHaveBeenCalledTimes(1);
+        expect(em.fork().findAndCount).toHaveBeenCalledWith(Notification, { userId });
     });
 
     it('should mark notification as read', async () => {
@@ -93,28 +100,28 @@ describe('NotificationService', () => {
             readAt: null,
         };
 
-        jest.spyOn(repo, 'findOneOrFail').mockResolvedValue(notification);
-        jest.spyOn(repo.getEntityManager(), 'flush').mockReturnValue(null);
+        jest.spyOn(em.fork(), 'findOneOrFail').mockResolvedValue(notification);
+        jest.spyOn(em.fork(), 'flush').mockReturnValue(null);
 
         const result = await service.markAsRead('1', '123');
         expect(result).toEqual(null);
         expect(notification.readAt).toBeInstanceOf(Date);
 
-        expect(repo.getEntityManager().flush).toHaveBeenCalledTimes(1);
+        expect(em.fork().findOneOrFail).toHaveBeenCalledTimes(1);
+        expect(em.fork().flush).toHaveBeenCalledTimes(1);
     });
 
     it('should throw an exception when finding a nonexistent notification when trying to mark it as read', async () => {
-        repo.findOneOrFail.mockImplementation(() => {
+        jest.spyOn(em.fork(), 'findOneOrFail').mockImplementation(() => {
             throw new NotFoundException();
         });
-
-        jest.spyOn(repo.getEntityManager(), 'flush').mockImplementation();
+        jest.spyOn(em.fork(), 'flush').mockImplementation();
 
         try {
             await service.markAsRead('1', '123');
         } catch (e) {
             expect(e).toBeInstanceOf(NotFoundException);
-            expect(repo.getEntityManager().flush).toHaveBeenCalledTimes(0);
+            expect(em.fork().flush).toHaveBeenCalledTimes(0);
         }
     });
 
@@ -124,28 +131,27 @@ describe('NotificationService', () => {
             isHidden: false,
         };
 
-        jest.spyOn(repo, 'findOneOrFail').mockResolvedValue(notification);
-        jest.spyOn(repo.getEntityManager(), 'flush').mockReturnValue(null);
+        jest.spyOn(em.fork(), 'findOneOrFail').mockResolvedValue(notification);
+        jest.spyOn(em.fork(), 'flush').mockReturnValue(null);
 
         const result = await service.hide('1', '123');
         expect(result).toEqual(null);
         expect(notification.isHidden).toBe(true);
 
-        expect(repo.getEntityManager().flush).toHaveBeenCalledTimes(1);
+        expect(em.fork().flush).toHaveBeenCalledTimes(1);
     });
 
     it('should throw an exception when finding a nonexistent notification when trying to hide it', async () => {
-        repo.findOneOrFail.mockImplementation(() => {
+        jest.spyOn(em.fork(), 'findOneOrFail').mockImplementation(() => {
             throw new NotFoundException();
         });
-
-        jest.spyOn(repo.getEntityManager(), 'flush').mockImplementation();
+        jest.spyOn(em.fork(), 'flush').mockImplementation();
 
         try {
             await service.hide('1', '123');
         } catch (e) {
             expect(e).toBeInstanceOf(NotFoundException);
-            expect(repo.getEntityManager().flush).toHaveBeenCalledTimes(0);
+            expect(em.fork().flush).toHaveBeenCalledTimes(0);
         }
     });
 });
