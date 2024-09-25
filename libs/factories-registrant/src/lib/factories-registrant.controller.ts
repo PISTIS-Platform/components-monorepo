@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Put, Res, StreamableFile } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Put, Res, StreamableFile } from '@nestjs/common';
 import {
     ApiBearerAuth,
     ApiBody,
@@ -47,7 +47,7 @@ export class FactoriesRegistrantController {
     constructor(
         private readonly factoriesService: FactoriesRegistrantService,
         private readonly servicesMappingService: ServicesMappingService,
-    ) {}
+    ) { }
 
     @Get()
     @Roles({ roles: [ADMIN_ROLE] })
@@ -404,5 +404,17 @@ export class FactoriesRegistrantController {
         @AuthToken() token: string,
     ) {
         return this.factoriesService.suspendFactory(factoryId, token, user.id);
+    }
+
+    @Delete(':factoryId')
+    @Roles({ roles: [ADMIN_ROLE] })
+    @ApiOkResponse({
+        description: 'Factory delete',
+        schema: {
+            example: { message: 'Factory deleted' },
+        },
+    })
+    async deleteFactory(@Param('factoryId', new ParseUUIDPipe({ version: '4' })) factoryId: string, @AuthToken() token: string, @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,) {
+        return this.factoriesService.deleteFactory(token, factoryId, user.id);
     }
 }

@@ -5,6 +5,7 @@ import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common'
 import { getHeaders } from '@pistis/shared';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import { catchError, firstValueFrom, lastValueFrom, map, mergeMap, of, toArray } from 'rxjs';
 
@@ -27,7 +28,9 @@ export class FactoriesRegistrantService {
         private readonly httpService: HttpService,
         private readonly servicesMappingService: ServicesMappingService,
         @Inject(MODULE_OPTIONS_TOKEN) private options: FactoryModuleOptions,
-    ) {}
+    ) { }
+
+
 
     async checkClient(organizationId: string, token: string) {
         // check if the information already exist in our database
@@ -212,7 +215,6 @@ export class FactoriesRegistrantService {
                     }),
                 ),
         );
-        //TODO Call to identity manager to notify for new factory
     }
 
     async retrieveFactories(): Promise<FactoriesRegistrant[]> {
@@ -257,6 +259,7 @@ export class FactoriesRegistrantService {
         factory.ip = data.ip;
         factory.status = data.status;
         await this.repo.getEntityManager().persistAndFlush(factory);
+        await this.recreateClients(token, factory.organizationId)
         const notification = {
             userId: userId,
             organizationId: factory.organizationId,
@@ -301,6 +304,7 @@ export class FactoriesRegistrantService {
 
     async recreateClients(token: string, organizationId: string) {
         dayjs.extend(isSameOrBefore);
+        dayjs.extend(isSameOrAfter);
         //Find all services
         const services = await this.servicesMappingService.findServicesMappingForAdmin();
         //Find factory
@@ -344,7 +348,7 @@ export class FactoriesRegistrantService {
             //Filter services to update clients
             const servicesToUpdate = services.filter(
                 (service) =>
-                    clientServices.includes(service.id) && dayjs(client.updatedAt).isSameOrBefore(service.updatedAt),
+                    clientServices.includes(service.id) && dayjs(client.updatedAt).isSameOrBefore(service.updatedAt) || dayjs(factory?.updatedAt).isSameOrAfter(client.updatedAt),
             );
 
             for (const service of servicesToCreate) {
@@ -387,6 +391,7 @@ export class FactoriesRegistrantService {
                         webOrigins: ['*'],
                     },
                 ];
+
                 //Call the function to create the new client in keycloak
                 createdClients = await this.keycloakClients(updatedClients, token, 'patch');
                 //Update client
@@ -397,20 +402,69 @@ export class FactoriesRegistrantService {
         return createdClients;
     }
 
+    async deleteFactory(token: string, factoryId: string, userId: string) {
+        const factory = await this.repo.findOneOrFail({ id: factoryId });
+        await this.deleteClients(token, factory.organizationId)
+        await this.clientRepo.getEntityManager().removeAndFlush(factory);
+        const notification = {
+            userId,
+            organizationId: factory.organizationId,
+            type: 'delete_factory',
+            message: 'Factory deleted',
+        };
+        await firstValueFrom(
+            this.httpService
+                .post(`${this.options.notificationsUrl}/notifications`, notification, {
+                    headers: getHeaders(token),
+                })
+                .pipe(
+                    //If not an error from call admin receive the message below
+                    map(() => {
+                        return { message: 'Factory deleted' };
+                    }),
+                    // Catch any error occurred during the notification creation
+                    catchError((error) => {
+                        this.logger.error('Notification creation error:', error);
+                        return of({ error: 'Error occurred during notification creation' });
+                    }),
+                ),
+        );
+
+    }
+
+    private async deleteClients(token: string, organizationId: string) {
+        const client = await this.clientRepo.findOneOrFail({ organizationId });
+        await firstValueFrom(
+            of(client.clientsIds).pipe(
+                // Create client
+                mergeMap((client: any) =>
+                    this.httpService.request({
+                        method: 'delete',
+                        url: `${this.options.identityAccessManagementUrl}/factory/${client}`,
+                        headers: getHeaders(token),
+                    }),
+                ),
+                // Extract data part of response
+                map((res) => res),
+                catchError((error: any) => {
+                    this.logger.error('Client creation error:', error);
+                    throw error;
+                }),
+            ),
+        );
+        return await this.clientRepo.getEntityManager().removeAndFlush(client);
+    }
+
     private async keycloakClients(keycloakClients: any, token: string, method: 'post' | 'patch') {
-        let clients: string[];
-        const url =
-            method === 'post'
-                ? `${this.options.identityAccessManagementUrl}/factory`
-                : `${this.options.identityAccessManagementUrl}/factory`; //FIXME Change url for patch
         //Create clients in keycloak
         return await firstValueFrom(
             of(...keycloakClients).pipe(
                 // Create client
-                mergeMap((client) =>
+                mergeMap((client: any) =>
                     this.httpService.request({
                         method,
-                        url,
+                        //Change url calculation because patch needs every clientId in url  
+                        url: method === 'post' ? `${this.options.identityAccessManagementUrl}/factory` : `${this.options.identityAccessManagementUrl}/factory/${client.clientId}`,
                         data: client,
                         headers: getHeaders(token),
                     }),
@@ -427,8 +481,6 @@ export class FactoriesRegistrantService {
                 }),
             ),
         );
-
-        return clients;
     }
 
     // @Cron('0 01 * * * *')
