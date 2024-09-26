@@ -342,9 +342,11 @@ export class FactoriesRegistrantService {
             await this.clientRepo.getEntityManager().persistAndFlush(savedClients);
         } else {
             //If exist in DB we take the services Id's from clients
-            clientServices = client.clientsIds.map((client) => client.split('--')[1]);
+            clientServices = client.clientsIds.map((client) => JSON.parse(client)[0].split('--')[1]);
+
             //Filter services to create clients
             const servicesToCreate = services.filter((service) => !clientServices.includes(service.id));
+
             //Filter services to update clients
             const servicesToUpdate = services.filter(
                 (service) =>
