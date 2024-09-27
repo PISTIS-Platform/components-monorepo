@@ -25,6 +25,7 @@ export class NotificationService {
     }
 
     async findByUserId(userId: string): Promise<[Notification[], number]> {
+        this.logger.warn(userId);
         const emFork = this.em.fork();
         return emFork.findAndCount(Notification, { userId });
     }

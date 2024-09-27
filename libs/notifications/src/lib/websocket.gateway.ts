@@ -1,4 +1,4 @@
-import { forwardRef, Inject, UseGuards } from '@nestjs/common';
+import { forwardRef, Inject, Logger, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import {
     ConnectedSocket,
@@ -19,6 +19,7 @@ import { NotificationService } from './notification.service';
 @UseGuards(WsAuthGuard)
 @WebSocketGateway()
 export class Websocket implements OnGatewayDisconnect {
+    private readonly logger = new Logger(Websocket.name);
     @WebSocketServer()
     server!: Server;
 
@@ -35,6 +36,7 @@ export class Websocket implements OnGatewayDisconnect {
     }
 
     handleDisconnect(client: Socket) {
+        this.logger.warn('Disconnected')
         console.log('Disconnected');
     }
 
