@@ -17,7 +17,7 @@ import { NotificationService } from './notification.service';
 
 @ApiBearerAuth()
 @UseGuards(WsAuthGuard)
-@WebSocketGateway(3012)
+@WebSocketGateway()
 export class Websocket implements OnGatewayDisconnect {
     @WebSocketServer()
     server!: Server;
