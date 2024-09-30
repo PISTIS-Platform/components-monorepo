@@ -28,7 +28,8 @@ export class ServicesMappingService {
     }
 
     async find(id: string) {
-        const service = this.servicesMappingRepo.findOne({ id });
+        const service = await this.servicesMappingRepo.findOne({ id });
+
         if (!service) {
             throw new NotFoundException(`Service with id: ${id} not found`)
         }
