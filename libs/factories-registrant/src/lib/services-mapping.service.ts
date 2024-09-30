@@ -13,7 +13,7 @@ export class ServicesMappingService {
         private readonly servicesMappingRepo: EntityRepository<RegisteredService>,
         @InjectRepository(FactoriesRegistrant)
         private readonly factoriesRepo: EntityRepository<FactoriesRegistrant>,
-    ) {}
+    ) { }
 
     async findServicesMappingForAdmin(): Promise<RegisteredService[]> {
         return this.servicesMappingRepo.findAll();
@@ -39,7 +39,7 @@ export class ServicesMappingService {
         return Object.fromEntries(
             organisationServices.map(({ serviceName, serviceUrl }: RegisteredService) => [
                 serviceName,
-                `https://${factory.factoryPrefix}.pistis-market.eu/srv/${serviceUrl}`,
+                `https://${factory.factoryPrefix}.pistis-market.eu${serviceUrl}`,
             ]),
         );
     }
