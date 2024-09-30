@@ -224,7 +224,7 @@ export class FactoriesRegistrantService {
     async retrieveAcceptedFactories() {
         const factories = await this.repo.find(
             {
-                status: 'online',
+                status: 'pending' || 'online' || 'offline' || 'suspended'
             },
             {
                 fields: ['factoryPrefix'],
