@@ -1,6 +1,6 @@
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityRepository } from '@mikro-orm/postgresql';
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { CreateServiceMappingDTO } from './dto/create-service-mapping.dto';
 import { UpdateServiceMappingDTO } from './dto/update-service-mapping.dto';
@@ -28,7 +28,11 @@ export class ServicesMappingService {
     }
 
     async find(id: string) {
-        return this.servicesMappingRepo.findOneOrFail({ id });
+        const service = this.servicesMappingRepo.findOne({ id });
+        if (!service) {
+            throw new NotFoundException(`Service with id: ${id} not found`)
+        }
+        return service;
     }
 
     async findOrganizationServices(organizationId: string) {
