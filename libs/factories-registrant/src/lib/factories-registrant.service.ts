@@ -222,15 +222,7 @@ export class FactoriesRegistrantService {
     }
 
     async retrieveAcceptedFactories() {
-        const factories = await this.repo.find(
-            {
-                status: 'pending' || 'online' || 'offline' || 'suspended'
-            },
-            {
-                fields: ['factoryPrefix'],
-            },
-        );
-
+        const factories = await this.repo.findAll();
         return factories.map(
             (factory: Loaded<FactoriesRegistrant, never, 'factoryPrefix', never>) =>
                 `https://${factory.factoryPrefix}.pistis-market.eu`,
@@ -303,6 +295,7 @@ export class FactoriesRegistrantService {
     }
 
     async recreateClients(token: string, organizationId: string) {
+
         dayjs.extend(isSameOrBefore);
         dayjs.extend(isSameOrAfter);
         //Find all services
@@ -311,6 +304,7 @@ export class FactoriesRegistrantService {
         const factory = await this.repo.findOne({ organizationId });
         //Retrieve client
         const client = await this.clientRepo.findOne({ organizationId });
+
         let clientServices: string[] = [];
         let createdClients: string[] = [];
         let newClients: any[] = [];
@@ -371,7 +365,7 @@ export class FactoriesRegistrantService {
                 ];
                 //Call the function to create the new client in keycloak
                 createdClients = await this.keycloakClients(updatedClients, token, 'post');
-                client.clientsIds.push(`${organizationId}--${service.id}`);
+                client.clientsIds.push(`["${organizationId}--${service.id}"]`);
                 //Save new clients
                 await this.clientRepo.getEntityManager().persistAndFlush(client);
                 return;
@@ -401,6 +395,7 @@ export class FactoriesRegistrantService {
                 return;
             }
         }
+
         return createdClients;
     }
 
