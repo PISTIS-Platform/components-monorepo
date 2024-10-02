@@ -368,7 +368,6 @@ export class FactoriesRegistrantService {
                 client.clientsIds.push(`["${organizationId}--${service.id}"]`);
                 //Save new clients
                 await this.clientRepo.getEntityManager().persistAndFlush(client);
-                return;
             }
 
             for (const service of servicesToUpdate) {
@@ -392,7 +391,6 @@ export class FactoriesRegistrantService {
                 createdClients = await this.keycloakClients(updatedClients, token, 'patch');
                 //Update client
                 await this.clientRepo.getEntityManager().persistAndFlush(client);
-                return;
             }
         }
 
