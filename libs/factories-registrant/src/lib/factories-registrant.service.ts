@@ -428,7 +428,7 @@ export class FactoriesRegistrantService {
     async deleteClient(token: string, clientId: string, organizationId: string) {
         const client = await this.clientRepo.findOneOrFail({ organizationId });
         await firstValueFrom(
-            this.httpService.delete(`${this.options.identityAccessManagementUrl}/factory/${clientId}`, {
+            this.httpService.delete(`${this.options.identityAccessManagementUrl}/factory/${organizationId}--${clientId}`, {
                 headers: getHeaders(token),
             }).pipe(
                 map((res) => res),
@@ -450,7 +450,7 @@ export class FactoriesRegistrantService {
                 mergeMap((client: any) =>
                     this.httpService.request({
                         method: 'delete',
-                        url: `${this.options.identityAccessManagementUrl}/factory/${client}`,
+                        url: `${this.options.identityAccessManagementUrl}/factory/${organizationId}--${client}`,
                         headers: getHeaders(token),
                     }),
                 ),
