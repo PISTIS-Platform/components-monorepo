@@ -30,8 +30,6 @@ export class FactoriesRegistrantService {
         @Inject(MODULE_OPTIONS_TOKEN) private options: FactoryModuleOptions,
     ) { }
 
-
-
     async checkClient(organizationId: string, token: string) {
         // check if the information already exist in our database
         const client = await this.clientRepo.findOneOrFail({ organizationId: organizationId });
@@ -365,7 +363,7 @@ export class FactoriesRegistrantService {
                 ];
                 //Call the function to create the new client in keycloak
                 createdClients = await this.keycloakClients(updatedClients, token, 'post');
-                client.clientsIds.push(`["${organizationId}--${service.id}"]`);
+                client.clientsIds.push(createdClients[0]);
                 //Save new clients
                 await this.clientRepo.getEntityManager().persistAndFlush(client);
             }
@@ -427,11 +425,28 @@ export class FactoriesRegistrantService {
 
     }
 
+    async deleteClient(token: string, clientId: string, organizationId: string) {
+        const client = await this.clientRepo.findOneOrFail({ organizationId });
+        await firstValueFrom(
+            this.httpService.delete(`${this.options.identityAccessManagementUrl}/factory/${clientId}`, {
+                headers: getHeaders(token),
+            }).pipe(
+                map((res) => res),
+                catchError((error: any) => {
+                    this.logger.error('Client creation error:', error);
+                    throw error;
+                }),
+            )
+        );
+        const updatedClientIds = client.clientsIds.filter((item) => !item.includes(clientId))
+        client.clientsIds = updatedClientIds
+        return await this.clientRepo.getEntityManager().persistAndFlush(client);
+    }
+
     private async deleteClients(token: string, organizationId: string) {
         const client = await this.clientRepo.findOneOrFail({ organizationId });
         await firstValueFrom(
             of(client.clientsIds).pipe(
-                // Create client
                 mergeMap((client: any) =>
                     this.httpService.request({
                         method: 'delete',
@@ -449,6 +464,7 @@ export class FactoriesRegistrantService {
         );
         return await this.clientRepo.getEntityManager().removeAndFlush(client);
     }
+
 
     private async keycloakClients(keycloakClients: any, token: string, method: 'post' | 'patch') {
         //Create clients in keycloak

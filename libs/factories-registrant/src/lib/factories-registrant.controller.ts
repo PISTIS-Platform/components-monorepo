@@ -417,4 +417,16 @@ export class FactoriesRegistrantController {
     async deleteFactory(@Param('factoryId', new ParseUUIDPipe({ version: '4' })) factoryId: string, @AuthToken() token: string, @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,) {
         return this.factoriesService.deleteFactory(token, factoryId, user.id);
     }
+
+    @Delete('/client/:clientId/:organizationId')
+    @Roles({ roles: [ADMIN_ROLE] })
+    @ApiOkResponse({
+        description: 'Client delete',
+        schema: {
+            example: { message: 'Client deleted' },
+        },
+    })
+    async deleteClient(@Param('clientId', new ParseUUIDPipe({ version: '4' })) clientId: string, @Param('organizationId', new ParseUUIDPipe({ version: '4' })) organizationId: string, @AuthToken() token: string) {
+        return this.factoriesService.deleteClient(token, clientId, organizationId);
+    }
 }
