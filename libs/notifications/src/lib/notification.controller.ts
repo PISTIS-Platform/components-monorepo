@@ -11,7 +11,7 @@ import { NotificationService } from './notification.service';
 @ApiTags('notifications')
 @ApiBearerAuth()
 export class NotificationController {
-    constructor(private readonly notificationsService: NotificationService) { }
+    constructor(private readonly notificationsService: NotificationService) {}
 
     @Post()
     @Roles({ roles: [ADMIN_ROLE, NOTIFICATION_CLIENT] })
@@ -64,6 +64,12 @@ export class NotificationController {
         @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
     ): Promise<[Notification[], number]> {
         return this.notificationsService.findByUserId(user.id);
+    }
+
+    @Get('count')
+    @ApiUnauthorizedResponse()
+    async countNotifications(@AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo): Promise<number> {
+        return this.notificationsService.countByUserId(user.id);
     }
 
     @Patch('/:id/read')
