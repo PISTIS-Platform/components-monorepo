@@ -14,22 +14,6 @@ import { ConsumerModuleOptions } from './consumer-module-options.interface';
 import { RetrieveDataDTO } from './retrieveData.dto';
 import { IResults } from './typings';
 
-/*
-{
-  "id": "a87025b7-87af-4ca7-8ebc-38157ee22ae6",
-  "organizationName": "Space hellas",
-  "organizationId": "0e859f3b-2799-460c-8eba-d86c51923bfc",
-  "ip": "74.241.167.93",
-  "factoryPrefix": "sph",
-  "country": "GR",
-  "status": "pending",
-  "isAccepted": true,
-  "isActive": false,
-  "createdAt": "2024-09-26T13:40:56.441Z",
-  "updatedAt": "2024-09-27T06:23:29.004Z"
-}
-*/
-
 
 @Injectable()
 export class ConsumerService {
@@ -47,9 +31,9 @@ export class ConsumerService {
         const factory = await this.retrieveFactory(user.organizationId, token);
         const metadata = await this.metadataRepositoryService.retrieveMetadata(assetId);
 
-        let catalog: Record<string, any> = await this.metadataRepositoryService.retrieveCatalog(this.options.catalogId, factory.factoryPrefix)
+        let catalog: Record<string, any> = await this.metadataRepositoryService.retrieveCatalog(this.options.catalogId, factory.factoryPrefix, token)
         if (!catalog) {
-            catalog = await this.metadataRepositoryService.createCatalog(this.options.catalogId, factory)
+            catalog = await this.metadataRepositoryService.createCatalog(this.options.catalogId, factory, token)
         }
 
         // Flatten the JSON-LD document and assign new values in metadata catalog
@@ -165,7 +149,7 @@ export class ConsumerService {
             await this.repo.getEntityManager().persistAndFlush(assetInfo);
         }
 
-        await this.metadataRepositoryService.createMetadata(metadata, this.options.catalogId, factory.factoryPrefix)
+        await this.metadataRepositoryService.createMetadata(metadata, this.options.catalogId, factory.factoryPrefix, token)
 
         const notification = {
             userId: user.id,

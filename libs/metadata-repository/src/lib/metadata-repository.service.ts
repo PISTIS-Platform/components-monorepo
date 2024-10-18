@@ -29,11 +29,11 @@ export class MetadataRepositoryService {
         );
     }
 
-    async retrieveCatalog(catalogId: string, factoryPrefix: string) {
+    async retrieveCatalog(catalogId: string, factoryPrefix: string, token: string) {
         return await fetch(`https://${factoryPrefix}.pistis-market.eu/srv/repo/catalogues/${catalogId}`, {
             headers: {
                 'Content-Type': 'text/turtle',
-                'X-API-Key': '781f8a00-5d83-41eb-b778-5a4927ef477e'
+                Authorization: `Bearer ${token}`
             }
         }).then((res) => {
             if (!res.ok) {
@@ -44,7 +44,7 @@ export class MetadataRepositoryService {
             .then((response) => response)
     }
 
-    async createMetadata(metadata: any, catalogId: string, factoryPrefix: string) {
+    async createMetadata(metadata: any, catalogId: string, factoryPrefix: string, token: string) {
         const rdfData = `
             @prefix dcat:                <http://www.w3.org/ns/dcat#> .
             @prefix dct:                 <http://purl.org/dc/terms/> .
@@ -85,7 +85,7 @@ export class MetadataRepositoryService {
             this.httpService.post(`https://${factoryPrefix}.pistis-market.eu/srv/repo/catalogues/${catalogId}/datasets`, rdfData, {
                 headers: {
                     "Content-Type": "text/turtle",
-                    "X-API-Key": '781f8a00-5d83-41eb-b778-5a4927ef477e'
+                    Authorization: `Bearer ${token}`
                 }
             }).pipe(
                 map((res) => {
@@ -99,13 +99,13 @@ export class MetadataRepositoryService {
         );
     }
 
-    async createCatalog(catalogId: string, factory: any) {
+    async createCatalog(catalogId: string, factory: any, token: string) {
         const rdfData = `
         @prefix dcat: <http://www.w3.org/ns/dcat#> .
         @prefix dct:  <http://purl.org/dc/terms/> .
         @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 
-        <https://piveau.io/id/catalogue/${catalogId}>
+        <https://piveau.io/id/catalogue/${factory.factoryPrefix}>
             a                dcat:Catalog;
             dct:creator      <https://piveau.eu/def/creator>;
             dct:description  "The ${factory.organizationName} acquired catalog."@en;
@@ -125,7 +125,7 @@ export class MetadataRepositoryService {
             this.httpService.put(`https://${factory.factoryPrefix}.pistis-market.eu/srv/repo/catalogues/${catalogId}`, rdfData, {
                 headers: {
                     "Content-Type": "text/turtle",
-                    "X-API-Key": '781f8a00-5d83-41eb-b778-5a4927ef477e'
+                    Authorization: `Bearer ${token}`
                 }
             }).pipe(
                 map((res) => {
