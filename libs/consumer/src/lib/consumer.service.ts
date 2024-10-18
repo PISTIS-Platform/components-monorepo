@@ -2,14 +2,34 @@ import { EntityRepository } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { HttpService } from '@nestjs/axios';
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { Column, CreateTable, DataStorageService } from '@pistis/data-storage';
+import { Column, DataStorageService } from '@pistis/data-storage';
+import { MetadataRepositoryService } from '@pistis/metadata-repository';
 import { getHeaders } from '@pistis/shared';
+import * as jsonld from 'jsonld';
 import { catchError, firstValueFrom, map, of } from 'rxjs';
 
 import { AssetRetrievalInfo } from './asset-retrieval-info.entity';
 import { CONSUMER_MODULE_OPTIONS } from './consumer.module-definition';
 import { ConsumerModuleOptions } from './consumer-module-options.interface';
+import { RetrieveDataDTO } from './retrieveData.dto';
 import { IResults } from './typings';
+
+/*
+{
+  "id": "a87025b7-87af-4ca7-8ebc-38157ee22ae6",
+  "organizationName": "Space hellas",
+  "organizationId": "0e859f3b-2799-460c-8eba-d86c51923bfc",
+  "ip": "74.241.167.93",
+  "factoryPrefix": "sph",
+  "country": "GR",
+  "status": "pending",
+  "isAccepted": true,
+  "isActive": false,
+  "createdAt": "2024-09-26T13:40:56.441Z",
+  "updatedAt": "2024-09-27T06:23:29.004Z"
+}
+*/
+
 
 @Injectable()
 export class ConsumerService {
@@ -20,102 +40,136 @@ export class ConsumerService {
         @InjectRepository(AssetRetrievalInfo) private readonly repo: EntityRepository<AssetRetrievalInfo>,
         private readonly dataStorageService: DataStorageService,
         @Inject(CONSUMER_MODULE_OPTIONS) private options: ConsumerModuleOptions,
-    ) {}
+        private readonly metadataRepositoryService: MetadataRepositoryService,
+    ) { }
 
-    async retrieveData(contractId: string, assetId: string, userId: string, token: string) {
-        //FIXME: change types in variables when we have actual results
+    async retrieveData(assetId: string, user: any, token: string, data: RetrieveDataDTO) {
+        const factory = await this.retrieveFactory(user.organizationId, token);
+        const metadata = await this.metadataRepositoryService.retrieveMetadata(assetId);
 
-        const factoryId = ''; //FIXME we need to specify what we should use to find provider factory
-        const providerFactory = await firstValueFrom(
-            this.httpService
-                .get(`${this.options.factoryRegistryUrl}/${factoryId}`, {
-                    headers: getHeaders(token),
-                })
-                .pipe(
-                    map(async (res) => {
-                        return res.data;
-                    }),
-                    catchError((error) => {
-                        this.logger.error('Provider factory ip retrieval error:', error);
-                        return of({ error: 'Error occurred during retrieving provider factory info' });
-                    }),
-                ),
-        );
-
-        const providerUrl = providerFactory.ip;
-
-        let results: IResults | { error: string | undefined };
-
-        //get offset from db, if it does not exist set is as 0.
-        //FIXME: check what we should use to find any possible asset in db (e.g. if we will search by provider too)
-        let assetInfo = await this.repo.findOne({
-            cloudAssetId: assetId,
-        });
-        let offset = assetInfo?.offset || 0;
-
-        //first retrieval of data
-        results = await this.getDataFromProvider(
-            {
-                offset,
-                batchSize: this.options.downloadBatchSize,
-            },
-            providerUrl,
-            assetId,
-            token,
-        );
-
-        if (offset === 0 && 'data' in results) {
-            //store data in data store
-            const storeResult: CreateTable = await this.dataStorageService.createTableInStorage(results, token);
-
-            offset += results.data.rows.length;
-
-            //store asset retrieval info in consumer's database
-            assetInfo = this.repo.create({
-                id: storeResult.assetUUID,
-                cloudAssetId: assetId,
-                version: storeResult.version_id,
-                offset: offset,
-            });
-            await this.repo.getEntityManager().flush();
+        let catalog: Record<string, any> = await this.metadataRepositoryService.retrieveCatalog(this.options.catalogId, factory.factoryPrefix)
+        if (!catalog) {
+            catalog = await this.metadataRepositoryService.createCatalog(this.options.catalogId, factory)
         }
 
-        // loop to retrieve data in batches
-        while (offset % this.options.downloadBatchSize !== 0) {
-            if ('columns' in results) {
-                results = await this.getDataFromProvider(
-                    {
-                        offset,
-                        batchSize: this.options.downloadBatchSize,
-                        columns: results.columns,
-                    },
-                    providerUrl,
-                    assetId,
-                    token,
-                );
-            }
+        // Flatten the JSON-LD document and assign new values in metadata catalog
+        const flattened = await jsonld.flatten(catalog);
+        const descKey = flattened[0]['http://purl.org/dc/terms/description'][0]['@language']
+        const descValue = flattened[0]['http://purl.org/dc/terms/description'][0]['@value']
 
-            if (!('data' in results) || !('columns' in results) || results.data.rows.length === 0) break;
+        metadata.catalog.description = { [descKey]: descValue }
+        metadata.catalog.id = this.options.catalogId
+        metadata.catalog.modified = flattened[0]['http://purl.org/dc/terms/modified'][0]['@value']
+        metadata.catalog.issued = flattened[0]['http://purl.org/dc/terms/issued'][0]['@value']
+        metadata.catalog.language[0].resource = flattened[0]['http://purl.org/dc/terms/language'][0]['@id']
+        metadata.catalog.homepage = flattened[0]['http://xmlns.com/foaf/0.1/homepage'][0]['@id']
+        metadata.catalog.creator.resource = flattened[1]['http://xmlns.com/foaf/0.1/name'][0]['@value']
+        metadata.catalog.creator.name = flattened[0]['http://purl.org/dc/terms/creator'][0]['@id']
+        metadata.catalog.title.en = flattened[1]['http://xmlns.com/foaf/0.1/name'][0]['@value']
+        const providerFactory = await this.retrieveProviderFactory(data.assetFactory, token);
+        const storageUrl = `https://${factory.factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api`
+        let assetInfo: AssetRetrievalInfo | null
+        if (metadata.distributions[0].format.id === 'SQL') {
+            let results: IResults | { error: string | undefined };
+            let storeResult: any;
+            //get offset from db, if it does not exist set is as 0.
+            assetInfo = await this.repo.findOne({
+                cloudAssetId: assetId,
+            });
+            let offset = assetInfo?.offset || 0;
 
-            await this.dataStorageService.updateTableInStorage(
+            //first retrieval of data
+            results = await this.getDataFromProvider(
                 assetId,
-                {
-                    columns: results.columns,
-                    data: results.data,
-                },
                 token,
+                {
+                    offset,
+                    batchSize: this.options.downloadBatchSize,
+                    providerPrefix: providerFactory.factoryPrefix,
+                }
             );
-            offset += results.data.rows.length;
+            if (offset === 0 && 'data' in results) {
+                //store data in data store
+                storeResult = await this.dataStorageService.createTableInStorage(results, token, storageUrl);
 
-            if (assetInfo) {
-                assetInfo.offset = offset;
+                offset += results.data.rows.length;
+
+                // store asset retrieval info in consumer's database
+                assetInfo = this.repo.create({
+                    id: storeResult.asset_uuid,
+                    cloudAssetId: assetId,
+                    version: storeResult.version_id,
+                    offset: offset,
+                });
                 await this.repo.getEntityManager().flush();
             }
+
+            // loop to retrieve data in batches
+            while (offset % this.options.downloadBatchSize !== 0) {
+                if ('columns' in results) {
+                    results = await this.getDataFromProvider(
+                        assetId,
+                        token,
+                        {
+                            offset,
+                            batchSize: this.options.downloadBatchSize,
+                            columns: results.columns,
+                            consumerPrefix: factory.factoryPrefix,
+                            providerPrefix: providerFactory.factoryPrefix,
+                        }
+                    );
+                }
+
+                if (!('data' in results) || !('columns' in results) || results.data.rows.length === 0) break;
+
+                await this.dataStorageService.updateTableInStorage(
+                    assetId,
+                    {
+                        columns: results.columns,
+                        data: results.data,
+                    },
+                    token,
+                    storageUrl
+                );
+                offset += results.data.rows.length;
+
+                if (assetInfo) {
+                    assetInfo.offset = offset;
+                    await this.repo.getEntityManager().flush();
+                }
+            }
+
+            metadata.distributions.forEach((item: any) => {
+                item.access_url = [`https://${factory.factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api/tables/get_table?asset_uuid=${storeResult['asset_uuid']}`]
+            })
+        } else {
+            const fileResult = await this.getDataFromProvider(
+                assetId,
+                token,
+                {
+                    consumerPrefix: factory.factoryPrefix,
+                    providerPrefix: providerFactory.factoryPrefix,
+                }
+            );
+
+            metadata.distributions.forEach((item: any) => {
+                item.access_url = [`https://${factory.factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api/tables/get_table?asset_uuid=${fileResult.data.asset_uuid}`]
+            })
+
+            assetInfo = this.repo.create({
+                id: fileResult.data.asset_uuid,
+                cloudAssetId: assetId,
+                version: fileResult.metadata.id,
+                offset: 0,
+            });
+            await this.repo.getEntityManager().persistAndFlush(assetInfo);
         }
 
+        await this.metadataRepositoryService.createMetadata(metadata, this.options.catalogId, factory.factoryPrefix)
+
         const notification = {
-            userId,
-            organizationId: '', //FIXME: Replace this with actual organization id,
+            userId: user.id,
+            organizationId: user.organizationId,
             type: 'asset_retrieved',
             message: 'Asset retrieval finished',
         };
@@ -139,18 +193,20 @@ export class ConsumerService {
     }
 
     async getDataFromProvider(
-        bodyObject: {
-            offset: number;
-            batchSize: number;
-            columns?: Column[];
-        },
-        providerUrl: string,
         assetId: string,
         token: string,
-    ): Promise<IResults | { error: string | undefined }> {
+        bodyObject?: {
+            offset?: number;
+            batchSize?: number;
+            columns?: Column[];
+            consumerPrefix?: string;
+            providerPrefix?: string;
+        },
+
+    ) {
         return await firstValueFrom(
             this.httpService
-                .post(`${providerUrl}/provider/${assetId}`, { ...bodyObject }, { headers: getHeaders(token) })
+                .post(`https://${bodyObject?.providerPrefix}.pistis-market.eu/srv/data-connector/api/provider/${assetId}`, { ...bodyObject }, { headers: getHeaders(token) })
                 .pipe(
                     map(async (res) => {
                         return res.data;
@@ -158,6 +214,38 @@ export class ConsumerService {
                     catchError((error) => {
                         this.logger.error('Provider download dataset error:', error);
                         return of({ error: 'Error occurred during retrieving data from provider' });
+                    }),
+                ),
+        );
+    }
+
+    private async retrieveFactory(organizationId: string, token: string) {
+        return await firstValueFrom(
+            this.httpService
+                .get(`${this.options.factoryRegistryUrl}/api/factories/${organizationId}`, { headers: getHeaders(token) })
+                .pipe(
+                    map(async (res) => {
+                        return res.data;
+                    }),
+                    catchError((error) => {
+                        this.logger.error('Factory retrieval error:', error);
+                        return of({ error: 'Error occurred during retrieving factory' });
+                    }),
+                ),
+        );
+    }
+
+    private async retrieveProviderFactory(factoryName: string, token: string) {
+        return await firstValueFrom(
+            this.httpService
+                .get(`${this.options.factoryRegistryUrl}/api/factories/name/${factoryName}`, { headers: getHeaders(token) })
+                .pipe(
+                    map(async (res) => {
+                        return res.data;
+                    }),
+                    catchError((error) => {
+                        this.logger.error('Factory retrieval error:', error);
+                        return of({ error: 'Error occurred during retrieving factory' });
                     }),
                 ),
         );

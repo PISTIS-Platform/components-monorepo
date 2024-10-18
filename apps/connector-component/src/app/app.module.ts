@@ -6,13 +6,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ConsumerModule } from '@pistis/consumer';
 import { ProviderModule } from '@pistis/provider';
 import { IAppConfig, MorganMiddleware } from '@pistis/shared';
-import {
-    AuthGuard,
-    KeycloakConnectModule,
-    PolicyEnforcementMode,
-    RoleGuard,
-    TokenValidation,
-} from 'nest-keycloak-connect';
+import { AuthGuard, KeycloakConnectModule, PolicyEnforcementMode, RoleGuard, TokenValidation } from 'nest-keycloak-connect';
 
 import { AppConfig, IConnectorConfig } from './app.config';
 
@@ -36,6 +30,10 @@ import { AppConfig, IConnectorConfig } from './app.config';
                 notificationsUrl: options.notificationsUrl,
                 factoryRegistryUrl: options.factoryRegistryUrl,
                 downloadBatchSize: options.downloadBatchSize,
+                metadataRepositoryUrl: options.metadataRepositoryUrl,
+                catalogId: options.catalogId,
+                catalogKey: options.catalogKey,
+                catalogUrl: options.catalogUrl,
             }),
             inject: [AppConfig.KEY],
         }),

@@ -10,4 +10,4 @@ import { ConfigurableModuleClass } from './metadata-repository-definition';
     providers: [MetadataRepositoryService],
     exports: [MetadataRepositoryService],
 })
-export class MetadataRepositoryModule extends ConfigurableModuleClass {}
+export class MetadataRepositoryModule extends ConfigurableModuleClass { }

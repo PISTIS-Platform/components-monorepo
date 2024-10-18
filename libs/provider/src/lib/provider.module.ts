@@ -63,7 +63,6 @@ export class ProviderModule extends ConfigurableModuleClass {
                 },
             }),
         ];
-
         return { ...parent };
     }
 }

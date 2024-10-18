@@ -8,6 +8,9 @@ export type IConnectorConfig = IAppConfig & {
     blockchainUrl: string;
     metadataRepositoryUrl: string;
     downloadBatchSize: number;
+    catalogId: string;
+    catalogKey: string;
+    catalogUrl: string;
 };
 
 export const AppConfig = registerAs(
@@ -36,5 +39,8 @@ export const AppConfig = registerAs(
         downloadBatchSize: +process.env.DOWNLOAD_BATCH_SIZE,
         isDevelopment: process.env.NODE_ENV !== 'production',
         swaggerBaseUrl: process.env.SWAGGER_BASE_URL ?? '/',
+        catalogId: process.env.CATALOG_ACQUIRED_ID,
+        catalogKey: process.env.CATALOG_API_KEY,
+        catalogUrl: process.env.CATALOG_URL,
     }),
 );

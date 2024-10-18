@@ -1,17 +1,18 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsInt, IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { IsInt, IsOptional, IsString, ValidateNested } from 'class-validator';
 
 export class ColumnDto {
-    @IsNotEmpty()
     @IsString()
     @ApiProperty()
     name!: string;
 
-    @IsNotEmpty()
     @IsString()
     @ApiProperty()
     dataType!: string;
+
+    @ApiProperty()
+    data_model!: any;
 }
 
 export class PaginationDto {
@@ -21,13 +22,21 @@ export class PaginationDto {
     @Type(() => ColumnDto)
     columns?: ColumnDto[];
 
-    @IsNotEmpty()
+    @IsOptional()
     @IsInt()
     @ApiProperty()
     offset!: number;
 
-    @IsNotEmpty()
+    @IsOptional()
     @IsInt()
     @ApiProperty()
     batchSize!: number;
+
+    @IsString()
+    @ApiProperty()
+    consumerPrefix!: string;
+
+    @IsString()
+    @ApiProperty()
+    providerPrefix!: string;
 }

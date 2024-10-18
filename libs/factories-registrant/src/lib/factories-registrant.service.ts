@@ -231,6 +231,10 @@ export class FactoriesRegistrantService {
         return this.repo.findOneOrFail({ id: factoryId });
     }
 
+    async retrieveFactoryByPrefix(name: string): Promise<FactoriesRegistrant> {
+        return this.repo.findOneOrFail({ factoryPrefix: name });
+    }
+
     async findLoggedInUserFactory(organizationId: string): Promise<FactoriesRegistrant> {
         return this.repo.findOneOrFail({ organizationId });
     }

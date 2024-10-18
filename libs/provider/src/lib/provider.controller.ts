@@ -34,7 +34,7 @@ import { ProviderService } from './provider.service';
     },
 })
 export class ProviderController {
-    constructor(private readonly providerService: ProviderService) {}
+    constructor(private readonly providerService: ProviderService) { }
 
     @Post(':assetId')
     @ApiOkResponse({

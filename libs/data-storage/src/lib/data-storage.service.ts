@@ -1,25 +1,25 @@
 import { HttpService } from '@nestjs/axios';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { getHeaders } from '@pistis/shared';
 import { catchError, firstValueFrom, map, of } from 'rxjs';
 
-import { MODULE_OPTIONS_TOKEN } from './data-storage.module-definition';
-import { DataStorageModuleOptions } from './data-storage-module-options.interface';
 
 @Injectable()
 export class DataStorageService {
     private readonly logger = new Logger(DataStorageService.name);
-
     constructor(
         private readonly httpService: HttpService,
-        @Inject(MODULE_OPTIONS_TOKEN) private options: DataStorageModuleOptions,
-    ) {}
+        // @Inject(MODULE_OPTIONS_TOKEN) private options: DataStorageModuleOptions,
+    ) { }
 
-    async updateTableInStorage(assetId: string, results: any, token: any) {
-        //FIXME: change types in variables when we have actual results
+    private async prepareUrl(factory: string) {
+        return `https://${factory}.pistis-market.eu/srv/factory-data-storage/api`
+    }
+
+    async updateTableInStorage(assetId: string, results: any, token: string, factory: string) {
         return await firstValueFrom(
             this.httpService
-                .post(`${this.options.url}/assets/add_rows`, JSON.stringify(results), {
+                .post(`${this.prepareUrl(factory)}/tables/add_rows`, JSON.stringify(results), {
                     headers: getHeaders(token),
                     params: {
                         asset_uuid: assetId,
@@ -28,7 +28,6 @@ export class DataStorageService {
                 .pipe(
                     map(async (res) => {
                         return res.data;
-                        //FIXME: return object from data storage update
                     }),
                     // Catch any error occurred during update
                     catchError((error) => {
@@ -39,17 +38,15 @@ export class DataStorageService {
         );
     }
 
-    async createTableInStorage(results: any, token: any) {
-        //FIXME: change types in variables when we have actual results
+    async createTableInStorage(results: any, token: string, factory: string) {
         return await firstValueFrom(
             this.httpService
-                .post(`${this.options.url}/assets/create_table`, JSON.stringify(results), {
+                .post(`${this.prepareUrl(factory)}/tables/create_table`, results, {
                     headers: getHeaders(token),
                 })
                 .pipe(
                     map(async (res) => {
                         return res.data;
-                        //FIXME: return object from data storage
                     }),
                     // Catch any error occurred during creation
                     catchError((error) => {
@@ -66,24 +63,15 @@ export class DataStorageService {
         offset: number,
         limit: number,
         columnsForPagination: Record<string, null>,
+        factory: string
     ) {
-        const body = {
-            column_names: columnsForPagination,
-        };
-        const params = {
-            asset_type: 'Dataset',
-            assetUUID,
-            offset: offset,
-            limit: limit,
-        };
 
-        const data = await firstValueFrom(
+        return await firstValueFrom(
             this.httpService
                 .post(
-                    `${this.options.url}/assets/get_fields`,
+                    `${this.prepareUrl(factory)}/tables/get_fields?asset_uuid=${assetUUID}&OFFSET=${offset}&LIMIT=${limit}`,
                     {
-                        body: body,
-                        params: params,
+                        column_names: columnsForPagination,
                     },
                     { headers: getHeaders(token) },
                 )
@@ -102,15 +90,9 @@ export class DataStorageService {
                     }),
                 ),
         );
-
-        return {
-            data: {
-                rows: data,
-            },
-        };
     }
 
-    async countRows(id: string, token: string) {
+    async countRows(id: string, token: string, factory: string) {
         const body = [
             {
                 assetUUID: id,
@@ -119,52 +101,80 @@ export class DataStorageService {
 
         return await firstValueFrom(
             this.httpService
-                .get(`${this.options.url}/assets/count_rows`, {
+                .get(`${this.prepareUrl(factory)}/tables/count_rows`, {
                     headers: getHeaders(token),
                     params: body,
                 })
                 .pipe(
                     map(async (res) => {
                         return res.data['Number of rows'];
-                        //FIXME: return appropriate value when we have something from data store api
                     }),
-                    // Catch any error occurred during the contract validation
+                    // Catch any error occurred during rows retrieval
                     catchError((error) => {
-                        this.logger.error('Contract validation error:', error);
-                        return of({ error: 'Error occurred during contract validation retrieval' });
+                        this.logger.error('Count rows error:', error);
+                        return of({ error: 'Error occurred during count rows retrieval' });
                     }),
                 ),
         );
     }
 
-    async getColumns(uuid: string): Promise<any> {
-        const body = [
+    async getColumns(uuid: string, token: string, factory: string) {
+        return await fetch(`${this.prepareUrl(factory)}/tables/get_table?asset_uuid=${uuid}&JSON_output=true`,
             {
-                assetType: 'DATASET',
-                assetUUIDs: [uuid],
-            },
-        ];
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            }
+        ).then((res) => res.json())
+            .then((response) => response)
+    }
 
-        return await firstValueFrom(
-            this.httpService
-                .post(
-                    `${this.options.url}/assets/get_tables`,
-                    {
-                        body: body,
+    async transferFile(assetId: string, token: string, consumerPrefix: string, providerPrefix: string) {
+        try {
+            //Fetch the file as a Blob
+            const fileResponse = await fetch(
+                `${this.prepareUrl(providerPrefix)}/files/get_file?asset_uuid=${assetId}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
                     },
-                    { headers: getHeaders('') },
-                )
-                .pipe(
-                    map(async (res) => {
-                        return res.data.data_model;
-                        //FIXME: return appropriate value when we have something from data store api
-                    }),
-                    // Catch any error occurred during the contract validation
-                    catchError((error) => {
-                        this.logger.error('Data Store columns retrieval error:', error);
-                        return of({ error: 'Error occurred during retrieving columns from Data Store' });
-                    }),
-                ),
-        );
+                }
+            );
+
+            if (!fileResponse.ok) {
+                throw new Error(`Error fetching the file: ${fileResponse.statusText}`);
+            }
+
+            //Convert response to Blob
+            const blob = await fileResponse.blob();
+
+            //Create FormData and append the file (blob)
+            const formData = new FormData();
+            formData.append('file', blob, 'filename');
+
+            //POST the file to create a new file
+            const uploadResponse = await fetch(
+                `${this.prepareUrl(consumerPrefix)}/files/create_file`,
+                {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            if (!uploadResponse.ok) {
+                throw new Error(`Error uploading the file: ${uploadResponse.statusText}`);
+            }
+
+            // Parse and return the JSON response
+            const jsonResponse = await uploadResponse.json();
+
+            return jsonResponse;
+        } catch (error) {
+            console.error(`Error during file transfer:${error}`);
+            throw new Error(`Error during file transfer:${error}`)
+        }
     }
 }

@@ -270,6 +270,31 @@ export class FactoriesRegistrantController {
         return this.factoriesService.retrieveFactory(factoryId);
     }
 
+    @Get('/name/:factoryName')
+    @ApiOkResponse({
+        description: 'Factory',
+        schema: {
+            example: {
+                id: '768004e7-33b1-4248-bafe-04688f49f161',
+                organizationName: 'TestOrg',
+                organizationId: '8aff8e9b-1322-4395-a53e-c445d159eb80',
+                ip: '192.168.1.1',
+                country: 'Greece',
+                status: 'live',
+                isAccepted: false,
+                isActive: false,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+        },
+    })
+    async findFactoryInfoByPrefix(
+        @Param('factoryName') factoryName: string,
+    ): Promise<FactoriesRegistrant> {
+        return this.factoriesService.retrieveFactoryByPrefix(factoryName);
+    }
+
+
     @Put('set-ip')
     @ApiOkResponse({
         description: 'Factory update',

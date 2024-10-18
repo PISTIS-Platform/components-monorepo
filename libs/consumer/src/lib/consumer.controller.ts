@@ -1,9 +1,10 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Body, Controller, Param, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiNotFoundResponse, ApiOkResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { AuthToken, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
 import { AuthenticatedUser } from 'nest-keycloak-connect';
 
 import { ConsumerService } from './consumer.service';
+import { RetrieveDataDTO } from './retrieveData.dto';
 
 @Controller('consumer')
 @ApiTags('consumer')
@@ -27,20 +28,19 @@ import { ConsumerService } from './consumer.service';
     },
 })
 export class ConsumerController {
-    constructor(private readonly consumerService: ConsumerService) {}
+    constructor(private readonly consumerService: ConsumerService) { }
 
-    @Get('/retrieve/:contractId/:assetId')
+    @Post('/retrieve/:assetId')
     @ApiOkResponse({
         description: 'Consumer response',
         schema: { example: { asset_uuid: 'ae755a90-b7bc-4c28-bfc8-7a4fb247328b', message: 'Table created' } },
     })
     async retrieveData(
         @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
-        @Param('contractId') contractId: string,
         @Param('assetId') assetId: string,
+        @Body() data: RetrieveDataDTO,
         @AuthToken() token: string,
     ) {
-        //FIXME: change types in variables when we have actual results
-        return await this.consumerService.retrieveData(contractId, assetId, user.id, token);
+        return await this.consumerService.retrieveData(assetId, user, token, data);
     }
 }

@@ -2,6 +2,7 @@ import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { HttpModule } from '@nestjs/axios';
 import { DynamicModule, Module } from '@nestjs/common';
 import { DataStorageModule } from '@pistis/data-storage';
+import { MetadataRepositoryModule } from '@pistis/metadata-repository';
 
 import { AssetRetrievalInfo } from './asset-retrieval-info.entity';
 import { ConsumerController } from './consumer.controller';
@@ -21,7 +22,8 @@ import { ConsumerService } from './consumer.service';
 export class ConsumerModule extends ConfigurableModuleClass {
     static register(options: typeof CONSUMER_OPTIONS_TYPE): DynamicModule {
         return {
-            imports: [DataStorageModule.register({ url: options.dataStorageUrl })],
+            imports: [DataStorageModule.register({ url: options.dataStorageUrl }), MetadataRepositoryModule.register({ url: options.metadataRepositoryUrl }),],
+
             ...super.register(options),
         };
     }
@@ -38,6 +40,15 @@ export class ConsumerModule extends ConfigurableModuleClass {
                     const options: any = asyncOptions.useFactory ? asyncOptions.useFactory(config) : {};
 
                     return { url: options.dataStorageUrl };
+                },
+            }),
+            MetadataRepositoryModule.registerAsync({
+                imports: asyncOptions?.imports,
+                inject: asyncOptions?.inject,
+                useFactory: (config: typeof asyncOptions.inject) => {
+                    const options: any = asyncOptions.useFactory ? asyncOptions.useFactory(config) : {};
+
+                    return { url: options.metadataRepositoryUrl };
                 },
             }),
         ];
