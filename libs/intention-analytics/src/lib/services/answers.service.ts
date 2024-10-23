@@ -18,7 +18,7 @@ export class AnswersService {
         @Inject(INTENSION_ANALYTICS_MODULE_OPTIONS) private options: IntensionAnalyticsModuleOptions,
         private readonly blockchainService: BlockchainService,
         private readonly httpService: HttpService,
-    ) {}
+    ) { }
 
     async findActiveVersion(isForVerifiedBuyers: boolean) {
         return this.questionnaireRepo.findOneOrFail(
@@ -40,14 +40,15 @@ export class AnswersService {
     }
 
     async getUserQuestionnaire(assetId: string, token: string, userId: string) {
-        let questionnaire;
-        const assetCheck = await this.blockchainService.isContractValid(assetId, token);
 
-        if (assetCheck.id) {
-            questionnaire = await this.findActiveVersion(true);
-        } else {
-            questionnaire = await this.findActiveVersion(false);
-        }
+        //TODO: Remove this validation 
+        // const assetCheck = await this.blockchainService.isContractValid(assetId, token);
+
+        // if (assetCheck.id) {
+        const questionnaire = await this.findActiveVersion(true);
+        // } else {
+        //     questionnaire = await this.findActiveVersion(false);
+        // }
 
         const answers = await this.answersRepo.findOne({
             assetId: assetId,
