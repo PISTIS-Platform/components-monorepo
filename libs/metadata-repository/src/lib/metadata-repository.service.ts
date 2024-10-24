@@ -14,37 +14,50 @@ export class MetadataRepositoryService {
     ) { }
 
     async retrieveMetadata(assetId: string) {
-        return await firstValueFrom(
-            this.httpService
-                .get(`https://pistis-market.eu/srv/search/datasets/${assetId}`)
-                .pipe(
-                    map((res) => {
-                        return res.data.result
-                    }),
-                    catchError((error) => {
-                        this.logger.error('Metadata retrieval error:', error);
-                        return of({ error: 'Error occurred during metadata retrieval' });
-                    }),
-                ),
-        );
+        let metadata;
+        try {
+            metadata = await firstValueFrom(
+                this.httpService
+                    .get(`https://pistis-market.eu/srv/search/datasets/${assetId}`)
+                    .pipe(
+                        map((res) => {
+                            return res.data.result
+                        }),
+                        catchError((error) => {
+                            this.logger.error('Metadata retrieval error:', error);
+                            return of({ error: 'Error occurred during metadata retrieval' });
+                        }),
+                    ),
+            );
+        } catch (err) {
+            this.logger.error('Metadata retrieval from cloud error:', err)
+        }
+        return metadata
     }
 
     async retrieveCatalog(catalogId: string, factoryPrefix: string, token: string) {
-        return await fetch(`https://${factoryPrefix}.pistis-market.eu/srv/repo/catalogues/${catalogId}`, {
-            headers: {
-                'Content-Type': 'text/turtle',
-                Authorization: `Bearer ${token}`
-            }
-        }).then((res) => {
-            if (!res.ok) {
-                throw new Error(`Error fetching the catalog: ${res.statusText}`);
-            }
-            return res.json()
-        })
-            .then((response) => response)
+        let catalog;
+        try {
+            catalog = await fetch(`https://${factoryPrefix}.pistis-market.eu/srv/repo/catalogues/${catalogId}`, {
+                headers: {
+                    'Content-Type': 'text/turtle',
+                    Authorization: `Bearer ${token}`
+                }
+            }).then((res) => {
+                if (!res.ok) {
+                    throw new Error(`Error fetching the catalog: ${res.statusText}`);
+                }
+                return res.json()
+            })
+                .then((response) => response)
+        } catch (err) {
+            this.logger.error('Factory catalog retrieval error:', err)
+        }
+        return catalog
     }
 
     async createMetadata(metadata: any, catalogId: string, factoryPrefix: string, token: string) {
+        let newMetadata;
         const rdfData = `
             @prefix dcat:                <http://www.w3.org/ns/dcat#> .
             @prefix dct:                 <http://purl.org/dc/terms/> .
@@ -81,22 +94,27 @@ export class MetadataRepositoryService {
                 dcat:byteSize  "${metadata.distributions[1].byte_size}"^^xsd:decimal ;
                 dcat:accessURL <${metadata.distributions[1].access_url[0]}> .
         `
-        return await firstValueFrom(
-            this.httpService.post(`https://${factoryPrefix}.pistis-market.eu/srv/repo/catalogues/${catalogId}/datasets`, rdfData, {
-                headers: {
-                    "Content-Type": "text/turtle",
-                    Authorization: `Bearer ${token}`
-                }
-            }).pipe(
-                map((res) => {
-                    return res
-                }),
-                catchError((error) => {
-                    this.logger.error('Metadata retrieval error:', error);
-                    return of({ error: 'Error occurred during metadata retrieval' });
-                }),
-            ),
-        );
+        try {
+            newMetadata = await firstValueFrom(
+                this.httpService.post(`https://${factoryPrefix}.pistis-market.eu/srv/repo/catalogues/${catalogId}/datasets`, rdfData, {
+                    headers: {
+                        "Content-Type": "text/turtle",
+                        Authorization: `Bearer ${token}`
+                    }
+                }).pipe(
+                    map((res) => {
+                        return res
+                    }),
+                    catchError((error) => {
+                        this.logger.error('Metadata retrieval error:', error);
+                        return of({ error: 'Error occurred during metadata retrieval' });
+                    }),
+                ),
+            );
+        } catch (err) {
+            this.logger.error('Metadata creation error:', err)
+        }
+        return newMetadata;
     }
 
     async createCatalog(catalogId: string, factory: any, token: string) {

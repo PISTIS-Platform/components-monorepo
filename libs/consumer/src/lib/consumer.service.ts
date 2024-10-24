@@ -24,7 +24,7 @@ export class ConsumerService {
         private readonly dataStorageService: DataStorageService,
         @Inject(CONSUMER_MODULE_OPTIONS) private options: ConsumerModuleOptions,
         private readonly metadataRepositoryService: MetadataRepositoryService,
-    ) {}
+    ) { }
 
     async retrieveData(assetId: string, user: UserInfo, token: string, data: RetrieveDataDTO) {
         let factory: any;
@@ -63,6 +63,8 @@ export class ConsumerService {
 
         // Flatten the JSON-LD document and assign new values in metadata catalog
         const flattened = await jsonld.flatten(catalog);
+        this.logger.debug('---------------------Flattened string------------------')
+        this.logger.debug(flattened)
         const descKey = flattened[0]['http://purl.org/dc/terms/description'][0]['@language'];
         const descValue = flattened[0]['http://purl.org/dc/terms/description'][0]['@value'];
 
@@ -75,6 +77,8 @@ export class ConsumerService {
         metadata.catalog.creator.resource = flattened[1]['http://xmlns.com/foaf/0.1/name'][0]['@value'];
         metadata.catalog.creator.name = flattened[0]['http://purl.org/dc/terms/creator'][0]['@id'];
         metadata.catalog.title.en = flattened[1]['http://xmlns.com/foaf/0.1/name'][0]['@value'];
+        this.logger.debug('---------------------Metadata------------------')
+        this.logger.debug(metadata)
         try {
             providerFactory = await this.retrieveProviderFactory(data.assetFactory, token);
         } catch (err) {
