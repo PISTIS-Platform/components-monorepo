@@ -77,6 +77,8 @@ export class ConsumerService {
         metadata.catalog.creator.resource = flattened[1]['http://xmlns.com/foaf/0.1/name'][0]['@value'];
         metadata.catalog.creator.name = flattened[0]['http://purl.org/dc/terms/creator'][0]['@id'];
         metadata.catalog.title.en = flattened[1]['http://xmlns.com/foaf/0.1/name'][0]['@value'];
+
+
         this.logger.debug('---------------------Metadata------------------')
         this.logger.debug(metadata)
         try {

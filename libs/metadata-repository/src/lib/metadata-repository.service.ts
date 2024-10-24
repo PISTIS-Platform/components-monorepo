@@ -49,7 +49,7 @@ export class MetadataRepositoryService {
                 }
                 return res.json()
             })
-                .then((response) => response)
+                .then((response) => response["@graph"])
         } catch (err) {
             this.logger.error('Factory catalog retrieval error:', err)
         }
