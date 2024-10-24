@@ -65,18 +65,19 @@ export class ConsumerService {
         const flattened = await jsonld.flatten(catalog);
         this.logger.debug('---------------------Flattened string------------------')
         this.logger.debug(flattened)
-        const descKey = flattened[0]['http://purl.org/dc/terms/description'][0]['@language'];
-        const descValue = flattened[0]['http://purl.org/dc/terms/description'][0]['@value'];
+
+        const descKey = flattened[0]['dct:description'][0]['@language'];
+        const descValue = flattened[0]['dct:description'][0]['@value'];
 
         metadata.catalog.description = { [descKey]: descValue };
         metadata.catalog.id = this.options.catalogId;
-        metadata.catalog.modified = flattened[0]['http://purl.org/dc/terms/modified'][0]['@value'];
-        metadata.catalog.issued = flattened[0]['http://purl.org/dc/terms/issued'][0]['@value'];
-        metadata.catalog.language[0].resource = flattened[0]['http://purl.org/dc/terms/language'][0]['@id'];
-        metadata.catalog.homepage = flattened[0]['http://xmlns.com/foaf/0.1/homepage'][0]['@id'];
-        metadata.catalog.creator.resource = flattened[1]['http://xmlns.com/foaf/0.1/name'][0]['@value'];
-        metadata.catalog.creator.name = flattened[0]['http://purl.org/dc/terms/creator'][0]['@id'];
-        metadata.catalog.title.en = flattened[1]['http://xmlns.com/foaf/0.1/name'][0]['@value'];
+        metadata.catalog.modified = flattened[0]['dct:description'][0]['@value'];
+        metadata.catalog.issued = flattened[0]['dct:issued'][0]['@value'];
+        metadata.catalog.language[0].resource = flattened[0]['dct:language'][0]['@id'];
+        metadata.catalog.homepage = flattened[0]['foaf:homepage'][0]['@id'];
+        metadata.catalog.creator.name = flattened[1]['foaf:name'][0]['@value'];
+        metadata.catalog.creator.resource = flattened[0]['dct:creator'][0]['@id'];
+        metadata.catalog.title.en = flattened[0]['dct:title'][0]['@value'];
 
 
         this.logger.debug('---------------------Metadata------------------')
