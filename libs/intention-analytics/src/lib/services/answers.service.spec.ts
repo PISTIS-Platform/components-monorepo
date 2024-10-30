@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 
 import { CreateAnswerDto } from '../dto/create-answer.dto';
 import { AnswersService } from './answers.service';
@@ -23,6 +23,7 @@ describe('QuestionnaireService', () => {
         answersRepo = {
             create: jest.fn(),
             find: jest.fn(),
+            findOne: jest.fn(),
             getEntityManager: jest.fn().mockReturnValue({
                 persistAndFlush: () => jest.fn(),
             }),
@@ -209,5 +210,92 @@ describe('QuestionnaireService', () => {
                 fields: ['responses'],
             },
         );
+    });
+
+    it('should return active questionnaire for user for verified buyers', async () => {
+        const questionnaire = {
+            id: '1',
+            version: 3,
+            isActive: true,
+            isForVerifiedBuyers: true,
+        };
+        const assetId = '100';
+        const userId = '100';
+
+        jest.spyOn(questionnaireRepo, 'findOneOrFail').mockResolvedValue(questionnaire);
+        const answers = null;
+        jest.spyOn(answersRepo, 'findOne').mockResolvedValue(answers);
+
+        expect(await service.getUserQuestionnaire(assetId, userId, true)).toEqual(questionnaire);
+
+        expect(questionnaireRepo.findOneOrFail).toHaveBeenCalledTimes(1);
+        expect(answersRepo.findOne).toHaveBeenCalledWith({
+            assetId,
+            userId,
+            questionnaire: {
+                id: questionnaire.id,
+                version: questionnaire.version,
+            },
+        });
+    });
+
+    it('should return active questionnaire for user for general users', async () => {
+        const questionnaire = {
+            id: '1',
+            version: 3,
+            isActive: true,
+            isForVerifiedBuyers: false,
+        };
+        const assetId = '100';
+        const userId = '100';
+
+        jest.spyOn(questionnaireRepo, 'findOneOrFail').mockResolvedValue(questionnaire);
+        const answers = null;
+        jest.spyOn(answersRepo, 'findOne').mockResolvedValue(answers);
+
+        expect(await service.getUserQuestionnaire(assetId, userId, false)).toEqual(questionnaire);
+
+        expect(questionnaireRepo.findOneOrFail).toHaveBeenCalledTimes(1);
+        expect(answersRepo.findOne).toHaveBeenCalledWith({
+            assetId,
+            userId,
+            questionnaire: {
+                id: questionnaire.id,
+                version: questionnaire.version,
+            },
+        });
+    });
+
+    it('should throw exception when getting a user questionnaire for an asset that has answers', async () => {
+        const questionnaire = {
+            id: '1',
+            version: 3,
+            isActive: true,
+            isForVerifiedBuyers: false,
+        };
+        const assetId = '100';
+        const userId = '100';
+
+        jest.spyOn(questionnaireRepo, 'findOneOrFail').mockResolvedValue(questionnaire);
+
+        const answers = [{ id: '123' }];
+        jest.spyOn(answersRepo, 'findOne').mockResolvedValue(answers);
+
+        try {
+            await service.getUserQuestionnaire(assetId, userId, true);
+        } catch (e) {
+            expect(e).toBeInstanceOf(BadRequestException);
+            expect((e as BadRequestException).message).toBe('You have already submitted answers for this asset');
+
+            expect(questionnaireRepo.findOneOrFail).toHaveBeenCalledTimes(1);
+            expect(answersRepo.findOne).toHaveBeenCalledWith({
+                assetId,
+                userId,
+                questionnaire: {
+                    id: questionnaire.id,
+                    version: questionnaire.version,
+                },
+            });
+        }
     });
 });

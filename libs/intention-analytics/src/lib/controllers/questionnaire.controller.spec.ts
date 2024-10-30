@@ -1,3 +1,5 @@
+import { UserInfo } from '@pistis/shared';
+
 import { QuestionType } from '../constants';
 import { CreateAnswerDto } from '../dto/create-answer.dto';
 import { CreateQuestionnaireDto } from '../dto/create-questionnaire.dto';
@@ -8,6 +10,7 @@ describe('QuestionnaireController', () => {
     let questionnairesService: any;
     let answersService: any;
     let versions: any[];
+    let authUser: UserInfo;
 
     beforeEach(async () => {
         questionnairesService = {
@@ -23,6 +26,7 @@ describe('QuestionnaireController', () => {
             findActiveVersion: () => jest.fn(),
             submitAnswers: () => jest.fn(),
             getAnswers: () => jest.fn(),
+            getUserQuestionnaire: () => jest.fn(),
         };
 
         controller = new QuestionnaireController(questionnairesService, answersService);
@@ -61,6 +65,11 @@ describe('QuestionnaireController', () => {
                 publicationDate: null,
             },
         ];
+
+        authUser = {
+            id: '1',
+            organizationId: '1234',
+        };
     });
 
     afterEach(() => {
@@ -190,13 +199,39 @@ describe('QuestionnaireController', () => {
         };
 
         const createdAnswer = { id: 1 };
-        const authUser = { id: '1' };
 
         jest.spyOn(answersService, 'submitAnswers').mockResolvedValue(createdAnswer);
         expect(await controller.submitAnswers(authUser, questionnaire.id, questionnaire.version, answersDto)).toBe(
             createdAnswer,
         );
 
-        expect(answersService.submitAnswers).toHaveBeenCalledWith(questionnaire.id, questionnaire.version, answersDto, authUser.id);
+        expect(answersService.submitAnswers).toHaveBeenCalledWith(
+            questionnaire.id,
+            questionnaire.version,
+            answersDto,
+            authUser.id,
+        );
+    });
+
+    it('should return active version for answering questionnaire for verified buyers', async () => {
+        const activeVersionForVerifiedBuyers = versions[0];
+        const assetId = '100';
+
+        jest.spyOn(answersService, 'getUserQuestionnaire').mockResolvedValue(activeVersionForVerifiedBuyers);
+        expect(await controller.getUserQuestionnaireVerifiedBuyers(assetId, authUser)).toBe(
+            activeVersionForVerifiedBuyers,
+        );
+
+        expect(answersService.getUserQuestionnaire).toHaveBeenCalledWith(assetId, authUser.id, true);
+    });
+
+    it('should return active version for answering questionnaire for general users', async () => {
+        const activeVersionForGeneralUsers = versions[3];
+        const assetId = '100';
+
+        jest.spyOn(answersService, 'getUserQuestionnaire').mockResolvedValue(activeVersionForGeneralUsers);
+        expect(await controller.getUserQuestionnaireGeneralUsers(assetId, authUser)).toBe(activeVersionForGeneralUsers);
+
+        expect(answersService.getUserQuestionnaire).toHaveBeenCalledWith(assetId, authUser.id, false);
     });
 });

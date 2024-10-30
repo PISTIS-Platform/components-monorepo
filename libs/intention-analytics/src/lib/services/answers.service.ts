@@ -1,13 +1,9 @@
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityRepository } from '@mikro-orm/postgresql';
-import { HttpService } from '@nestjs/axios';
-import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
-import { BlockchainService } from '@pistis/blockchain';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 
 import { CreateAnswerDto } from '../dto/create-answer.dto';
 import { Answer, Questionnaire } from '../entities';
-import { INTENSION_ANALYTICS_MODULE_OPTIONS } from '../intension-analytics.module-definition';
-import { IntensionAnalyticsModuleOptions } from '../intension-analytics-module-options.interface';
 
 @Injectable()
 export class AnswersService {
@@ -15,10 +11,7 @@ export class AnswersService {
     constructor(
         @InjectRepository(Answer) private readonly answersRepo: EntityRepository<Answer>,
         @InjectRepository(Questionnaire) private readonly questionnaireRepo: EntityRepository<Questionnaire>,
-        @Inject(INTENSION_ANALYTICS_MODULE_OPTIONS) private options: IntensionAnalyticsModuleOptions,
-        private readonly blockchainService: BlockchainService,
-        private readonly httpService: HttpService,
-    ) { }
+    ) {}
 
     async findActiveVersion(isForVerifiedBuyers: boolean) {
         return this.questionnaireRepo.findOneOrFail(
@@ -39,16 +32,8 @@ export class AnswersService {
         );
     }
 
-    async getUserQuestionnaire(assetId: string, token: string, userId: string) {
-
-        //TODO: Remove this validation 
-        // const assetCheck = await this.blockchainService.isContractValid(assetId, token);
-
-        // if (assetCheck.id) {
-        const questionnaire = await this.findActiveVersion(true);
-        // } else {
-        //     questionnaire = await this.findActiveVersion(false);
-        // }
+    async getUserQuestionnaire(assetId: string, userId: string, forVerifiedBuyers: boolean) {
+        const questionnaire = await this.findActiveVersion(forVerifiedBuyers);
 
         const answers = await this.answersRepo.findOne({
             assetId: assetId,

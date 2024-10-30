@@ -19,7 +19,7 @@ import {
     ApiTags,
     ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { ADMIN_ROLE, AuthToken, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
+import { ADMIN_ROLE, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
 import { AuthenticatedUser, Roles } from 'nest-keycloak-connect';
 
 import { CreateAnswerDto } from '../dto/create-answer.dto';
@@ -76,7 +76,7 @@ export class QuestionnaireController {
         return this.questionnairesService.getVersions();
     }
 
-    @Get(':assetId/active-questionnaire')
+    @Get(':assetId/active-questionnaire/verified-buyers')
     @ApiResponse({
         description: 'User questionnaires',
         schema: {
@@ -107,12 +107,49 @@ export class QuestionnaireController {
         },
         status: 200,
     })
-    async getUserQuestionnaires(
+    async getUserQuestionnaireVerifiedBuyers(
         @Param('assetId') assetId: string,
         @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
-        @AuthToken() token: string,
     ) {
-        return await this.answersService.getUserQuestionnaire(assetId, token, user.id);
+        return await this.answersService.getUserQuestionnaire(assetId, user.id, true);
+    }
+
+    @Get(':assetId/active-questionnaire/general-users')
+    @ApiResponse({
+        description: 'User questionnaires',
+        schema: {
+            example: {
+                id: 'e96f396b-10ba-4164-96be-e432056e2114',
+                version: '9',
+                title: 'User questionnaires',
+                description: 'test description',
+                questions: [
+                    {
+                        id: '16e15fa3-f745-4b7f-8953-91969209c96a',
+                        type: 'Checkbox',
+                        title: 'Checkbox question',
+                        isRequired: true,
+                        options: [
+                            {
+                                text: 'Text 1',
+                                description: 'Description 1',
+                            },
+                            {
+                                text: 'Text 2',
+                                description: 'Description 2',
+                            },
+                        ],
+                    },
+                ],
+            },
+        },
+        status: 200,
+    })
+    async getUserQuestionnaireGeneralUsers(
+        @Param('assetId') assetId: string,
+        @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
+    ) {
+        return await this.answersService.getUserQuestionnaire(assetId, user.id, false);
     }
 
     @Get('active-version/verified-buyers')
