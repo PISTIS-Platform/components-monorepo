@@ -183,7 +183,7 @@ export class ConsumerService {
                 ),
         );
         */
-        return newAssetMetadata;
+        return { message: `Asset id: ${assetId} successfully transferred` }
     }
 
     async getDataFromProvider(
