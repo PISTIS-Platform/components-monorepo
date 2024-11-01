@@ -145,7 +145,7 @@ export class FactoriesRegistrantService {
         };
         return firstValueFrom(
             this.httpService
-                .post(`${this.options.notificationsUrl}/notifications`, notification, {
+                .post(`${this.options.notificationsUrl}/srv/notifications/api/notifications`, notification, {
                     headers: getHeaders(token),
                 })
                 .pipe(
@@ -198,7 +198,7 @@ export class FactoriesRegistrantService {
         };
         return firstValueFrom(
             this.httpService
-                .post(`${this.options.notificationsUrl}/notifications`, notification, {
+                .post(`${this.options.notificationsUrl}/srv/notifications/api/notifications`, notification, {
                     headers: getHeaders(token),
                 })
                 .pipe(
@@ -262,7 +262,7 @@ export class FactoriesRegistrantService {
         };
         await firstValueFrom(
             this.httpService
-                .post(`${this.options.notificationsUrl}/notifications`, notification, {
+                .post(`${this.options.notificationsUrl}/srv/notifications/api/notifications`, notification, {
                     headers: getHeaders(token),
                 })
                 .pipe(
@@ -411,7 +411,7 @@ export class FactoriesRegistrantService {
         };
         await firstValueFrom(
             this.httpService
-                .post(`${this.options.notificationsUrl}/notifications`, notification, {
+                .post(`${this.options.notificationsUrl}/srv/notifications/api/notifications`, notification, {
                     headers: getHeaders(token),
                 })
                 .pipe(

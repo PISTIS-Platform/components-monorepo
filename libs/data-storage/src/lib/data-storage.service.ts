@@ -12,7 +12,7 @@ export class DataStorageService {
         // @Inject(MODULE_OPTIONS_TOKEN) private options: DataStorageModuleOptions,
     ) { }
 
-    private async prepareUrl(factory: string) {
+    private prepareUrl(factory: string) {
         return `https://${factory}.pistis-market.eu/srv/factory-data-storage/api`
     }
 

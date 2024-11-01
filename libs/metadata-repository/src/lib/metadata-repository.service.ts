@@ -8,31 +8,30 @@ import { MetadataRepositoryModuleOptions } from './metadata-repository-options.i
 @Injectable()
 export class MetadataRepositoryService {
     private readonly logger = new Logger(MetadataRepositoryService.name);
+
     constructor(
         private readonly httpService: HttpService,
         @Inject(MODULE_OPTIONS_TOKEN) private options: MetadataRepositoryModuleOptions,
-    ) { }
+    ) {}
 
     async retrieveMetadata(assetId: string) {
         let metadata;
         try {
             metadata = await firstValueFrom(
-                this.httpService
-                    .get(`https://pistis-market.eu/srv/search/datasets/${assetId}`)
-                    .pipe(
-                        map((res) => {
-                            return res.data.result
-                        }),
-                        catchError((error) => {
-                            this.logger.error('Metadata retrieval error:', error);
-                            return of({ error: 'Error occurred during metadata retrieval' });
-                        }),
-                    ),
+                this.httpService.get(`https://pistis-market.eu/srv/search/datasets/${assetId}`).pipe(
+                    map((res) => {
+                        return res.data.result;
+                    }),
+                    catchError((error) => {
+                        this.logger.error('Metadata retrieval error:', error);
+                        return of({ error: 'Error occurred during metadata retrieval' });
+                    }),
+                ),
             );
         } catch (err) {
-            this.logger.error('Metadata retrieval from cloud error:', err)
+            this.logger.error('Metadata retrieval from cloud error:', err);
         }
-        return metadata
+        return metadata;
     }
 
     async retrieveCatalog(catalogId: string, factoryPrefix: string, token: string) {
@@ -41,23 +40,35 @@ export class MetadataRepositoryService {
             catalog = await fetch(`https://${factoryPrefix}.pistis-market.eu/srv/repo/catalogues/${catalogId}`, {
                 headers: {
                     'Content-Type': 'text/turtle',
-                    Authorization: `Bearer ${token}`
-                }
-            }).then((res) => {
-                if (!res.ok) {
-                    throw new Error(`Error fetching the catalog: ${res.statusText}`);
-                }
-                return res.json()
+                    'X-API-Key': '781f8a00-5d83-41eb-b778-5a4927ef477e',
+                    Authorization: `Bearer ${token}`,
+                },
             })
-                .then((response) => response["@graph"])
+                .then((res) => {
+                    if (!res.ok) {
+                        throw new Error(`Error fetching the catalog: ${res.statusText}`);
+                    }
+                    return res.json();
+                })
+                .then((response) => response['@graph']);
         } catch (err) {
-            this.logger.error('Factory catalog retrieval error:', err)
+            this.logger.error('Factory catalog retrieval error:', err);
         }
-        return catalog
+        return catalog;
     }
 
     async createMetadata(metadata: any, catalogId: string, factoryPrefix: string, token: string) {
         let newMetadata;
+
+        const getValue = (key: string, value: string) => {
+            const entry = metadata.distributions.find((item: any) => item[key]);
+            return entry ? (value !== '' ? entry[key][value] : entry[key]) : '';
+        };
+        const getValueLicense = (key: string, value: string) => {
+            const entry = metadata.monetization.find((item: any) => item[key]);
+            return entry ? (value !== '' ? entry[key][value] : entry[key]) : '';
+        };
+
         const rdfData = `
             @prefix dcat:                <http://www.w3.org/ns/dcat#> .
             @prefix dct:                 <http://purl.org/dc/terms/> .
@@ -71,48 +82,61 @@ export class MetadataRepositoryService {
                 a                   dcat:Dataset ;
                 dct:description     "${metadata.description.en}"@en ;
                 dct:title           "${metadata.title.en}"@en ;
-                dcat:keyword        "${metadata.keyword != null ? metadata.keyword.map((keyword: string) => `"${keyword}"@en`).join(', ') : ''}  " ;
-                dct:publisher       [ a     foaf:${metadata.publisher.type} ;
-                                            foaf:mbox <${metadata.publisher.email}> ;
-                                            foaf:name "${metadata.publisher.name}" ; ] ;
+                dcat:keyword        ${
+                    metadata.keywords != null
+                        ? metadata.keywords.map((keyword: any) => `"${keyword.label}"@${keyword.language}`).join(', ')
+                        : ''
+                } ;
+                dct:publisher       [ a     foaf:${getValue('publisher', 'type')} ;
+                                            foaf:mbox <${getValue('publisher', 'email')}> ;
+                                            foaf:name "${getValue('publisher', 'name')}" ; ] ;
                 dcat:theme          <http://publications.europa.eu/resource/authority/data-theme/EDUC> ;
                 dct:language        <http://publications.europa.eu/resource/authority/language/ENG> ;
-                dct:issued          "${metadata.issued}"^^xsd:dateTime ;
-                dct:modified        "${metadata.modified}"^^xsd:dateTime ;
+                dct:issued          "${new Date().toISOString()}"^^xsd:dateTime ;
+                dct:modified        "${new Date().toISOString()}"^^xsd:dateTime ;
                 dcat:distribution   <https://piveau.io/set/distribution/1> .
 
             <https://piveau.io/set/distribution/1>
                 a              dcat:Distribution ;
-                dct:title      "${metadata.distributions[1].title.en}" ;
+                dct:title      "${getValue('title', 'en')}" ;
                 dct:license    [
-                                    dct:identifier "${metadata.distributions[1].license.id}" ;
-                                    dct:title "${metadata.distributions[1].license.label}" ;
-                                    skos:prefLabel "${metadata.distributions[1].license.description}" ;
-                                    skos:exactMatch <${metadata.distributions[1].license.resource}>
+                                    dct:identifier "${getValueLicense('license', 'id')}" ;
+                                    dct:title "${getValueLicense('license', 'label')}" ;
+                                    skos:prefLabel "${getValueLicense('license', 'description')}" ;
+                                    skos:exactMatch <${getValueLicense('license', 'resource')}>
                             ] ;
-                dct:format     <${metadata.distributions[0].format.resource}> ;
-                dcat:byteSize  "${metadata.distributions[1].byte_size}"^^xsd:decimal ;
-                dcat:accessURL <${metadata.distributions[1].access_url[0]}> .
-        `
+                dct:format     <${getValue('format', 'resource')}> ;
+                dcat:byteSize  "${getValue('byte_size', '')}"^^xsd:decimal ;
+                dcat:accessURL <${getValue('access_url', '0')}> .
+        `;
+
         try {
             newMetadata = await firstValueFrom(
-                this.httpService.post(`https://${factoryPrefix}.pistis-market.eu/srv/repo/catalogues/${catalogId}/datasets`, rdfData, {
-                    headers: {
-                        "Content-Type": "text/turtle",
-                        Authorization: `Bearer ${token}`
-                    }
-                }).pipe(
-                    map((res) => {
-                        return res
-                    }),
-                    catchError((error) => {
-                        this.logger.error('Metadata retrieval error:', error);
-                        return of({ error: 'Error occurred during metadata retrieval' });
-                    }),
-                ),
+                this.httpService
+                    .post(
+                        `https://${factoryPrefix}.pistis-market.eu/srv/repo/catalogues/${catalogId}/datasets`,
+                        rdfData,
+                        {
+                            headers: {
+                                'Content-Type': 'text/turtle',
+                                'X-API-Key': '781f8a00-5d83-41eb-b778-5a4927ef477e',
+                                Authorization: `Bearer ${token}`,
+                            },
+                        },
+                    )
+                    .pipe(
+                        map((res) => {
+                            return res;
+                        }),
+                        catchError((error) => {
+                            console.log(error);
+                            this.logger.error('Metadata creation error:', error);
+                            return of({ error: 'Error occurred during creation retrieval' });
+                        }),
+                    ),
             );
         } catch (err) {
-            this.logger.error('Metadata creation error:', err)
+            this.logger.error('Metadata creation error:', err);
         }
         return newMetadata;
     }
@@ -138,22 +162,25 @@ export class MetadataRepositoryService {
         <https://piveau.eu/def/creator>
             a          foaf:Agent;
             foaf:name  "The ${factory.organizationName}" .
-    `
+    `;
         return await firstValueFrom(
-            this.httpService.put(`https://${factory.factoryPrefix}.pistis-market.eu/srv/repo/catalogues/${catalogId}`, rdfData, {
-                headers: {
-                    "Content-Type": "text/turtle",
-                    Authorization: `Bearer ${token}`
-                }
-            }).pipe(
-                map((res) => {
-                    return res
-                }),
-                catchError((error) => {
-                    this.logger.error('Catalog creation error:', error);
-                    return of({ error: 'Error occurred during catalog creation' });
-                }),
-            ),
+            this.httpService
+                .put(`https://${factory.factoryPrefix}.pistis-market.eu/srv/repo/catalogues/${catalogId}`, rdfData, {
+                    headers: {
+                        'Content-Type': 'text/turtle',
+                        'X-API-Key': '781f8a00-5d83-41eb-b778-5a4927ef477e',
+                        Authorization: `Bearer ${token}`,
+                    },
+                })
+                .pipe(
+                    map((res) => {
+                        return res;
+                    }),
+                    catchError((error) => {
+                        this.logger.error('Catalog creation error:', error);
+                        return of({ error: 'Error occurred during catalog creation' });
+                    }),
+                ),
         );
     }
 }
