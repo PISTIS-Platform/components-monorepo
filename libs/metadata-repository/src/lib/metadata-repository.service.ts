@@ -12,7 +12,7 @@ export class MetadataRepositoryService {
     constructor(
         private readonly httpService: HttpService,
         @Inject(MODULE_OPTIONS_TOKEN) private options: MetadataRepositoryModuleOptions,
-    ) {}
+    ) { }
 
     async retrieveMetadata(assetId: string) {
         let metadata;
@@ -82,11 +82,10 @@ export class MetadataRepositoryService {
                 a                   dcat:Dataset ;
                 dct:description     "${metadata.description.en}"@en ;
                 dct:title           "${metadata.title.en}"@en ;
-                dcat:keyword        ${
-                    metadata.keywords != null
-                        ? metadata.keywords.map((keyword: any) => `"${keyword.label}"@${keyword.language}`).join(', ')
-                        : ''
-                } ;
+                dcat:keyword        ${metadata.keywords != null
+                ? metadata.keywords.map((keyword: any) => `"${keyword.label}"@${keyword.language}`).join(', ')
+                : ''
+            } ;
                 dct:publisher       [ a     foaf:${getValue('publisher', 'type')} ;
                                             foaf:mbox <${getValue('publisher', 'email')}> ;
                                             foaf:name "${getValue('publisher', 'name')}" ; ] ;
@@ -129,7 +128,6 @@ export class MetadataRepositoryService {
                             return res;
                         }),
                         catchError((error) => {
-                            console.log(error);
                             this.logger.error('Metadata creation error:', error);
                             return of({ error: 'Error occurred during creation retrieval' });
                         }),

@@ -36,8 +36,8 @@ export class ConsumerModule extends ConfigurableModuleClass {
             DataStorageModule.registerAsync({
                 imports: asyncOptions?.imports,
                 inject: asyncOptions?.inject,
-                useFactory: (config: typeof asyncOptions.inject) => {
-                    const options: any = asyncOptions.useFactory ? asyncOptions.useFactory(config) : {};
+                useFactory: async (config: typeof asyncOptions.inject) => {
+                    const options: any = asyncOptions.useFactory ? await asyncOptions.useFactory(config) : {};
 
                     return { url: options.dataStorageUrl };
                 },
@@ -45,8 +45,8 @@ export class ConsumerModule extends ConfigurableModuleClass {
             MetadataRepositoryModule.registerAsync({
                 imports: asyncOptions?.imports,
                 inject: asyncOptions?.inject,
-                useFactory: (config: typeof asyncOptions.inject) => {
-                    const options: any = asyncOptions.useFactory ? asyncOptions.useFactory(config) : {};
+                useFactory: async (config: typeof asyncOptions.inject) => {
+                    const options: any = asyncOptions.useFactory ? await asyncOptions.useFactory(config) : {};
 
                     return { url: options.metadataRepositoryUrl };
                 },

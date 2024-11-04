@@ -1,6 +1,6 @@
 import { EntityRepository } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
-import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { Notification } from './notification.entity';
@@ -12,9 +12,9 @@ export class NotificationService {
     constructor(
         @InjectRepository(Notification)
         private readonly repo: EntityRepository<Notification>,
-    ) {}
+    ) { }
 
-    async create(data: CreateNotificationDto, userId: string): Promise<Notification> {
+    async create(data: CreateNotificationDto): Promise<Notification> {
         const notification = this.repo.create(data);
 
         await this.repo.getEntityManager().persistAndFlush(notification);

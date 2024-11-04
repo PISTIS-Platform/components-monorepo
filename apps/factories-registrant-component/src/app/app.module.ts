@@ -33,6 +33,9 @@ import { AppConfig, IFactoryConfig } from './app.config';
             useFactory: async (options: IFactoryConfig) => ({
                 notificationsUrl: options.notificationsUrl,
                 identityAccessManagementUrl: options.identityAccessManagementUrl,
+                clientId: options.keycloak.clientId,
+                secret: options.keycloak.clientSecret,
+                authServerUrl: options.keycloak.url,
             }),
             inject: [AppConfig.KEY],
         }),

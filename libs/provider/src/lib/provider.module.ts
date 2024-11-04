@@ -38,8 +38,8 @@ export class ProviderModule extends ConfigurableModuleClass {
             DataStorageModule.registerAsync({
                 imports: asyncOptions?.imports,
                 inject: asyncOptions?.inject,
-                useFactory: (config: typeof asyncOptions.inject) => {
-                    const options: any = asyncOptions.useFactory ? asyncOptions.useFactory(config) : {};
+                useFactory: async (config: typeof asyncOptions.inject) => {
+                    const options: any = asyncOptions.useFactory ? await asyncOptions.useFactory(config) : {};
 
                     return { url: options.dataStorageUrl };
                 },
@@ -47,8 +47,8 @@ export class ProviderModule extends ConfigurableModuleClass {
             BlockchainModule.registerAsync({
                 imports: asyncOptions?.imports,
                 inject: asyncOptions?.inject,
-                useFactory: (config: typeof asyncOptions.inject) => {
-                    const options: any = asyncOptions.useFactory ? asyncOptions.useFactory(config) : {};
+                useFactory: async (config: typeof asyncOptions.inject) => {
+                    const options: any = asyncOptions.useFactory ? await asyncOptions.useFactory(config) : {};
 
                     return { url: options.blockchainUrl };
                 },
@@ -56,8 +56,8 @@ export class ProviderModule extends ConfigurableModuleClass {
             MetadataRepositoryModule.registerAsync({
                 imports: asyncOptions?.imports,
                 inject: asyncOptions?.inject,
-                useFactory: (config: typeof asyncOptions.inject) => {
-                    const options: any = asyncOptions.useFactory ? asyncOptions.useFactory(config) : {};
+                useFactory: async (config: typeof asyncOptions.inject) => {
+                    const options: any = asyncOptions.useFactory ? await asyncOptions.useFactory(config) : {};
 
                     return { url: options.metadataRepositoryUrl };
                 },

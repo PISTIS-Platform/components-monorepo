@@ -32,7 +32,7 @@ export const AppConfig = registerAs(
             clientSecret: process.env.KC_CLIENT_SECRET,
         },
         dataStorageUrl: process.env.DATA_STORE_URL,
-        notificationsUrl: process.env.NOTIFICATIONS_URL,
+        notificationsUrl: process.env.CLOUD_URL,
         factoryRegistryUrl: process.env.FACTORY_REGISTRY_URL,
         blockchainUrl: process.env.BLOCKCHAIN_URL,
         metadataRepositoryUrl: process.env.METADATA_REPOSITORY_URL,

@@ -7,4 +7,7 @@ export interface ConsumerModuleOptions {
     catalogId: string;
     catalogKey: string;
     catalogUrl: string;
+    clientId: string;
+    secret: string;
+    authServerUrl: string;
 }

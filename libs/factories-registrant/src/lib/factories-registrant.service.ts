@@ -7,7 +7,7 @@ import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
-import { catchError, firstValueFrom, lastValueFrom, map, mergeMap, of, toArray } from 'rxjs';
+import { catchError, firstValueFrom, lastValueFrom, map, mergeMap, of, tap, toArray } from 'rxjs';
 
 import { CreateFactoryDTO, UpdateFactoryDTO, UpdateFactoryIpDTO } from './dto';
 import { ClientInfo } from './entities';
@@ -97,7 +97,7 @@ export class FactoriesRegistrantService {
         factoryId: string,
         token: string,
         userId: string,
-    ): Promise<{ message: string } | { error: string }> {
+    ) {
         //Search db if factory exist
         const factory = await this.repo.findOneOrFail({ id: factoryId });
 
@@ -143,30 +143,14 @@ export class FactoriesRegistrantService {
             type: 'factory_activated',
             message: 'Factory activated',
         };
-        return firstValueFrom(
-            this.httpService
-                .post(`${this.options.notificationsUrl}/srv/notifications/api/notifications`, notification, {
-                    headers: getHeaders(token),
-                })
-                .pipe(
-                    //If not an error from call admin receive the message below
-                    map(() => {
-                        return { message: 'Notification created' };
-                    }),
-                    // Catch any error occurred during the notification creation
-                    catchError((error) => {
-                        this.logger.error('Client activation error:', error);
-                        return of({ error: 'Error occurred during Client activation' });
-                    }),
-                ),
-        );
+        return await this.notifications(notification);
     }
 
     async suspendFactory(
         factoryId: string,
         token: string,
         userId: string,
-    ): Promise<{ message: string } | { error: string }> {
+    ) {
         //Search db if factory exist
         const factory = await this.repo.findOneOrFail({ id: factoryId });
 
@@ -196,23 +180,7 @@ export class FactoriesRegistrantService {
             type: 'factory_suspended',
             message: 'Factory suspended',
         };
-        return firstValueFrom(
-            this.httpService
-                .post(`${this.options.notificationsUrl}/srv/notifications/api/notifications`, notification, {
-                    headers: getHeaders(token),
-                })
-                .pipe(
-                    //If not an error from call admin receive the message below
-                    map(() => {
-                        return { message: 'Notification created' };
-                    }),
-                    // Catch any error occurred during the notification creation
-                    catchError((error) => {
-                        this.logger.error('Notification creation error:', error);
-                        return of({ error: 'Error occurred during notification creation' });
-                    }),
-                ),
-        );
+        return await this.notifications(notification);
     }
 
     async retrieveFactories(): Promise<FactoriesRegistrant[]> {
@@ -260,23 +228,7 @@ export class FactoriesRegistrantService {
             type: data.status === 'online' ? 'factory_online' : 'factory_suspended',
             message: data.status === 'online' ? 'Factory activate' : 'Factory suspended',
         };
-        await firstValueFrom(
-            this.httpService
-                .post(`${this.options.notificationsUrl}/srv/notifications/api/notifications`, notification, {
-                    headers: getHeaders(token),
-                })
-                .pipe(
-                    //If not an error from call admin receive the message below
-                    map(() => {
-                        return { message: 'Notification created' };
-                    }),
-                    // Catch any error occurred during the notification creation
-                    catchError((error) => {
-                        this.logger.error('Notification creation error:', error);
-                        return of({ error: 'Error occurred during notification creation' });
-                    }),
-                ),
-        );
+        await this.notifications(notification)
         return factory;
     }
 
@@ -409,23 +361,7 @@ export class FactoriesRegistrantService {
             type: 'delete_factory',
             message: 'Factory deleted',
         };
-        await firstValueFrom(
-            this.httpService
-                .post(`${this.options.notificationsUrl}/srv/notifications/api/notifications`, notification, {
-                    headers: getHeaders(token),
-                })
-                .pipe(
-                    //If not an error from call admin receive the message below
-                    map(() => {
-                        return { message: 'Factory deleted' };
-                    }),
-                    // Catch any error occurred during the notification creation
-                    catchError((error) => {
-                        this.logger.error('Notification creation error:', error);
-                        return of({ error: 'Error occurred during notification creation' });
-                    }),
-                ),
-        );
+        return await this.notifications(notification)
 
     }
 
@@ -508,5 +444,37 @@ export class FactoriesRegistrantService {
         });
         //TODO Add call to Data factory Backend in Data Factory for details
         //Notify Identity manager for changes
+    }
+
+    private async notifications(data: any) {
+        const tokenData = {
+            grant_type: 'client_credentials',
+            client_id: this.options.clientId,
+            client_secret: this.options.secret
+        }
+        return await firstValueFrom(
+            this.httpService
+                .post(`${this.options.authServerUrl}/PISTIS/protocol/openid-connect/token`, tokenData, {
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                })
+                .pipe(
+                    map(({ data }) => data.access_token),
+                    map((access_token) =>
+                        this.httpService
+                            .post(`${this.options.notificationsUrl}/srv/notifications/api/notifications`, data, {
+                                headers: getHeaders(access_token),
+                            })
+                    ),
+                    tap(() => { this.logger.debug('response') }),
+                    map(() => of({ message: 'Notification created' })),
+                    // Catch any error occurred during the notification creation
+                    catchError((error) => {
+                        this.logger.error('Error occurred during notification creation: ', error);
+                        return of({ error: 'Error occurred during notification creation' });
+                    }),
+                ),
+        );
     }
 }

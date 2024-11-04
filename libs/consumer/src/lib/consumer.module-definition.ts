@@ -7,4 +7,4 @@ export const {
     MODULE_OPTIONS_TOKEN: CONSUMER_MODULE_OPTIONS,
     OPTIONS_TYPE: CONSUMER_OPTIONS_TYPE,
     ASYNC_OPTIONS_TYPE: CONSUMER_ASYNC_OPTIONS_TYPE,
-} = new ConfigurableModuleBuilder<ConsumerModuleOptions>().build();
+} = new ConfigurableModuleBuilder<ConsumerModuleOptions>().build(); 

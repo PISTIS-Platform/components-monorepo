@@ -5,7 +5,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Column, DataStorageService } from '@pistis/data-storage';
 import { MetadataRepositoryService } from '@pistis/metadata-repository';
 import { getHeaders } from '@pistis/shared';
-import { catchError, firstValueFrom, map, of } from 'rxjs';
+import { catchError, firstValueFrom, map, of, tap } from 'rxjs';
 
 import { AssetRetrievalInfo } from './asset-retrieval-info.entity';
 import { CONSUMER_MODULE_OPTIONS } from './consumer.module-definition';
@@ -27,7 +27,7 @@ export class ConsumerService {
     async retrieveData(assetId: string, user: any, token: string, _data: RetrieveDataDTO) {
         let factory: any;
         let metadata;
-        let newAssetMetadata;
+
         // let providerFactory;
         try {
             factory = await this.retrieveFactory(token);
@@ -148,7 +148,7 @@ export class ConsumerService {
         */
 
         try {
-            newAssetMetadata = await this.metadataRepositoryService.createMetadata(
+            await this.metadataRepositoryService.createMetadata(
                 metadata,
                 this.options.catalogId,
                 factory.factoryPrefix,
@@ -157,33 +157,42 @@ export class ConsumerService {
         } catch (err) {
             this.logger.error('Metadata creation error:', err);
         }
-        //FIXME: Change the way we send notification because user don't have this rights
-        /*
+
         const notification = {
             userId: user.id,
             organizationId: user.organizationId,
             type: 'asset_retrieved',
             message: 'Asset retrieval finished',
         };
+        const tokenData = {
+            grant_type: 'client_credentials',
+            client_id: this.options.clientId,
+            client_secret: this.options.secret
+        }
         return await firstValueFrom(
             this.httpService
-                .post(`${this.options.notificationsUrl}/srv/notifications/api/notifications`, notification, {
-                    headers: getHeaders(token),
+                .post(`${this.options.authServerUrl}/PISTIS/protocol/openid-connect/token`, tokenData, {
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
                 })
                 .pipe(
-                    //If not an error from call admin receive the message below
-                    map(() => {
-                        return { message: 'Notification created' };
-                    }),
+                    map(({ data }) => data.access_token),
+                    map((access_token) =>
+                        this.httpService
+                            .post(`${this.options.notificationsUrl}/srv/notifications/api/notifications`, notification, {
+                                headers: getHeaders(access_token),
+                            }).subscribe((value) => value)
+                    ),
+                    tap((response) => this.logger.debug(response)),
+                    map(() => of({ message: 'Notification created' })),
                     // Catch any error occurred during the notification creation
                     catchError((error) => {
-                        this.logger.error('Notification creation error:', error);
+                        this.logger.error('Error occurred during notification creation: ', error);
                         return of({ error: 'Error occurred during notification creation' });
                     }),
                 ),
         );
-        */
-        return { message: `Asset id: ${assetId} successfully transferred` }
     }
 
     async getDataFromProvider(
