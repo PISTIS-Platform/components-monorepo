@@ -67,7 +67,7 @@
                         "org.opencontainers.image.authors=Suite5 Information Technology Solutions",
                         "org.opencontainers.image.version=1.0.0"
                     ],
-                    "tags": ["1.0.12"]
+                    "tags": ["1.0.13"]
                 }
             }
         }
