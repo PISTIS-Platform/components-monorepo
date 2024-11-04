@@ -171,7 +171,7 @@ export class ConsumerService {
         }
         return await firstValueFrom(
             this.httpService
-                .post(`${this.options.authServerUrl}/PISTIS/protocol/openid-connect/token`, tokenData, {
+                .post(`${this.options.authServerUrl}/realms/PISTIS/protocol/openid-connect/token`, tokenData, {
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                     },
