@@ -454,11 +454,10 @@ export class FactoriesRegistrantService {
         }
         return await firstValueFrom(
             this.httpService
-                .post(`${this.options.authServerUrl}/PISTIS/protocol/openid-connect/token`, {
+                .post(`${this.options.authServerUrl}/PISTIS/protocol/openid-connect/token`, tokenData, {
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                     },
-                    data: JSON.stringify(tokenData)
                 })
                 .pipe(
                     map(({ data }) => data.access_token),
