@@ -17,44 +17,54 @@ export class DataStorageService {
     }
 
     async updateTableInStorage(assetId: string, results: any, token: string, factory: string) {
-        return await firstValueFrom(
-            this.httpService
-                .post(`${this.prepareUrl(factory)}/tables/add_rows`, JSON.stringify(results), {
-                    headers: getHeaders(token),
-                    params: {
-                        asset_uuid: assetId,
-                    },
-                })
-                .pipe(
-                    map(async (res) => {
-                        return res.data;
-                    }),
-                    // Catch any error occurred during update
-                    catchError((error) => {
-                        this.logger.error('Data update in storage error:', error);
-                        return of({ error: 'Error occurred during data update in storage' });
-                    }),
-                ),
-        );
+        try {
+            return await firstValueFrom(
+                this.httpService
+                    .post(`${this.prepareUrl(factory)}/tables/add_rows`, JSON.stringify(results), {
+                        headers: getHeaders(token),
+                        params: {
+                            asset_uuid: assetId,
+                        },
+                    })
+                    .pipe(
+                        map(async (res) => {
+                            return res.data;
+                        }),
+                        // Catch any error occurred during update
+                        catchError((error) => {
+                            this.logger.error('Data update in storage error:', error);
+                            return of({ error: 'Error occurred during data update in storage' });
+                        }),
+                    ),
+            );
+        } catch (err) {
+            this.logger.error('Update table in storage error:', err);
+        }
+
     }
 
     async createTableInStorage(results: any, token: string, factory: string) {
-        return await firstValueFrom(
-            this.httpService
-                .post(`${this.prepareUrl(factory)}/tables/create_table`, results, {
-                    headers: getHeaders(token),
-                })
-                .pipe(
-                    map(async (res) => {
-                        return res.data;
-                    }),
-                    // Catch any error occurred during creation
-                    catchError((error) => {
-                        this.logger.error('Data creation in storage error:', error);
-                        return of({ error: 'Error occurred during data creation in storage' });
-                    }),
-                ),
-        );
+        try {
+            return await firstValueFrom(
+                this.httpService
+                    .post(`${this.prepareUrl(factory)}/tables/create_table`, results, {
+                        headers: getHeaders(token),
+                    })
+                    .pipe(
+                        map(async (res) => {
+                            return res.data;
+                        }),
+                        // Catch any error occurred during creation
+                        catchError((error) => {
+                            this.logger.error('Data creation in storage error:', error);
+                            return of({ error: 'Error occurred during data creation in storage' });
+                        }),
+                    ),
+            );
+        } catch (err) {
+            this.logger.error('Create table in storage error:', err);
+        }
+
     }
 
     async retrievePaginatedData(
@@ -65,7 +75,6 @@ export class DataStorageService {
         columnsForPagination: Record<string, null>,
         factory: string
     ) {
-
         return await firstValueFrom(
             this.httpService
                 .post(
@@ -99,34 +108,46 @@ export class DataStorageService {
             },
         ];
 
-        return await firstValueFrom(
-            this.httpService
-                .get(`${this.prepareUrl(factory)}/tables/count_rows`, {
-                    headers: getHeaders(token),
-                    params: body,
-                })
-                .pipe(
-                    map(async (res) => {
-                        return res.data['Number of rows'];
-                    }),
-                    // Catch any error occurred during rows retrieval
-                    catchError((error) => {
-                        this.logger.error('Count rows error:', error);
-                        return of({ error: 'Error occurred during count rows retrieval' });
-                    }),
-                ),
-        );
+        try {
+            return await firstValueFrom(
+                this.httpService
+                    .get(`${this.prepareUrl(factory)}/tables/count_rows`, {
+                        headers: getHeaders(token),
+                        params: body,
+                    })
+                    .pipe(
+                        map(async (res) => {
+                            return res.data['Number of rows'];
+                        }),
+                        // Catch any error occurred during rows retrieval
+                        catchError((error) => {
+                            this.logger.error('Count rows error:', error);
+                            return of({ error: 'Error occurred during count rows retrieval' });
+                        }),
+                    ),
+            );
+        } catch (err) {
+            console.error('Count rows error:', err);
+            this.logger.error('Count rows error:', err);
+        }
+
     }
 
     async getColumns(uuid: string, token: string, factory: string) {
-        return await fetch(`${this.prepareUrl(factory)}/tables/get_table?asset_uuid=${uuid}&JSON_output=true`,
-            {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            }
-        ).then((res) => res.json())
-            .then((response) => response)
+        try {
+            return await fetch(`${this.prepareUrl(factory)}/tables/get_table?asset_uuid=${uuid}&JSON_output=true`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            ).then((res) => res.json())
+                .then((response) => response)
+        } catch (err) {
+            console.error('Get columns error:', err);
+            this.logger.error('Get columns error:', err);
+        }
+
     }
 
     async transferFile(assetId: string, token: string, consumerPrefix: string, providerPrefix: string) {

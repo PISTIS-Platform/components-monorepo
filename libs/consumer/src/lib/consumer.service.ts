@@ -11,6 +11,7 @@ import { AssetRetrievalInfo } from './asset-retrieval-info.entity';
 import { CONSUMER_MODULE_OPTIONS } from './consumer.module-definition';
 import { ConsumerModuleOptions } from './consumer-module-options.interface';
 import { RetrieveDataDTO } from './retrieveData.dto';
+import { IResults } from './typings';
 
 @Injectable()
 export class ConsumerService {
@@ -24,11 +25,11 @@ export class ConsumerService {
         private readonly metadataRepositoryService: MetadataRepositoryService,
     ) { }
 
-    async retrieveData(assetId: string, user: any, token: string, _data: RetrieveDataDTO) {
+    async retrieveData(assetId: string, user: any, token: string, data: RetrieveDataDTO) {
         let factory: any;
         let metadata;
 
-        // let providerFactory;
+        let providerFactory;
         try {
             factory = await this.retrieveFactory(token);
         } catch (err) {
@@ -41,7 +42,7 @@ export class ConsumerService {
             this.logger.error('Metadata retrieval error:', err);
         }
         //FIXME: Uncomment the above when the data-storage fixed
-        /*try {
+        try {
             providerFactory = await this.retrieveProviderFactory(data.assetFactory, token);
         } catch (err) {
             this.logger.error('Provider factory retrieval error:', err);
@@ -50,102 +51,102 @@ export class ConsumerService {
         const storageUrl = `https://${factory.factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api`;
         let assetInfo: AssetRetrievalInfo | null;
         if (metadata.distributions[0].format.id === 'SQL') {
-        try {
-            let results: IResults | { error: string | undefined };
-            let storeResult: any;
-        get offset from db, if it does not exist set is as 0.
-        assetInfo = await this.repo.findOne({
-            cloudAssetId: assetId,
-        });
-        let offset = assetInfo?.offset || 0;
+            try {
+                let results: IResults | { error: string | undefined };
+                let storeResult: any;
+                // get offset from db, if it does not exist set is as 0.
+                assetInfo = await this.repo.findOne({
+                    cloudAssetId: assetId,
+                });
+                let offset = assetInfo?.offset || 0;
 
-        first retrieval of data
-        results = await this.getDataFromProvider(assetId, token, {
-            offset,
-            batchSize: this.options.downloadBatchSize,
-            providerPrefix: providerFactory.factoryPrefix,
-        });
-        if (offset === 0 && 'data' in results) {
-        store data in data store
-        storeResult = await this.dataStorageService.createTableInStorage(results, token, storageUrl);
-
-        offset += results.data.rows.length;
-
-        store asset retrieval info in consumer's database
-        assetInfo = this.repo.create({
-            id: storeResult.asset_uuid,
-            cloudAssetId: assetId,
-            version: storeResult.version_id,
-            offset: offset,
-        });
-        await this.repo.getEntityManager().flush();
-        }
-
-        loop to retrieve data in batches
-        while (offset % this.options.downloadBatchSize !== 0) {
-            if ('columns' in results) {
+                // first retrieval of data
                 results = await this.getDataFromProvider(assetId, token, {
                     offset,
                     batchSize: this.options.downloadBatchSize,
-                    columns: results.columns,
+                    providerPrefix: providerFactory.factoryPrefix,
+                });
+                if (offset === 0 && 'data' in results) {
+                    // store data in data store
+                    storeResult = await this.dataStorageService.createTableInStorage(results, token, storageUrl);
+
+                    offset += results.data.rows.length;
+
+                    // store asset retrieval info in consumer's database
+                    assetInfo = this.repo.create({
+                        id: storeResult.asset_uuid,
+                        cloudAssetId: assetId,
+                        version: storeResult.version_id,
+                        offset: offset,
+                    });
+                    await this.repo.getEntityManager().flush();
+                }
+
+                // loop to retrieve data in batches
+                while (offset % this.options.downloadBatchSize !== 0) {
+                    if ('columns' in results) {
+                        results = await this.getDataFromProvider(assetId, token, {
+                            offset,
+                            batchSize: this.options.downloadBatchSize,
+                            columns: results.columns,
+                            consumerPrefix: factory.factoryPrefix,
+                            providerPrefix: providerFactory.factoryPrefix,
+                        });
+                    }
+
+                    if (!('data' in results) || !('columns' in results) || results.data.rows.length === 0) break;
+
+                    await this.dataStorageService.updateTableInStorage(
+                        assetId,
+                        {
+                            columns: results.columns,
+                            data: results.data,
+                        },
+                        token,
+                        storageUrl,
+                    );
+                    offset += results.data.rows.length;
+
+                    if (assetInfo) {
+                        assetInfo.offset = offset;
+                        await this.repo.getEntityManager().flush();
+                    }
+                }
+
+                metadata.distributions.forEach((item: any) => {
+                    item.access_url = [
+                        `https://${factory.factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api/tables/get_table?asset_uuid=${storeResult['asset_uuid']}`,
+                    ];
+                });
+            } catch (err) {
+                this.logger.error('Transfer SQL data error:', err);
+            }
+        } else {
+            try {
+                const fileResult = await this.getDataFromProvider(assetId, token, {
                     consumerPrefix: factory.factoryPrefix,
                     providerPrefix: providerFactory.factoryPrefix,
                 });
-            }
 
-        if (!('data' in results) || !('columns' in results) || results.data.rows.length === 0) break;
+                metadata.distributions.forEach((item: any) => {
+                    item.access_url = [
+                        `https://${factory.factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api/tables/get_file?asset_uuid=${fileResult.data.asset_uuid}`,
+                    ];
+                });
 
-        await this.dataStorageService.updateTableInStorage(
-            assetId,
-            {
-                columns: results.columns,
-                data: results.data,
-            },
-            token,
-            storageUrl,
-        );
-        offset += results.data.rows.length;
-
-        if (assetInfo) {
-        assetInfo.offset = offset;
-        await this.repo.getEntityManager().flush();
-        }
-        }
-
-        metadata.distributions.forEach((item: any) => {
-            item.access_url = [
-                `https://${factory.factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api/tables/get_table?asset_uuid=${storeResult['asset_uuid']}`,
-            ];
-        });
-        } catch (err) {
-            this.logger.error('Transfer SQL data error:', err);
-        }
-        } else {
-        try {
-        const fileResult = await this.getDataFromProvider(assetId, token, {
-            consumerPrefix: factory.factoryPrefix,
-            providerPrefix: providerFactory.factoryPrefix,
-        });
-
-        metadata.distributions.forEach((item: any) => {
-            item.access_url = [
-                `https://${factory.factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api/tables/get_file?asset_uuid=${fileResult.data.asset_uuid}`,
-            ];
-        });
-
-        assetInfo = this.repo.create({
-            id: fileResult.data.asset_uuid,
-            cloudAssetId: assetId,
-            version: fileResult.metadata.id,
-            offset: 0,
-        });
-        await this.repo.getEntityManager().persistAndFlush(assetInfo);
+                assetInfo = this.repo.create({
+                    id: fileResult.data.asset_uuid,
+                    cloudAssetId: assetId,
+                    version: fileResult.metadata.id,
+                    offset: 0,
+                });
+                await this.repo.getEntityManager().persistAndFlush(assetInfo);
             } catch (err) {
                 console.log(err)
                 this.logger.error('Transfer file data error:', err);
             }
         }
-        */
+
 
         try {
             await this.metadataRepositoryService.createMetadata(
