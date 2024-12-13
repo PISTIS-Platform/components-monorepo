@@ -40,7 +40,7 @@ export class MetadataRepositoryService {
             catalog = await fetch(`https://${factoryPrefix}.pistis-market.eu/srv/repo/catalogues/${catalogId}`, {
                 headers: {
                     'Content-Type': 'text/turtle',
-                    'X-API-Key': '781f8a00-5d83-41eb-b778-5a4927ef477e',
+                    'X-API-Key': 'b857b3c5-ccc4-4e1d-b378-32c6b879942d',
                     Authorization: `Bearer ${token}`,
                 },
             })
@@ -118,7 +118,7 @@ export class MetadataRepositoryService {
                         {
                             headers: {
                                 'Content-Type': 'text/turtle',
-                                'X-API-Key': '781f8a00-5d83-41eb-b778-5a4927ef477e',
+                                'X-API-Key': 'b857b3c5-ccc4-4e1d-b378-32c6b879942d',
                                 Authorization: `Bearer ${token}`,
                             },
                         },
@@ -166,7 +166,7 @@ export class MetadataRepositoryService {
                 .put(`https://${factory.factoryPrefix}.pistis-market.eu/srv/repo/catalogues/${catalogId}`, rdfData, {
                     headers: {
                         'Content-Type': 'text/turtle',
-                        'X-API-Key': '781f8a00-5d83-41eb-b778-5a4927ef477e',
+                        'X-API-Key': 'b857b3c5-ccc4-4e1d-b378-32c6b879942d',
                         Authorization: `Bearer ${token}`,
                     },
                 })
