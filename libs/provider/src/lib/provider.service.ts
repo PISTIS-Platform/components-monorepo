@@ -11,6 +11,7 @@ export class ProviderService {
         private readonly metadataRepositoryService: MetadataRepositoryService,
     ) { }
 
+
     async downloadDataset(assetId: string, paginationData: PaginationDto, token: string) {
         let data;
         let returnedValue;
@@ -58,8 +59,9 @@ export class ProviderService {
 
         } else {
             data = await this.dataStorageService.retrieveFile(storageId, token, paginationData.providerPrefix);
+
             returnedValue = {
-                data: data,
+                data,
                 metadata: { id: metadataName },
                 data_model: "columnsInfo",
             }

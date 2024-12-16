@@ -1,7 +1,7 @@
 import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { getHeaders } from '@pistis/shared';
-import { catchError, firstValueFrom, map, of } from 'rxjs';
+import { catchError, firstValueFrom, lastValueFrom, map, of } from 'rxjs';
 
 
 @Injectable()
@@ -202,34 +202,36 @@ export class DataStorageService {
     async retrieveFile(assetId: string, token: string, providerPrefix: string): Promise<Blob> {
         try {
             // Fetch the file as a Blob
-            const fileResponse = await fetch(
-                `${this.prepareUrl(providerPrefix)}/files/get_file?asset_uuid=${assetId}`,
-                {
+            const fileResponse = await lastValueFrom(
+                this.httpService.get(`${this.prepareUrl(providerPrefix)}/files/get_file?asset_uuid=${assetId}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
-                }
+                    responseType: 'arraybuffer'
+                }).pipe(
+                    map(async (res) => {
+                        return res.data;
+                    }),
+                    // Catch any error occurred during update
+                    catchError((error) => {
+                        this.logger.error('Data update in storage error:', error);
+                        return of({ error: 'Error fetching the file' });
+                    }),
+                ),
             );
 
-            if (!fileResponse.ok) {
-                throw new Error(`Error fetching the file: ${fileResponse.statusText}`);
-            }
-
-            // Convert response to Blob
-            const blob = await fileResponse.blob();
-
-            return blob;
+            return fileResponse;
         } catch (error) {
             console.error(`Error retrieving file: ${error}`);
             throw new Error(`Error retrieving file: ${error}`);
         }
     }
 
-    async createFile(blob: Blob, token: string, consumerPrefix: string): Promise<any> {
+    async createFile(data: any, filename: string, token: string, consumerPrefix: string): Promise<any> {
         try {
-            // Create FormData and append the file (blob)
+
             const formData = new FormData();
-            formData.append('file', blob, 'filename'); // Adjust filename as needed
+            formData.append('file', data, filename);
 
             // POST the file to create a new file
             const uploadResponse = await fetch(

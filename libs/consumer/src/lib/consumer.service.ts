@@ -48,6 +48,7 @@ export class ConsumerService {
             this.logger.error('Provider factory retrieval error:', err);
         }
 
+
         const storageUrl = `https://${factory.factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api`;
         let assetInfo: AssetRetrievalInfo | null;
         if (metadata.distributions[0].format.id === 'SQL') {
@@ -127,7 +128,7 @@ export class ConsumerService {
                     providerPrefix: providerFactory.factoryPrefix,
                 });
 
-                const createFile = await this.dataStorageService.createFile(fileResult, token, factory.factoryPrefix)
+                const createFile = await this.dataStorageService.createFile(fileResult.data, fileResult.metadata.id, token, factory.factoryPrefix)
 
                 metadata.distributions.forEach((item: any) => {
                     item.access_url = [
