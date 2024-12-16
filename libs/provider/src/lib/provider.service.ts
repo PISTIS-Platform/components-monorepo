@@ -57,7 +57,7 @@ export class ProviderService {
             }
 
         } else {
-            data = await this.dataStorageService.transferFile(storageId, token, paginationData.consumerPrefix, paginationData.providerPrefix);
+            data = await this.dataStorageService.retrieveFile(storageId, token, paginationData.providerPrefix);
             returnedValue = {
                 data: data,
                 metadata: { id: metadataName },

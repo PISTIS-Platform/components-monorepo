@@ -124,13 +124,14 @@ export class ConsumerService {
         } else {
             try {
                 const fileResult = await this.getDataFromProvider(assetId, token, {
-                    consumerPrefix: factory.factoryPrefix,
                     providerPrefix: providerFactory.factoryPrefix,
                 });
 
+                const createFile = await this.dataStorageService.createFile(fileResult, token, factory.factoryPrefix)
+
                 metadata.distributions.forEach((item: any) => {
                     item.access_url = [
-                        `https://${factory.factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api/tables/get_file?asset_uuid=${fileResult.data.asset_uuid}`,
+                        `https://${factory.factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api/tables/get_file?asset_uuid=${createFile.data.asset_uuid}`,
                     ];
                 });
 

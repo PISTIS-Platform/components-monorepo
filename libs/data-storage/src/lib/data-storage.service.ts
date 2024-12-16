@@ -150,9 +150,58 @@ export class DataStorageService {
 
     }
 
-    async transferFile(assetId: string, token: string, consumerPrefix: string, providerPrefix: string) {
+    // async transferFile(assetId: string, token: string, consumerPrefix: string, providerPrefix: string) {
+    //     try {
+    //         //Fetch the file as a Blob
+    //         const fileResponse = await fetch(
+    //             `${this.prepareUrl(providerPrefix)}/files/get_file?asset_uuid=${assetId}`,
+    //             {
+    //                 headers: {
+    //                     Authorization: `Bearer ${token}`,
+    //                 },
+    //             }
+    //         );
+
+    //         if (!fileResponse.ok) {
+    //             throw new Error(`Error fetching the file: ${fileResponse.statusText}`);
+    //         }
+
+    //         //Convert response to Blob
+    //         const blob = await fileResponse.blob();
+
+    //         //Create FormData and append the file (blob)
+    //         const formData = new FormData();
+    //         formData.append('file', blob, 'filename');
+
+    //         //POST the file to create a new file
+    //         const uploadResponse = await fetch(
+    //             `${this.prepareUrl(consumerPrefix)}/files/create_file`,
+    //             {
+    //                 method: 'POST',
+    //                 body: formData,
+    //                 headers: {
+    //                     Authorization: `Bearer ${token}`,
+    //                 },
+    //             }
+    //         );
+
+    //         if (!uploadResponse.ok) {
+    //             throw new Error(`Error uploading the file: ${uploadResponse.statusText}`);
+    //         }
+
+    //         // Parse and return the JSON response
+    //         const jsonResponse = await uploadResponse.json();
+
+    //         return jsonResponse;
+    //     } catch (error) {
+    //         console.error(`Error during file transfer:${error}`);
+    //         throw new Error(`Error during file transfer:${error}`)
+    //     }
+    // }
+
+    async retrieveFile(assetId: string, token: string, providerPrefix: string): Promise<Blob> {
         try {
-            //Fetch the file as a Blob
+            // Fetch the file as a Blob
             const fileResponse = await fetch(
                 `${this.prepareUrl(providerPrefix)}/files/get_file?asset_uuid=${assetId}`,
                 {
@@ -166,14 +215,23 @@ export class DataStorageService {
                 throw new Error(`Error fetching the file: ${fileResponse.statusText}`);
             }
 
-            //Convert response to Blob
+            // Convert response to Blob
             const blob = await fileResponse.blob();
 
-            //Create FormData and append the file (blob)
-            const formData = new FormData();
-            formData.append('file', blob, 'filename');
+            return blob;
+        } catch (error) {
+            console.error(`Error retrieving file: ${error}`);
+            throw new Error(`Error retrieving file: ${error}`);
+        }
+    }
 
-            //POST the file to create a new file
+    async createFile(blob: Blob, token: string, consumerPrefix: string): Promise<any> {
+        try {
+            // Create FormData and append the file (blob)
+            const formData = new FormData();
+            formData.append('file', blob, 'filename'); // Adjust filename as needed
+
+            // POST the file to create a new file
             const uploadResponse = await fetch(
                 `${this.prepareUrl(consumerPrefix)}/files/create_file`,
                 {
@@ -194,8 +252,8 @@ export class DataStorageService {
 
             return jsonResponse;
         } catch (error) {
-            console.error(`Error during file transfer:${error}`);
-            throw new Error(`Error during file transfer:${error}`)
+            console.error(`Error creating file: ${error}`);
+            throw new Error(`Error creating file: ${error}`);
         }
     }
 }
