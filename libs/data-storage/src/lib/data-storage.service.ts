@@ -214,7 +214,7 @@ export class DataStorageService {
                     }),
                     // Catch any error occurred during update
                     catchError((error) => {
-                        this.logger.error('Data update in storage error:', error);
+                        this.logger.error('Data fetching from storage error:', error);
                         return of({ error: 'Error fetching the file' });
                     }),
                 ),
