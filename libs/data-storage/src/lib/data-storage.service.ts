@@ -231,7 +231,7 @@ export class DataStorageService {
         try {
 
             const formData = new FormData();
-            formData.append('file', new Blob(data), filename);
+            formData.append('file', new Blob([data]), filename);
 
             // POST the file to create a new file
             const uploadResponse = await fetch(
