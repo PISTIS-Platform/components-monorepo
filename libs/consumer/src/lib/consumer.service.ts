@@ -41,7 +41,7 @@ export class ConsumerService {
         } catch (err) {
             this.logger.error('Metadata retrieval error:', err);
         }
-        //FIXME: Uncomment the above when the data-storage fixed
+
         try {
             providerFactory = await this.retrieveProviderFactory(data.assetFactory, token);
         } catch (err) {
@@ -124,11 +124,12 @@ export class ConsumerService {
             }
         } else {
             try {
+
                 const fileResult = await this.getDataFromProvider(assetId, token, {
                     providerPrefix: providerFactory.factoryPrefix,
                 });
 
-                const createFile = await this.dataStorageService.createFile(fileResult.data, fileResult.metadata.id, token, factory.factoryPrefix)
+                const createFile = await this.dataStorageService.createFile(fileResult.data, metadata.distributions[0].title.en, token, factory.factoryPrefix)
 
                 metadata.distributions.forEach((item: any) => {
                     item.access_url = [
@@ -137,9 +138,9 @@ export class ConsumerService {
                 });
 
                 assetInfo = this.repo.create({
-                    id: fileResult.data.asset_uuid,
+                    id: createFile.data.asset_uuid,
                     cloudAssetId: assetId,
-                    version: fileResult.metadata.id,
+                    version: '',
                     offset: 0,
                 });
                 await this.repo.getEntityManager().persistAndFlush(assetInfo);
