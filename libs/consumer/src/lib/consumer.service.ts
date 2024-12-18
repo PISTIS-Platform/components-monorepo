@@ -130,7 +130,7 @@ export class ConsumerService {
                 });
 
                 const createFile = await this.dataStorageService.createFile(fileResult.data, metadata.distributions[0].title.en, token, factory.factoryPrefix)
-
+                console.log(createFile)
                 metadata.distributions.forEach((item: any) => {
                     item.access_url = [
                         `https://${factory.factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api/tables/get_file?asset_uuid=${createFile.data.asset_uuid}`,
