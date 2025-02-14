@@ -250,8 +250,13 @@ export class FactoriesRegistrantService {
 
         //send email to admin - sends if production, returns JSON if not
         const email = await this.mailerService.sendMail({
-            to: data.adminEmail,
-            subject: `Your Factory "${data.factoryPrefix}" Has Successfully Been Created`,
+            to: [
+                {
+                    address: data.adminEmail,
+                    name: `${data.adminFirstName} ${data.adminLastName}`, // This is where you include the user's name
+                },
+            ],
+            subject: `Your factory for ${data.organizationName} Has Successfully Been Created`,
             html: `<b>Hello</b>`,
         });
 
