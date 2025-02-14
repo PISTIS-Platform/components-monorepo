@@ -19,6 +19,7 @@ import { FactoryCreationDTO } from './dto/factory-creation.dto';
 
 import { v4 as uuid } from 'uuid';
 import { MailerService } from '@nestjs-modules/mailer';
+import { htmlForEmail } from './utils/email-html';
 
 @Injectable()
 export class FactoriesRegistrantService {
@@ -257,7 +258,7 @@ export class FactoriesRegistrantService {
                 },
             ],
             subject: `Your factory for ${data.organizationName} Has Successfully Been Created`,
-            html: `<b>Hello</b>`,
+            html: htmlForEmail(data),
         });
 
         console.log({ email });
