@@ -18,6 +18,7 @@ import { ServicesMappingService } from './services-mapping.service';
 import { FactoryCreationDTO } from './dto/factory-creation.dto';
 
 import { v4 as uuid } from 'uuid';
+import { MailerService } from '@nestjs-modules/mailer';
 
 @Injectable()
 export class FactoriesRegistrantService {
@@ -31,6 +32,7 @@ export class FactoriesRegistrantService {
         private readonly httpService: HttpService,
         private readonly servicesMappingService: ServicesMappingService,
         @Inject(MODULE_OPTIONS_TOKEN) private options: FactoryModuleOptions,
+        private readonly mailerService: MailerService,
     ) {}
 
     async checkClient(organizationId: string, token: string) {
@@ -228,8 +230,7 @@ export class FactoriesRegistrantService {
     }
 
     async createFactory(data: FactoryCreationDTO, token: string): Promise<FactoriesRegistrant> {
-        console.log('Got information:');
-        console.log({ data });
+        //transform into object to be saved in DB
         const objToBeSaved: CreateFactoryDTO = {
             organizationName: data.organizationName,
             //FIXME: Get Organization ID from other call
@@ -241,9 +242,20 @@ export class FactoriesRegistrantService {
             isAccepted: data.isAccepted,
             isActive: false,
         };
+
+        //create and save in DB
         const factory = this.repo.create(objToBeSaved);
         await this.repo.getEntityManager().persistAndFlush(factory);
         await this.recreateClients(token, factory.organizationId);
+
+        //send email to admin - sends if production, returns JSON if not
+        const email = await this.mailerService.sendMail({
+            to: data.adminEmail,
+            subject: `Your Factory "${data.factoryPrefix}" Has Successfully Been Created`,
+            html: `<b>Hello</b>`,
+        });
+
+        console.log({ email });
 
         return factory;
     }

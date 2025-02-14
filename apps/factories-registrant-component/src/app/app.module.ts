@@ -15,6 +15,10 @@ import {
 
 import { AppConfig, IFactoryConfig } from './app.config';
 
+import { MailerModule } from '@nestjs-modules/mailer';
+
+const isDevelopment = process.env.NODE_ENV !== 'production';
+
 @Module({
     imports: [
         ConfigModule.forRoot({ isGlobal: true }),
@@ -52,6 +56,34 @@ import { AppConfig, IFactoryConfig } from './app.config';
         //         tokenValidation: TokenValidation.OFFLINE,
         //     }),
         // }),
+        MailerModule.forRoot({
+            transport: isDevelopment
+                ? {
+                      //jsonTransport for testing / dev purposes
+                      //used to simulate sending emails
+                      jsonTransport: true,
+                  }
+                : {
+                      host: 'smtp.example.com', //FIXME: replace with SMTP host
+                      port: 587, // typically 587 for TLS or 465 for SSL
+                      secure: false, // true if using port 465
+                      auth: {
+                          user: 'your_username', //FIXME: replace with username
+                          pass: 'your_password', //FIXME: replace with password
+                      },
+                  },
+            defaults: {
+                from: '"PISTIS" <pistis_admin@pistis.eu>', //FIXME: Replace with official default from
+            },
+            // Optionally, you can set up template options here if you need HTML templates.
+            // template: {
+            //   dir: __dirname + '/templates',
+            //   adapter: new HandlebarsAdapter(), // or PugAdapter, EJSAdapter, etc.
+            //   options: {
+            //     strict: true,
+            //   },
+            // },
+        }),
     ],
     // providers: [
     //     {
