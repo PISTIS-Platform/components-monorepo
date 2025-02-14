@@ -17,6 +17,8 @@ import { FactoryModuleOptions } from './factories-registrant-module-options.inte
 import { ServicesMappingService } from './services-mapping.service';
 import { FactoryCreationDTO } from './dto/factory-creation.dto';
 
+import { v4 as uuid } from 'uuid';
+
 @Injectable()
 export class FactoriesRegistrantService {
     private readonly logger = new Logger(FactoriesRegistrantService.name);
@@ -231,7 +233,7 @@ export class FactoriesRegistrantService {
         const objToBeSaved: CreateFactoryDTO = {
             organizationName: data.organizationName,
             //FIXME: Get Organization ID from other call
-            organizationId: '936cf6f7-f0ab-4417-a75d-8fdea1ff925b',
+            organizationId: uuid(),
             ip: data.ip,
             factoryPrefix: data.factoryPrefix,
             country: data.country,
