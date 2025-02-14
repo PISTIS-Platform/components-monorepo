@@ -260,9 +260,7 @@ export class FactoriesRegistrantService {
             subject: `Your factory for ${data.organizationName} Has Successfully Been Created`,
             html: htmlForEmail(data),
         });
-
-        console.log({ email });
-
+        
         return factory;
     }
 

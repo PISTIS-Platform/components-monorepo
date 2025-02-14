@@ -43,19 +43,19 @@ const isDevelopment = process.env.NODE_ENV !== 'production';
             }),
             inject: [AppConfig.KEY],
         }),
-        // KeycloakConnectModule.registerAsync({
-        //     imports: [ConfigModule.forFeature(AppConfig)],
-        //     inject: [AppConfig.KEY],
-        //     useFactory: (options: IAppConfig) => ({
-        //         authServerUrl: options.keycloak.url,
-        //         realm: options.keycloak.realm,
-        //         clientId: options.keycloak.clientId,
-        //         secret: options.keycloak.clientSecret,
-        //         useNestLogger: true,
-        //         policyEnforcement: PolicyEnforcementMode.PERMISSIVE,
-        //         tokenValidation: TokenValidation.OFFLINE,
-        //     }),
-        // }),
+        KeycloakConnectModule.registerAsync({
+            imports: [ConfigModule.forFeature(AppConfig)],
+            inject: [AppConfig.KEY],
+            useFactory: (options: IAppConfig) => ({
+                authServerUrl: options.keycloak.url,
+                realm: options.keycloak.realm,
+                clientId: options.keycloak.clientId,
+                secret: options.keycloak.clientSecret,
+                useNestLogger: true,
+                policyEnforcement: PolicyEnforcementMode.PERMISSIVE,
+                tokenValidation: TokenValidation.OFFLINE,
+            }),
+        }),
         MailerModule.forRoot({
             transport: isDevelopment
                 ? {
@@ -75,26 +75,18 @@ const isDevelopment = process.env.NODE_ENV !== 'production';
             defaults: {
                 from: '"PISTIS" <pistis_admin@pistis.eu>', //FIXME: Replace with official default from
             },
-            // Optionally, you can set up template options here if you need HTML templates.
-            // template: {
-            //   dir: __dirname + '/templates',
-            //   adapter: new HandlebarsAdapter(), // or PugAdapter, EJSAdapter, etc.
-            //   options: {
-            //     strict: true,
-            //   },
-            // },
         }),
     ],
-    // providers: [
-    //     {
-    //         provide: APP_GUARD,
-    //         useClass: AuthGuard,
-    //     },
-    //     {
-    //         provide: APP_GUARD,
-    //         useClass: RoleGuard,
-    //     },
-    // ],
+    providers: [
+        {
+            provide: APP_GUARD,
+            useClass: AuthGuard,
+        },
+        {
+            provide: APP_GUARD,
+            useClass: RoleGuard,
+        },
+    ],
 })
 export class AppModule implements NestModule {
     configure(consumer: MiddlewareConsumer) {
