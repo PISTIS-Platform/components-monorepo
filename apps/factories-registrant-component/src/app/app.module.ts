@@ -39,30 +39,30 @@ import { AppConfig, IFactoryConfig } from './app.config';
             }),
             inject: [AppConfig.KEY],
         }),
-        KeycloakConnectModule.registerAsync({
-            imports: [ConfigModule.forFeature(AppConfig)],
-            inject: [AppConfig.KEY],
-            useFactory: (options: IAppConfig) => ({
-                authServerUrl: options.keycloak.url,
-                realm: options.keycloak.realm,
-                clientId: options.keycloak.clientId,
-                secret: options.keycloak.clientSecret,
-                useNestLogger: true,
-                policyEnforcement: PolicyEnforcementMode.PERMISSIVE,
-                tokenValidation: TokenValidation.OFFLINE,
-            }),
-        }),
+        // KeycloakConnectModule.registerAsync({
+        //     imports: [ConfigModule.forFeature(AppConfig)],
+        //     inject: [AppConfig.KEY],
+        //     useFactory: (options: IAppConfig) => ({
+        //         authServerUrl: options.keycloak.url,
+        //         realm: options.keycloak.realm,
+        //         clientId: options.keycloak.clientId,
+        //         secret: options.keycloak.clientSecret,
+        //         useNestLogger: true,
+        //         policyEnforcement: PolicyEnforcementMode.PERMISSIVE,
+        //         tokenValidation: TokenValidation.OFFLINE,
+        //     }),
+        // }),
     ],
-    providers: [
-        {
-            provide: APP_GUARD,
-            useClass: AuthGuard,
-        },
-        {
-            provide: APP_GUARD,
-            useClass: RoleGuard,
-        },
-    ],
+    // providers: [
+    //     {
+    //         provide: APP_GUARD,
+    //         useClass: AuthGuard,
+    //     },
+    //     {
+    //         provide: APP_GUARD,
+    //         useClass: RoleGuard,
+    //     },
+    // ],
 })
 export class AppModule implements NestModule {
     configure(consumer: MiddlewareConsumer) {

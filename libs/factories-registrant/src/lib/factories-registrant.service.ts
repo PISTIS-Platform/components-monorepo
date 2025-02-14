@@ -15,6 +15,7 @@ import { FactoriesRegistrant } from './entities/factories-registrant.entity';
 import { MODULE_OPTIONS_TOKEN } from './factories-registrant.module-definition';
 import { FactoryModuleOptions } from './factories-registrant-module-options.interface';
 import { ServicesMappingService } from './services-mapping.service';
+import { FactoryCreationDTO } from './dto/factory-creation.dto';
 
 @Injectable()
 export class FactoriesRegistrantService {
@@ -28,7 +29,7 @@ export class FactoriesRegistrantService {
         private readonly httpService: HttpService,
         private readonly servicesMappingService: ServicesMappingService,
         @Inject(MODULE_OPTIONS_TOKEN) private options: FactoryModuleOptions,
-    ) { }
+    ) {}
 
     async checkClient(organizationId: string, token: string) {
         // check if the information already exist in our database
@@ -93,11 +94,7 @@ export class FactoriesRegistrantService {
         };
     }
 
-    async activateFactory(
-        factoryId: string,
-        token: string,
-        userId: string,
-    ) {
+    async activateFactory(factoryId: string, token: string, userId: string) {
         //Search db if factory exist
         const factory = await this.repo.findOneOrFail({ id: factoryId });
 
@@ -146,11 +143,7 @@ export class FactoriesRegistrantService {
         return await this.notifications(notification);
     }
 
-    async suspendFactory(
-        factoryId: string,
-        token: string,
-        userId: string,
-    ) {
+    async suspendFactory(factoryId: string, token: string, userId: string) {
         //Search db if factory exist
         const factory = await this.repo.findOneOrFail({ id: factoryId });
 
@@ -221,19 +214,32 @@ export class FactoriesRegistrantService {
         factory.ip = data.ip;
         factory.status = data.status;
         await this.repo.getEntityManager().persistAndFlush(factory);
-        await this.recreateClients(token, factory.organizationId)
+        await this.recreateClients(token, factory.organizationId);
         const notification = {
             userId: userId,
             organizationId: factory.organizationId,
             type: data.status === 'online' ? 'factory_online' : 'factory_suspended',
             message: data.status === 'online' ? 'Factory activate' : 'Factory suspended',
         };
-        await this.notifications(notification)
+        await this.notifications(notification);
         return factory;
     }
 
-    async createFactory(data: CreateFactoryDTO, token: string): Promise<FactoriesRegistrant> {
-        const factory = this.repo.create(data);
+    async createFactory(data: FactoryCreationDTO, token: string): Promise<FactoriesRegistrant> {
+        console.log('Got information:');
+        console.log({ data });
+        const objToBeSaved: CreateFactoryDTO = {
+            organizationName: data.organizationName,
+            //FIXME: Get Organization ID from other call
+            organizationId: '936cf6f7-f0ab-4417-a75d-8fdea1ff925b',
+            ip: data.ip,
+            factoryPrefix: data.factoryPrefix,
+            country: data.country,
+            status: 'pending',
+            isAccepted: data.isAccepted,
+            isActive: false,
+        };
+        const factory = this.repo.create(objToBeSaved);
         await this.repo.getEntityManager().persistAndFlush(factory);
         await this.recreateClients(token, factory.organizationId);
 
@@ -249,7 +255,6 @@ export class FactoriesRegistrantService {
     }
 
     async recreateClients(token: string, organizationId: string) {
-
         dayjs.extend(isSameOrBefore);
         dayjs.extend(isSameOrAfter);
         //Find all services
@@ -298,7 +303,9 @@ export class FactoriesRegistrantService {
             //Filter services to update clients
             const servicesToUpdate = services.filter(
                 (service) =>
-                    clientServices.includes(service.id) && dayjs(client.updatedAt).isSameOrBefore(service.updatedAt) || dayjs(factory?.updatedAt).isSameOrAfter(client.updatedAt),
+                    (clientServices.includes(service.id) &&
+                        dayjs(client.updatedAt).isSameOrBefore(service.updatedAt)) ||
+                    dayjs(factory?.updatedAt).isSameOrAfter(client.updatedAt),
             );
 
             for (const service of servicesToCreate) {
@@ -353,7 +360,7 @@ export class FactoriesRegistrantService {
 
     async deleteFactory(token: string, factoryId: string, userId: string) {
         const factory = await this.repo.findOneOrFail({ id: factoryId });
-        await this.deleteClients(token, factory.organizationId)
+        await this.deleteClients(token, factory.organizationId);
         await this.clientRepo.getEntityManager().removeAndFlush(factory);
         const notification = {
             userId,
@@ -361,25 +368,26 @@ export class FactoriesRegistrantService {
             type: 'delete_factory',
             message: 'Factory deleted',
         };
-        return await this.notifications(notification)
-
+        return await this.notifications(notification);
     }
 
     async deleteClient(token: string, clientId: string, organizationId: string) {
         const client = await this.clientRepo.findOneOrFail({ organizationId });
         await firstValueFrom(
-            this.httpService.delete(`${this.options.identityAccessManagementUrl}/factory/${organizationId}--${clientId}`, {
-                headers: getHeaders(token),
-            }).pipe(
-                map((res) => res),
-                catchError((error: any) => {
-                    this.logger.error('Client creation error:', error);
-                    throw error;
-                }),
-            )
+            this.httpService
+                .delete(`${this.options.identityAccessManagementUrl}/factory/${organizationId}--${clientId}`, {
+                    headers: getHeaders(token),
+                })
+                .pipe(
+                    map((res) => res),
+                    catchError((error: any) => {
+                        this.logger.error('Client creation error:', error);
+                        throw error;
+                    }),
+                ),
         );
-        const updatedClientIds = client.clientsIds.filter((item) => !item.includes(clientId))
-        client.clientsIds = updatedClientIds
+        const updatedClientIds = client.clientsIds.filter((item) => !item.includes(clientId));
+        client.clientsIds = updatedClientIds;
         return await this.clientRepo.getEntityManager().persistAndFlush(client);
     }
 
@@ -405,7 +413,6 @@ export class FactoriesRegistrantService {
         return await this.clientRepo.getEntityManager().removeAndFlush(client);
     }
 
-
     private async keycloakClients(keycloakClients: any, token: string, method: 'post' | 'patch') {
         //Create clients in keycloak
         return await firstValueFrom(
@@ -414,8 +421,11 @@ export class FactoriesRegistrantService {
                 mergeMap((client: any) =>
                     this.httpService.request({
                         method,
-                        //Change url calculation because patch needs every clientId in url  
-                        url: method === 'post' ? `${this.options.identityAccessManagementUrl}/factory` : `${this.options.identityAccessManagementUrl}/factory/${client.clientId}`,
+                        //Change url calculation because patch needs every clientId in url
+                        url:
+                            method === 'post'
+                                ? `${this.options.identityAccessManagementUrl}/factory`
+                                : `${this.options.identityAccessManagementUrl}/factory/${client.clientId}`,
                         data: client,
                         headers: getHeaders(token),
                     }),
@@ -450,8 +460,8 @@ export class FactoriesRegistrantService {
         const tokenData = {
             grant_type: 'client_credentials',
             client_id: this.options.clientId,
-            client_secret: this.options.secret
-        }
+            client_secret: this.options.secret,
+        };
         return await firstValueFrom(
             this.httpService
                 .post(`${this.options.authServerUrl}/realms/PISTIS/protocol/openid-connect/token`, tokenData, {
@@ -462,12 +472,17 @@ export class FactoriesRegistrantService {
                 .pipe(
                     map(({ data }) => data.access_token),
                     map((access_token) =>
-                        this.httpService
-                            .post(`${this.options.notificationsUrl}/srv/notifications/api/notifications`, data, {
+                        this.httpService.post(
+                            `${this.options.notificationsUrl}/srv/notifications/api/notifications`,
+                            data,
+                            {
                                 headers: getHeaders(access_token),
-                            })
+                            },
+                        ),
                     ),
-                    tap(() => { this.logger.debug('response') }),
+                    tap(() => {
+                        this.logger.debug('response');
+                    }),
                     map(() => of({ message: 'Notification created' })),
                     // Catch any error occurred during the notification creation
                     catchError((error) => {
