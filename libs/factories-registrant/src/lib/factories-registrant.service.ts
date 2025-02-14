@@ -253,7 +253,7 @@ export class FactoriesRegistrantService {
             to: [
                 {
                     address: data.adminEmail,
-                    name: `${data.adminFirstName} ${data.adminLastName}`, // This is where you include the user's name
+                    name: `${data.adminFirstName} ${data.adminLastName}`,
                 },
             ],
             subject: `Your factory for ${data.organizationName} Has Successfully Been Created`,
