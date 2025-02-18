@@ -1,4 +1,4 @@
-export const countriesInEnglish = {
+export const countriesInEnglish: Record<string, string> = {
     AF: 'Afghanistan',
     AX: 'Åland Islands',
     AL: 'Albania',
@@ -250,19 +250,19 @@ export const countriesInEnglish = {
     ZW: 'Zimbabwe',
 };
 
-export const companySizesInEnglish = {
+export const companySizesInEnglish: Record<string, string> = {
     SMALL: 'Small',
     MEDIUM: 'Medium',
     LARGE: 'Large',
 };
 
-export const typesInEnglish = {
+export const typesInEnglish: Record<string, string> = {
     SME: 'Small Medium Enterprise',
     ACADEMIC: 'Academic / Research',
     PUBLIC_BODY: 'Public Body',
 };
 
-export const domainsInEnglish = {
+export const domainsInEnglish: Record<string, string> = {
     EDUCATION: 'Education',
     TRANSPORTATION: 'Transportation',
     CONSUMER_GOODS: 'Consumer Goods',
