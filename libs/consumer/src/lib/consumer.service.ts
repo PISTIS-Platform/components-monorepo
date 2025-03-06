@@ -41,7 +41,9 @@ export class ConsumerService {
         } catch (err) {
             this.logger.error('Metadata retrieval error:', err);
         }
-
+        console.log('-------------START METADATA--------------------')
+        console.log(metadata)
+        console.log('-------------END METADATA--------------------')
         try {
             providerFactory = await this.retrieveProviderFactory(data.assetFactory, token);
         } catch (err) {
