@@ -228,7 +228,6 @@ export class DataStorageService {
     }
 
     async createFile(data: any, filename: string, token: string, consumerPrefix: string): Promise<any> {
-        console.log(`URL: ${this.prepareUrl(consumerPrefix)}/files/create_file`)
         try {
 
             const formData = new FormData();

@@ -29,7 +29,7 @@ export class ConsumerService {
         let factory: any;
         let metadata;
 
-        let providerFactory;
+        let providerFactory: any;
         try {
             factory = await this.retrieveFactory(token);
         } catch (err) {
@@ -41,9 +41,7 @@ export class ConsumerService {
         } catch (err) {
             this.logger.error('Metadata retrieval error:', err);
         }
-        console.log('-------------START METADATA--------------------')
-        console.log(metadata)
-        console.log('-------------END METADATA--------------------')
+
         try {
             providerFactory = await this.retrieveProviderFactory(data.assetFactory, token);
         } catch (err) {
@@ -116,10 +114,13 @@ export class ConsumerService {
                     }
                 }
 
-                metadata.distributions.forEach((item: any) => {
-                    return item.access_url = [
-                        `https://${factory.factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api/tables/get_table?asset_uuid=${storeResult['asset_uuid']}`,
-                    ];
+                metadata.distributions.map((item: any) => {
+                    if (item.access_url) {
+                        return item.access_url = [
+                            `https://${factory.factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api/tables/get_table?asset_uuid=${storeResult['asset_uuid']}`,
+                        ];
+                    }
+                    return;
                 });
             } catch (err) {
                 this.logger.error('Transfer SQL data error:', err);
@@ -132,15 +133,20 @@ export class ConsumerService {
                 });
 
                 const createFile = await this.dataStorageService.createFile(fileResult.data, metadata.distributions[0].title.en, token, factory.factoryPrefix)
+                console.log('------------CREATED FILE START-------------------')
                 console.log(createFile)
-                metadata.distributions.forEach((item: any) => {
-                    return item.access_url = [
-                        `https://${factory.factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api/tables/get_file?asset_uuid=${createFile.data.asset_uuid}`,
-                    ];
+                console.log('------------CREATED FILE END-------------------')
+                metadata.distributions.map((item: any) => {
+                    if (item.access_url) {
+                        return item.access_url = [
+                            `https://${factory.factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api/tables/get_table?asset_uuid=${createFile.asset_uuid}`,
+                        ];
+                    }
+                    return;
                 });
 
                 assetInfo = this.repo.create({
-                    id: createFile.data.asset_uuid,
+                    id: createFile.asset_uuid,
                     cloudAssetId: assetId,
                     version: '',
                     offset: 0,
@@ -213,6 +219,7 @@ export class ConsumerService {
             providerPrefix?: string;
         },
     ) {
+        console.log(token)
         return await firstValueFrom(
             this.httpService
                 .post(
