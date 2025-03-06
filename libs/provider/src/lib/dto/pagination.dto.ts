@@ -25,18 +25,20 @@ export class PaginationDto {
     @IsOptional()
     @IsInt()
     @ApiProperty()
-    offset!: number;
+    offset?: number;
 
     @IsOptional()
     @IsInt()
     @ApiProperty()
-    batchSize!: number;
+    batchSize?: number;
 
+    @IsOptional()
     @IsString()
     @ApiProperty()
-    consumerPrefix!: string;
+    consumerPrefix?: string;
 
+    @IsOptional()
     @IsString()
     @ApiProperty()
-    providerPrefix!: string;
+    providerPrefix?: string;
 }
