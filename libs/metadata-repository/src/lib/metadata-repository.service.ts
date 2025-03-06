@@ -30,6 +30,7 @@ export class MetadataRepositoryService {
             );
         } catch (err) {
             this.logger.error('Metadata retrieval from cloud error:', err);
+            throw new Error(`Metadata retrieval from cloud error: ${err}`);
         }
         return metadata;
     }
@@ -53,6 +54,7 @@ export class MetadataRepositoryService {
                 .then((response) => response['@graph']);
         } catch (err) {
             this.logger.error('Factory catalog retrieval error:', err);
+            throw new Error(`Factory catalog retrieval error: ${err}`);
         }
         return catalog;
     }
@@ -135,6 +137,7 @@ export class MetadataRepositoryService {
             );
         } catch (err) {
             this.logger.error('Metadata creation error:', err);
+            throw new Error(`Metadata creation error: ${err}`);
         }
         return newMetadata;
     }

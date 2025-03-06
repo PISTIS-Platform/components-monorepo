@@ -16,25 +16,21 @@ export class ProviderService {
     async downloadDataset(assetId: string, paginationData: PaginationDto, token: string) {
         let data;
         let returnedValue;
+        let metadata;
 
         let columnsInfo = paginationData.columns || [];
-        const metadata = await this.metadataRepositoryService.retrieveMetadata(assetId);
-        console.log('----------- METADATA START-----------')
-        console.log(metadata)
-        console.log('----------- METADATA END-----------')
+        try {
+            metadata = await this.metadataRepositoryService.retrieveMetadata(assetId);
+        } catch (err) {
+            this.logger.error('Metadata retrieval error:', err);
+            throw new Error(`Metadata retrieval error: ${err}`);
+        }
+
+
         const metadataName = metadata.distributions[0].title.en;
-        console.log('----------- METADATA NAME START-----------')
-        console.log(metadataName)
-        console.log('----------- METADATA NAME END-----------')
         const storageId = metadata.distributions[0].access_url[0].split('=')[1]
-        console.log('----------- STORAGE ID START-----------')
-        console.log(storageId)
-        console.log('----------- STORAGE ID END-----------')
 
         if (metadata.distributions[0].format.id.toUpperCase() === 'SQL') {
-            console.log('----------- If START-----------')
-            console.log('Mphka sto SQL')
-            console.log('----------- If END-----------')
             try {
                 // In case the consumer asked for columns and metadata
                 // (if columns were not send in dto (during first retrieval), the provider needs to retrieve them below)
@@ -72,15 +68,12 @@ export class ProviderService {
                 }
 
             } catch (err) {
-                console.log(err)
                 this.logger.error('Provider SQL retrieval error:', err);
+                throw new Error(`Provider SQL retrieval error: ${err}`);
             }
 
 
         } else {
-            console.log('----------- ELSE START-----------')
-            console.log('Mphka sto File')
-            console.log('----------- ELSE END-----------')
             try {
                 data = await this.dataStorageService.retrieveFile(storageId, token, paginationData.providerPrefix);
 
@@ -90,14 +83,11 @@ export class ProviderService {
                     data_model: "columnsInfo",
                 }
             } catch (err) {
-                console.log(err)
                 this.logger.error('Provider File retrieval error:', err);
+                throw new Error(`Provider File retrieval error: ${err}`);
             }
 
         }
-        console.log('----------- RETURNED VALUE START-----------')
-        console.log(returnedValue)
-        console.log('----------- RETURNED VALUE END-----------')
         return returnedValue;
     }
 

@@ -39,6 +39,7 @@ export class DataStorageService {
             );
         } catch (err) {
             this.logger.error('Update table in storage error:', err);
+            throw new Error(`Update table in storage error: ${err}`);
         }
 
     }
@@ -63,6 +64,7 @@ export class DataStorageService {
             );
         } catch (err) {
             this.logger.error('Create table in storage error:', err);
+            throw new Error(`Create table in storage error: ${err}`);
         }
 
     }
@@ -129,6 +131,7 @@ export class DataStorageService {
         } catch (err) {
             console.error('Count rows error:', err);
             this.logger.error('Count rows error:', err);
+            throw new Error(`Count rows error: ${err}`);
         }
 
     }
@@ -146,6 +149,7 @@ export class DataStorageService {
         } catch (err) {
             console.error('Get columns error:', err);
             this.logger.error('Get columns error:', err);
+            throw new Error(`Get columns error: ${err}`);
         }
 
     }

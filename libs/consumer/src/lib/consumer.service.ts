@@ -34,18 +34,21 @@ export class ConsumerService {
             factory = await this.retrieveFactory(token);
         } catch (err) {
             this.logger.error('Factory retrieval error:', err);
+            throw new Error(`Factory retrieval error: ${err}`);
         }
 
         try {
             metadata = await this.metadataRepositoryService.retrieveMetadata(assetId);
         } catch (err) {
             this.logger.error('Metadata retrieval error:', err);
+            throw new Error(`Metadata retrieval error: ${err}`);
         }
 
         try {
             providerFactory = await this.retrieveProviderFactory(data.assetFactory, token);
         } catch (err) {
             this.logger.error('Provider factory retrieval error:', err);
+            throw new Error(`Provider factory retrieval error: ${err}`);
         }
 
 
@@ -124,6 +127,7 @@ export class ConsumerService {
                 });
             } catch (err) {
                 this.logger.error('Transfer SQL data error:', err);
+                throw new Error(`Transfer SQL data error: ${err}`);
             }
         } else {
             try {
@@ -133,9 +137,7 @@ export class ConsumerService {
                 });
 
                 const createFile = await this.dataStorageService.createFile(fileResult.data, metadata.distributions[0].title.en, token, factory.factoryPrefix)
-                console.log('------------CREATED FILE START-------------------')
-                console.log(createFile)
-                console.log('------------CREATED FILE END-------------------')
+
                 metadata.distributions.map((item: any) => {
                     if (item.access_url) {
                         return item.access_url = [
@@ -155,6 +157,7 @@ export class ConsumerService {
             } catch (err) {
                 console.log(err)
                 this.logger.error('Transfer file data error:', err);
+                throw new Error(`Transfer file data error: ${err}`);
             }
         }
 
@@ -168,6 +171,7 @@ export class ConsumerService {
             );
         } catch (err) {
             this.logger.error('Metadata creation error:', err);
+            throw new Error(`Metadata creation error: ${err}`);
         }
 
         const notification = {
