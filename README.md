@@ -1,4 +1,15 @@
-# Pistis
+# PISTIS Components Monorepo
+
+## Contents
+
+The following components can be found under the `./apps` directory:
+
+-   Data Connector
+-   Factories Registry
+-   Intention Analytics
+-   Models Repository
+-   Notifications
+-   Smart Contract Template Composer
 
 ## Tools
 
