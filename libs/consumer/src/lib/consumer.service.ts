@@ -26,14 +26,12 @@ export class ConsumerService {
     ) { }
 
     async retrieveData(assetId: string, user: any, token: string, data: RetrieveDataDTO) {
-        console.log(`DATA: ${data.assetFactory}`)
         let factory: any;
         let metadata;
 
         let providerFactory: any;
         try {
             factory = await this.retrieveFactory(token);
-            console.log(`Factory: ${factory}`)
         } catch (err) {
             this.logger.error('Factory retrieval error:', err);
             throw new Error(`Factory retrieval error: ${err}`);
@@ -232,7 +230,6 @@ export class ConsumerService {
             providerPrefix?: string;
         },
     ) {
-        console.log(token)
         return await firstValueFrom(
             this.httpService
                 .post(
