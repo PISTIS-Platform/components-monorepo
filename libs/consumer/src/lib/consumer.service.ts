@@ -26,6 +26,7 @@ export class ConsumerService {
     ) { }
 
     async retrieveData(assetId: string, user: any, token: string, data: RetrieveDataDTO) {
+        console.log(`DATA: ${data}`)
         let factory: any;
         let metadata;
 
@@ -46,6 +47,7 @@ export class ConsumerService {
 
         try {
             providerFactory = await this.retrieveProviderFactory(data.assetFactory, token);
+            console.log(`Provider factory: ${providerFactory.factoryPrefix}`)
         } catch (err) {
             this.logger.error('Provider factory retrieval error:', err);
             throw new Error(`Provider factory retrieval error: ${err}`);

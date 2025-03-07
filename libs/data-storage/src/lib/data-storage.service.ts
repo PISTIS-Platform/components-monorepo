@@ -204,6 +204,7 @@ export class DataStorageService {
     // }
 
     async retrieveFile(assetId: string, token: string, providerPrefix: string): Promise<Blob> {
+        console.log(`Retrieve File: ${providerPrefix}`)
         try {
             // Fetch the file as a Blob
             const fileResponse = await lastValueFrom(
