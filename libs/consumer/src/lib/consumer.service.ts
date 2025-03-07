@@ -46,7 +46,6 @@ export class ConsumerService {
 
         try {
             providerFactory = await this.retrieveProviderFactory(data.assetFactory, token);
-            console.log(`Provider factory: ${providerFactory.factoryPrefix}`)
         } catch (err) {
             this.logger.error('Provider factory retrieval error:', err);
             throw new Error(`Provider factory retrieval error: ${err}`);
@@ -162,7 +161,6 @@ export class ConsumerService {
                 });
                 await this.repo.getEntityManager().persistAndFlush(assetInfo);
             } catch (err) {
-                console.log(err)
                 this.logger.error('Transfer file data error:', err);
                 throw new Error(`Transfer file data error: ${err}`);
             }
