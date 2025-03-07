@@ -270,6 +270,30 @@ export class FactoriesRegistrantController {
         return this.factoriesService.retrieveFactory(factoryId);
     }
 
+    @Get('/organization/:orgId')
+    @ApiOkResponse({
+        description: 'Factory',
+        schema: {
+            example: {
+                id: '768004e7-33b1-4248-bafe-04688f49f161',
+                organizationName: 'TestOrg',
+                organizationId: '8aff8e9b-1322-4395-a53e-c445d159eb80',
+                ip: '192.168.1.1',
+                country: 'Greece',
+                status: 'live',
+                isAccepted: false,
+                isActive: false,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+        },
+    })
+    async findFactoryInfoByOrganizationId(
+        @Param('orgId', new ParseUUIDPipe({ version: '4' })) orgId: string,
+    ): Promise<FactoriesRegistrant> {
+        return this.factoriesService.findFactoryInfoByOrganizationId(orgId);
+    }
+
     @Get('/name/:factoryName')
     @ApiOkResponse({
         description: 'Factory',
