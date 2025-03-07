@@ -270,10 +270,10 @@ export class ConsumerService {
         );
     }
 
-    private async retrieveProviderFactory(factoryName: string, token: string) {
+    private async retrieveProviderFactory(factoryId: string, token: string) {
         return await firstValueFrom(
             this.httpService
-                .get(`${this.options.factoryRegistryUrl}/api/factories/name/${factoryName}`, {
+                .get(`${this.options.factoryRegistryUrl}/api/factories/${factoryId}`, {
                     headers: getHeaders(token),
                 })
                 .pipe(
