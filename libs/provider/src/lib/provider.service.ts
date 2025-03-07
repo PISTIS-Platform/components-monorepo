@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { DataStorageService } from '@pistis/data-storage';
 import { MetadataRepositoryService } from '@pistis/metadata-repository';
 
@@ -27,16 +27,37 @@ export class ProviderService {
         }
 
 
-        const metadataName = metadata.distributions[0].title.en;
-        const storageId = metadata.distributions[0].access_url[0].split('=')[1]
+        const metadataName = metadata.distributions.map(({ title }: any) => title?.en ?? null).filter((en: any) => en !== null)
+        const storageId = metadata.distributions
+            .map(({ access_url }: any) => {
+                if (access_url && access_url[0]) {
+                    try {
+                        const url = new URL(access_url[0]);
+                        return url.searchParams.get('asset_uuid');
+                    } catch (error) {
+                        console.error('Invalid URL:', access_url[0]);
+                        return null;
+                    }
+                }
+                return null;
+            })
+            .filter((storageId: string | null) => storageId !== null);
 
-        if (metadata.distributions[0].format.id.toUpperCase() === 'SQL') {
+        console.log(storageId);
+        const format = metadata.distributions.map(({ format }: any) => format?.id ?? null).filter((id: any) => id !== null)
+
+        if (format.length === 0) {
+            this.logger.error('Format not found');
+            throw new BadRequestException('Distribution format not found')
+        }
+
+        if (format[0] === 'SQL') {
             try {
                 // In case the consumer asked for columns and metadata
                 // (if columns were not send in dto (during first retrieval), the provider needs to retrieve them below)
 
                 if (columnsInfo.length === 0 && paginationData.offset === 0) {
-                    columnsInfo = await this.dataStorageService.getColumns(storageId, token, paginationData.providerPrefix);
+                    columnsInfo = await this.dataStorageService.getColumns(storageId[0], token, paginationData.providerPrefix);
                 }
                 //transform this into the object needed for columns , for retrieving paginated data
                 const columnsForPagination: Record<string, null> = Object.fromEntries(
