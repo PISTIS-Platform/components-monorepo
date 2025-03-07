@@ -1,7 +1,7 @@
 import { EntityRepository } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { HttpService } from '@nestjs/axios';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
 import { Column, DataStorageService } from '@pistis/data-storage';
 import { MetadataRepositoryService } from '@pistis/metadata-repository';
 import { getHeaders } from '@pistis/shared';
@@ -54,7 +54,13 @@ export class ConsumerService {
 
         const storageUrl = `https://${factory.factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api`;
         let assetInfo: AssetRetrievalInfo | null;
-        if (metadata.distributions[0].format.id === 'SQL') {
+        const format = metadata.distributions.map(({ format }: any) => format?.id ?? null).filter((id: any) => id !== null)
+        if (format.length === 0) {
+            this.logger.error('Format not found');
+            throw new BadRequestException('Distribution format not found')
+        }
+
+        if (format[0] === 'SQL') {
             try {
                 let results: IResults | { error: string | undefined };
                 let storeResult: any;
