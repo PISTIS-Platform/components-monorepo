@@ -141,8 +141,8 @@ export class ConsumerService {
                 const fileResult = await this.getDataFromProvider(assetId, token, {
                     providerPrefix: providerFactory.factoryPrefix,
                 });
-
-                const createFile = await this.dataStorageService.createFile(fileResult.data, metadata.distributions[0].title.en, token, factory.factoryPrefix)
+                const title = metadata.distributions.map(({ title }: any) => title?.en ?? null).filter((en: any) => en !== null)
+                const createFile = await this.dataStorageService.createFile(fileResult.data, title[0], token, factory.factoryPrefix)
 
                 metadata.distributions.map((item: any) => {
                     if (item.access_url) {
