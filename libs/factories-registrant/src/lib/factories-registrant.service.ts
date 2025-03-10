@@ -93,6 +93,49 @@ export class FactoriesRegistrantService {
         };
     }
 
+    async getClientsSecretAdmin(organizationId: string) {
+        // check if the information already exist in our database
+        const { clientsIds } = await this.clientRepo.findOneOrFail({ organizationId: organizationId });
+        const { factoryPrefix } = await this.findLoggedInUserFactory(organizationId)
+        const services = await this.servicesMappingService.findServicesMappingForAdmin();
+
+        const data: Record<string, string> = clientsIds.reduce((data, client) => {
+            const [id, secret] = JSON.parse(client);
+            const [_, serviceId] = id.split('--');
+            const service = services.find((service) => service.id === serviceId);
+            if (!service) return data;
+
+            const prefix =
+                service.serviceUrl === '/'
+                    ? 'FACTORY_UI'
+                    : service.serviceUrl.replace('/srv/', '').replace(/-/g, '_').toUpperCase();
+
+            data[`PISTIS_KC_${prefix}_ID`] = id;
+            data[`PISTIS_KC_${prefix}_SECRET`] = secret;
+
+            return data;
+        }, {} as Record<string, string>);
+
+        return {
+            apiVersion: 'v1',
+            kind: 'Secret',
+            metadata: {
+                name: 'keycloak-clients-secret',
+                namespace: 'default',
+                PISTIS_FACTORY_URL: `https://${factoryPrefix}.pistis-market.eu`,
+                PISTIS_FACTORY_URL_DOMAIN: `${factoryPrefix}.pistis-market.eu`,
+                PISTIS_FACTORY_NAME: `${factoryPrefix}`,
+                PISTIS_FACTORY_FULLNAME: ` ${factoryPrefix.toUpperCase()} Corporation`,
+                PISTIS_FACTORY_ID: `${organizationId}`,
+                PISTIS_FACTORY_LOGO: `${factoryPrefix}.png`,
+                PISTIS_FACTORY_OWNED_CATALOG: "my-data",
+                PISTIS_FACTORY_ACQUIRED_CATALOG: "acquired-data",
+            },
+            stringData: data,
+            type: 'Opaque',
+        };
+    }
+
     async activateFactory(
         factoryId: string,
         token: string,
