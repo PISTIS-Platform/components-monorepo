@@ -30,6 +30,7 @@ export class MetadataRepositoryService {
             );
         } catch (err) {
             this.logger.error('Metadata retrieval from cloud error:', err);
+            throw new Error(`Metadata retrieval from cloud error: ${err}`);
         }
         return metadata;
     }
@@ -40,7 +41,7 @@ export class MetadataRepositoryService {
             catalog = await fetch(`https://${factoryPrefix}.pistis-market.eu/srv/repo/catalogues/${catalogId}`, {
                 headers: {
                     'Content-Type': 'text/turtle',
-                    'X-API-Key': '781f8a00-5d83-41eb-b778-5a4927ef477e',
+                    'X-API-Key': 'b857b3c5-ccc4-4e1d-b378-32c6b879942d',
                     Authorization: `Bearer ${token}`,
                 },
             })
@@ -53,6 +54,7 @@ export class MetadataRepositoryService {
                 .then((response) => response['@graph']);
         } catch (err) {
             this.logger.error('Factory catalog retrieval error:', err);
+            throw new Error(`Factory catalog retrieval error: ${err}`);
         }
         return catalog;
     }
@@ -86,9 +88,9 @@ export class MetadataRepositoryService {
                 ? metadata.keywords.map((keyword: any) => `"${keyword.label}"@${keyword.language}`).join(', ')
                 : ''
             } ;
-                dct:publisher       [ a     foaf:${getValue('publisher', 'type')} ;
-                                            foaf:mbox <${getValue('publisher', 'email')}> ;
-                                            foaf:name "${getValue('publisher', 'name')}" ; ] ;
+                dct:publisher       [ a     foaf:${metadata.publisher.type} ;
+                                            foaf:mbox <${metadata.publisher.email}> ;
+                                            foaf:name "${metadata.publisher.name}" ; ] ;
                 dcat:theme          <http://publications.europa.eu/resource/authority/data-theme/EDUC> ;
                 dct:language        <http://publications.europa.eu/resource/authority/language/ENG> ;
                 dct:issued          "${new Date().toISOString()}"^^xsd:dateTime ;
@@ -118,7 +120,7 @@ export class MetadataRepositoryService {
                         {
                             headers: {
                                 'Content-Type': 'text/turtle',
-                                'X-API-Key': '781f8a00-5d83-41eb-b778-5a4927ef477e',
+                                'X-API-Key': 'b857b3c5-ccc4-4e1d-b378-32c6b879942d',
                                 Authorization: `Bearer ${token}`,
                             },
                         },
@@ -135,6 +137,7 @@ export class MetadataRepositoryService {
             );
         } catch (err) {
             this.logger.error('Metadata creation error:', err);
+            throw new Error(`Metadata creation error: ${err}`);
         }
         return newMetadata;
     }
@@ -166,7 +169,7 @@ export class MetadataRepositoryService {
                 .put(`https://${factory.factoryPrefix}.pistis-market.eu/srv/repo/catalogues/${catalogId}`, rdfData, {
                     headers: {
                         'Content-Type': 'text/turtle',
-                        'X-API-Key': '781f8a00-5d83-41eb-b778-5a4927ef477e',
+                        'X-API-Key': 'b857b3c5-ccc4-4e1d-b378-32c6b879942d',
                         Authorization: `Bearer ${token}`,
                     },
                 })
