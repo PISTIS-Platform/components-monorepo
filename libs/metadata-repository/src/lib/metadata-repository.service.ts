@@ -88,9 +88,9 @@ export class MetadataRepositoryService {
                 ? metadata.keywords.map((keyword: any) => `"${keyword.label}"@${keyword.language}`).join(', ')
                 : ''
             } ;
-                dct:publisher       [ a     foaf:${getValue('publisher', 'type')} ;
-                                            foaf:mbox <${getValue('publisher', 'email')}> ;
-                                            foaf:name "${getValue('publisher', 'name')}" ; ] ;
+                dct:publisher       [ a     foaf:${metadata.publisher.type} ;
+                                            foaf:mbox <${metadata.publisher.email}> ;
+                                            foaf:name "${metadata.publisher.name}" ; ] ;
                 dcat:theme          <http://publications.europa.eu/resource/authority/data-theme/EDUC> ;
                 dct:language        <http://publications.europa.eu/resource/authority/language/ENG> ;
                 dct:issued          "${new Date().toISOString()}"^^xsd:dateTime ;
@@ -110,7 +110,7 @@ export class MetadataRepositoryService {
                 dcat:byteSize  "${getValue('byte_size', '')}"^^xsd:decimal ;
                 dcat:accessURL <${getValue('access_url', '0')}> .
         `;
-        console.log(rdfData)
+
         try {
             newMetadata = await firstValueFrom(
                 this.httpService
