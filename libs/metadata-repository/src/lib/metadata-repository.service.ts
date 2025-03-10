@@ -110,7 +110,7 @@ export class MetadataRepositoryService {
                 dcat:byteSize  "${getValue('byte_size', '')}"^^xsd:decimal ;
                 dcat:accessURL <${getValue('access_url', '0')}> .
         `;
-
+        console.log(rdfData)
         try {
             newMetadata = await firstValueFrom(
                 this.httpService
