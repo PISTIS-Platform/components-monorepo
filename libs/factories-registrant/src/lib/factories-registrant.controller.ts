@@ -252,14 +252,14 @@ export class FactoriesRegistrantController {
         @Res({ passthrough: true }) res: Response,
         @Param('organizationId', new ParseUUIDPipe({ version: '4' })) organizationId: string,
     ) {
-        const configmap = await this.factoriesService.getClientsSecretAdmin(organizationId);
+        const { fileBuffer, factoryPrefix } = await this.factoriesService.getClientsSecretAdmin(organizationId);
 
         // Set appropriate headers to indicate JSON content
         res.setHeader('Content-Type', 'application/yaml');
-        res.setHeader('Content-Disposition', 'attachment; filename=keycloak-clients.yaml');
+        res.setHeader('Content-Disposition', `attachment; filename=.env.${factoryPrefix}.factory`);
 
-        // Send JSON object as response
-        res.send(YAML.stringify(configmap));
+        // Send file as response
+        res.send(fileBuffer);
     }
 
     @Get(':factoryId')
