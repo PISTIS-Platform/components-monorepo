@@ -246,6 +246,22 @@ export class FactoriesRegistrantController {
         res.send(YAML.stringify(configmap));
     }
 
+    @Get('download-keycloak-clients-admin/:organizationId')
+    @Roles({ roles: [ADMIN_ROLE] })
+    async downloadKeycloakClientsAdmin(
+        @Res({ passthrough: true }) res: Response,
+        @Param('organizationId', new ParseUUIDPipe({ version: '4' })) organizationId: string,
+    ) {
+        const { fileBuffer, factoryPrefix } = await this.factoriesService.getClientsSecretAdmin(organizationId);
+
+        // Set appropriate headers to indicate JSON content
+        res.setHeader('Content-Type', 'application/yaml');
+        res.setHeader('Content-Disposition', `attachment; filename=.env.${factoryPrefix}.factory`);
+
+        // Send file as response
+        res.send(fileBuffer);
+    }
+
     @Get(':factoryId')
     @ApiOkResponse({
         description: 'Factory',
