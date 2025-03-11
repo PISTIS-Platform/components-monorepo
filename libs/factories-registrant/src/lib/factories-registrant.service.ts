@@ -106,7 +106,7 @@ export class FactoriesRegistrantService {
                 ######################################################################
 
                 # Factory
-                PISTIS_FACTORY_URL= https://${factoryPrefix}.pistis-market.eu,
+                PISTIS_FACTORY_URL= https://${factoryPrefix}.pistis-market.eu
                 PISTIS_FACTORY_URL_DOMAIN= ${factoryPrefix}.pistis-market.eu
                 PISTIS_FACTORY_NAME= ${factoryPrefix}
                 PISTIS_FACTORY_FULLNAME= ${factoryPrefix.toUpperCase()} Corporation
@@ -130,14 +130,20 @@ export class FactoriesRegistrantService {
                     : service.serviceUrl.replace('/srv/', '').replace(/-/g, '_').toUpperCase();
 
             data += `
-                        PISTIS_KC_${prefix}_ID= ${id}
-                        PISTIS_KC_${prefix}_SECRET= ${secret}
-                        `;
+                    PISTIS_KC_${prefix}_ID=${id}
+                    PISTIS_KC_${prefix}_SECRET=${secret}
+                    `.trim() + '\n';
 
             return data;
         }, fileContent);
 
-        return { fileBuffer: Buffer.from(updatedFileContent, 'utf-8'), factoryPrefix };
+        // Remove whitespaces from generated string
+        const cleanedFileContent = updatedFileContent
+            .split("\n") // Split into lines
+            .map(line => line.trim()) // Trim each line
+            .join("\n"); // Join them back
+
+        return { fileBuffer: Buffer.from(cleanedFileContent, 'utf-8'), factoryPrefix };
     }
 
     async activateFactory(
