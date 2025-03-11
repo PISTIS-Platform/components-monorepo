@@ -96,7 +96,7 @@ export class FactoriesRegistrantService {
     async getClientsSecretAdmin(organizationId: string) {
         // check if the information already exist in our database
         const { clientsIds } = await this.clientRepo.findOneOrFail({ organizationId: organizationId });
-        const { factoryPrefix } = await this.findLoggedInUserFactory(organizationId)
+        const { factoryPrefix, organizationName } = await this.findLoggedInUserFactory(organizationId)
         const services = await this.servicesMappingService.findServicesMappingForAdmin();
 
 
@@ -109,7 +109,7 @@ export class FactoriesRegistrantService {
                 PISTIS_FACTORY_URL= https://${factoryPrefix}.pistis-market.eu
                 PISTIS_FACTORY_URL_DOMAIN= ${factoryPrefix}.pistis-market.eu
                 PISTIS_FACTORY_NAME= ${factoryPrefix}
-                PISTIS_FACTORY_FULLNAME= ${factoryPrefix.toUpperCase()} Corporation
+                PISTIS_FACTORY_FULLNAME= ${organizationName.toUpperCase()}
                 PISTIS_FACTORY_ID= ${organizationId}
                 PISTIS_FACTORY_LOGO= ${factoryPrefix}.png
                 PISTIS_FACTORY_OWNED_CATALOG= my-data
