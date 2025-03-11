@@ -109,7 +109,7 @@ export class FactoriesRegistrantService {
                 PISTIS_FACTORY_URL= https://${factoryPrefix}.pistis-market.eu
                 PISTIS_FACTORY_URL_DOMAIN= ${factoryPrefix}.pistis-market.eu
                 PISTIS_FACTORY_NAME= ${factoryPrefix}
-                PISTIS_FACTORY_FULLNAME= ${organizationName.toUpperCase()}
+                PISTIS_FACTORY_FULLNAME= ${organizationName}
                 PISTIS_FACTORY_ID= ${organizationId}
                 PISTIS_FACTORY_LOGO= ${factoryPrefix}.png
                 PISTIS_FACTORY_OWNED_CATALOG= my-data
