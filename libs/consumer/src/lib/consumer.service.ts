@@ -147,7 +147,7 @@ export class ConsumerService {
                 metadata.distributions.map((item: any) => {
                     if (item.access_url) {
                         return item.access_url = [
-                            `https://${factory.factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api/tables/get_table?asset_uuid=${createFile.asset_uuid}`,
+                            `https://${factory.factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api/files/get_file?asset_uuid=${createFile.asset_uuid}`,
                         ];
                     }
                     return;
