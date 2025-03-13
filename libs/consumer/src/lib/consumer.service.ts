@@ -63,9 +63,9 @@ export class ConsumerService {
                 let results: any;
                 let storeResult: any;
                 // get offset from db, if it does not exist set is as 0.
-                // assetInfo = await this.repo.findOne({
-                //     cloudAssetId: assetId,
-                // });
+                assetInfo = await this.repo.findOne({
+                    cloudAssetId: assetId,
+                });
 
                 let offset = 0;
 
@@ -117,10 +117,10 @@ export class ConsumerService {
                     );
                     offset += results.data.rows.length;
 
-                    // if (assetInfo) {
-                    //     assetInfo.offset = offset;
-                    //     await this.repo.getEntityManager().flush();
-                    // }
+                    if (assetInfo) {
+                        assetInfo.offset = offset;
+                        await this.repo.getEntityManager().flush();
+                    }
                 }
 
                 metadata.distributions.map((item: any) => {
