@@ -71,6 +71,10 @@ export class MetadataRepositoryService {
             return entry ? (value !== '' ? entry[key][value] : entry[key]) : '';
         };
 
+        const byteSizeValue = getValue('byte_size', '');
+        const byteSizeEntry = byteSizeValue ? `dcat:byteSize  "${byteSizeValue}"^^xsd:decimal ;` : '';
+
+
         const rdfData = `
             @prefix dcat:                <http://www.w3.org/ns/dcat#> .
             @prefix dct:                 <http://purl.org/dc/terms/> .
@@ -107,7 +111,7 @@ export class MetadataRepositoryService {
                                     skos:exactMatch <${getValueLicense('license', 'resource')}>
                             ] ;
                 dct:format     <${getValue('format', 'resource')}> ;
-                dcat:byteSize  "${getValue('byte_size', '')}"^^xsd:decimal ;
+                ${byteSizeEntry}
                 dcat:accessURL <${getValue('access_url', '0')}> .
         `;
 
