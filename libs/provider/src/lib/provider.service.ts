@@ -43,7 +43,6 @@ export class ProviderService {
             })
             .filter((storageId: string | null) => storageId !== null);
 
-        console.log(storageId);
         const format = metadata.distributions.map(({ format }: any) => format?.id ?? null).filter((id: any) => id !== null)
 
         if (format.length === 0) {
@@ -76,8 +75,8 @@ export class ProviderService {
                 data = await this.dataStorageService.retrievePaginatedData(
                     storageId,
                     token,
-                    paginationData.offset,
-                    paginationData.batchSize,
+                    paginationData.offset || 0,
+                    paginationData.batchSize || 1000,
                     columnsForPagination,
                     paginationData.providerPrefix
                 );

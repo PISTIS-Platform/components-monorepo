@@ -1,6 +1,8 @@
 import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { getHeaders } from '@pistis/shared';
+import axios from 'axios';
+import FormData from 'form-data';
 import { catchError, firstValueFrom, lastValueFrom, map, of } from 'rxjs';
 
 
@@ -48,7 +50,7 @@ export class DataStorageService {
         try {
             return await firstValueFrom(
                 this.httpService
-                    .post(`${this.prepareUrl(factory)}/tables/create_table`, results, {
+                    .post(`${this.prepareUrl(factory)}/tables/create_table`, { data: results.data.data, metadata: { id: results.metadata.id[0] }, data_model: results.data_model }, {
                         headers: getHeaders(token),
                     })
                     .pipe(
@@ -204,7 +206,6 @@ export class DataStorageService {
     // }
 
     async retrieveFile(assetId: string, token: string, providerPrefix: string): Promise<Blob> {
-        console.log(`Retrieve File: ${providerPrefix}`)
         try {
             // Fetch the file as a Blob
             const fileResponse = await lastValueFrom(
@@ -234,30 +235,23 @@ export class DataStorageService {
 
     async createFile(data: any, filename: string, token: string, consumerPrefix: string): Promise<any> {
         try {
-
             const formData = new FormData();
-            formData.append('file', new Blob([data]), filename);
+            const buffer = Buffer.from(data.data)
+            formData.append('file', buffer, { filename, contentType: 'application/octet-stream' });
+            // POST the data to create a new file
+            const uploadResponse = await axios.post(`${this.prepareUrl(consumerPrefix)}/files/create_file`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    Authorization: `Bearer ${token}`,
+                },
+            });
 
-            // POST the file to create a new file
-            const uploadResponse = await fetch(
-                `${this.prepareUrl(consumerPrefix)}/files/create_file`,
-                {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
-
-            if (!uploadResponse.ok) {
+            if (uploadResponse.status !== 200) {
                 throw new Error(`Error uploading the file: ${uploadResponse.statusText}`);
             }
 
-            // Parse and return the JSON response
-            const jsonResponse = await uploadResponse.json();
+            return uploadResponse.data
 
-            return jsonResponse;
         } catch (error) {
             console.error(`Error creating file: ${error}`);
             throw new Error(`Error creating file: ${error}`);

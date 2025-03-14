@@ -11,7 +11,6 @@ import { AssetRetrievalInfo } from './asset-retrieval-info.entity';
 import { CONSUMER_MODULE_OPTIONS } from './consumer.module-definition';
 import { ConsumerModuleOptions } from './consumer-module-options.interface';
 import { RetrieveDataDTO } from './retrieveData.dto';
-import { IResults } from './typings';
 
 @Injectable()
 export class ConsumerService {
@@ -51,7 +50,6 @@ export class ConsumerService {
             throw new Error(`Provider factory retrieval error: ${err}`);
         }
 
-
         const storageUrl = `https://${factory.factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api`;
         let assetInfo: AssetRetrievalInfo | null;
         const format = metadata.distributions.map(({ format }: any) => format?.id ?? null).filter((id: any) => id !== null)
@@ -62,25 +60,27 @@ export class ConsumerService {
 
         if (format[0] === 'SQL') {
             try {
-                let results: IResults | { error: string | undefined };
+                let results: any;
                 let storeResult: any;
                 // get offset from db, if it does not exist set is as 0.
                 assetInfo = await this.repo.findOne({
                     cloudAssetId: assetId,
                 });
-                let offset = assetInfo?.offset || 0;
+
+                let offset = 0;
 
                 // first retrieval of data
                 results = await this.getDataFromProvider(assetId, token, {
                     offset,
-                    batchSize: this.options.downloadBatchSize,
+                    batchSize: 1000,
                     providerPrefix: providerFactory.factoryPrefix,
                 });
+
                 if (offset === 0 && 'data' in results) {
                     // store data in data store
-                    storeResult = await this.dataStorageService.createTableInStorage(results, token, storageUrl);
+                    storeResult = await this.dataStorageService.createTableInStorage(results, token, factory.factoryPrefix);
 
-                    offset += results.data.rows.length;
+                    offset += results.data.data.rows.length;
 
                     // store asset retrieval info in consumer's database
                     assetInfo = this.repo.create({
@@ -137,10 +137,10 @@ export class ConsumerService {
             }
         } else {
             try {
-
                 const fileResult = await this.getDataFromProvider(assetId, token, {
                     providerPrefix: providerFactory.factoryPrefix,
                 });
+
                 const title = metadata.distributions.map(({ title }: any) => title?.en ?? null).filter((en: any) => en !== null)
                 const createFile = await this.dataStorageService.createFile(fileResult.data, title[0], token, factory.factoryPrefix)
 
