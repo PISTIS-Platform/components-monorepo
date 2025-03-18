@@ -7,7 +7,7 @@ import {
     ApiTags,
     ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { ADMIN_ROLE, AuthToken, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
+import { ADMIN_ROLE, AuthToken, NOTIFICATION_CLIENT, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
 import type { Response } from 'express';
 import { createReadStream } from 'fs';
 import { AuthenticatedUser, Roles } from 'nest-keycloak-connect';
@@ -72,6 +72,21 @@ export class FactoriesRegistrantController {
     })
     async findFactories(): Promise<FactoriesRegistrant[]> {
         return this.factoriesService.retrieveFactories();
+    }
+
+    @Get('org-factories')
+    @Roles({ roles: [NOTIFICATION_CLIENT] })
+    @ApiOkResponse({
+        description: 'Factories',
+        schema: {
+            example: [
+                `'8aff8e9b-1322-4395-a53e-c445d159eb80': 'https://test.pistis-market.eu'`,
+                `'c0604304-a46e-42f9-bec9-7894f5ba73a6': 'https://test2.pistis-market.eu'`,
+            ],
+        },
+    })
+    async findFactoriesMapping() {
+        return this.factoriesService.findFactoriesMapping();
     }
 
     @Get('list')

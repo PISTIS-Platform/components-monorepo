@@ -240,6 +240,21 @@ export class FactoriesRegistrantService {
         return this.repo.findAll();
     }
 
+    async findFactoriesMapping() {
+        const factories = await this.repo.findAll();
+
+        if (factories.length === 0) {
+            return {};
+        }
+
+        const mapping = factories.reduce((acc: Record<string, string>, factory: any) => {
+            acc[factory.organizationId] = `https://${factory.factoryPrefix}.pistis-market.eu`;
+            return acc;
+        }, {});
+
+        return mapping;
+    }
+
     async retrieveAcceptedFactories() {
         const factories = await this.repo.findAll();
         return factories.map(
