@@ -1,7 +1,7 @@
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityRepository, Loaded } from '@mikro-orm/postgresql';
 import { HttpService } from '@nestjs/axios';
-import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
 import { getHeaders } from '@pistis/shared';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
@@ -244,7 +244,7 @@ export class FactoriesRegistrantService {
         const factories = await this.repo.findAll();
 
         if (factories.length === 0) {
-            throw new NotFoundException('Factories not found')
+            return {};
         }
 
         const mapping = factories.reduce((acc: Record<string, string>, factory: any) => {
@@ -252,7 +252,7 @@ export class FactoriesRegistrantService {
             return acc;
         }, {});
 
-        return mapping
+        return mapping;
     }
 
     async retrieveAcceptedFactories() {
