@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { BadGatewayException, BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { DataStorageService } from '@pistis/data-storage';
 import { MetadataRepositoryService } from '@pistis/metadata-repository';
 
@@ -23,7 +23,10 @@ export class ProviderService {
             metadata = await this.metadataRepositoryService.retrieveMetadata(assetId);
         } catch (err) {
             this.logger.error('Metadata retrieval error:', err);
-            throw new Error(`Metadata retrieval error: ${err}`);
+            return new BadGatewayException('Metadata retrieval error', {
+                cause: new Error(),
+                description: `${err}`,
+            });
         }
 
 
@@ -89,7 +92,10 @@ export class ProviderService {
 
             } catch (err) {
                 this.logger.error('Provider SQL retrieval error:', err);
-                throw new Error(`Provider SQL retrieval error: ${err}`);
+                return new BadGatewayException('Provider SQL retrieval error', {
+                    cause: new Error(),
+                    description: `${err}`,
+                });
             }
 
 
@@ -104,7 +110,10 @@ export class ProviderService {
                 }
             } catch (err) {
                 this.logger.error('Provider File retrieval error:', err);
-                throw new Error(`Provider File retrieval error: ${err}`);
+                return new BadGatewayException('Provider File retrieval error', {
+                    cause: new Error(),
+                    description: `${err}`,
+                });
             }
 
         }
