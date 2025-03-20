@@ -40,10 +40,7 @@ export class ConsumerService {
             metadata = await this.metadataRepositoryService.retrieveMetadata(assetId);
         } catch (err) {
             this.logger.error('Metadata retrieval error:', err);
-            return new BadGatewayException('Metadata retrieval error', {
-                cause: new Error(),
-                description: `${err}`,
-            });
+            return new BadGatewayException('Metadata retrieval error');
         }
 
         try {
@@ -136,10 +133,7 @@ export class ConsumerService {
                 });
             } catch (err) {
                 this.logger.error('Transfer SQL data error:', err);
-                return new BadGatewayException('Transfer SQL data error', {
-                    cause: new Error(),
-                    description: `${err}`,
-                });
+                return new BadGatewayException('Transfer SQL data error');
             }
         } else {
             try {
@@ -168,10 +162,7 @@ export class ConsumerService {
                 await this.repo.getEntityManager().persistAndFlush(assetInfo);
             } catch (err) {
                 this.logger.error('Transfer file data error:', err);
-                return new BadGatewayException('Transfer file data error', {
-                    cause: new Error(),
-                    description: `${err}`,
-                });
+                return new BadGatewayException('Transfer file data error');
             }
         }
 
@@ -184,10 +175,7 @@ export class ConsumerService {
             );
         } catch (err) {
             this.logger.error('Metadata creation error:', err);
-            return new BadGatewayException('Metadata creation error', {
-                cause: new Error(),
-                description: `${err}`,
-            });
+            return new BadGatewayException('Metadata creation error');
         }
 
         const notification = {
