@@ -24,7 +24,7 @@ export class ProviderModule extends ConfigurableModuleClass {
             imports: [
                 DataStorageModule.register({ url: options.dataStorageUrl }),
                 BlockchainModule.register({ url: options.blockchainUrl }),
-                MetadataRepositoryModule.register({ url: options.metadataRepositoryUrl }),
+                MetadataRepositoryModule.register({ url: options.metadataRepositoryUrl, apiKey: options.catalogKey }),
             ],
             ...super.register(options),
         };
@@ -59,7 +59,7 @@ export class ProviderModule extends ConfigurableModuleClass {
                 useFactory: async (config: typeof asyncOptions.inject) => {
                     const options: any = asyncOptions.useFactory ? await asyncOptions.useFactory(config) : {};
 
-                    return { url: options.metadataRepositoryUrl };
+                    return { url: options.metadataRepositoryUrl, apiKey: options.catalogKey };
                 },
             }),
         ];
