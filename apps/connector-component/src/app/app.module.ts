@@ -49,6 +49,7 @@ import { AppConfig, IConnectorConfig } from './app.config';
                 clientId: options.keycloak.clientId,
                 secret: options.keycloak.clientSecret,
                 authServerUrl: options.keycloak.url,
+                catalogKey: options.catalogKey,
             }),
             inject: [AppConfig.KEY],
         }),
