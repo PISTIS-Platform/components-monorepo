@@ -35,14 +35,13 @@ export class MetadataRepositoryService {
         return metadata;
     }
 
-    async retrieveCatalog(catalogId: string, factoryPrefix: string, token: string) {
+    async retrieveCatalog(catalogId: string, factoryPrefix: string) {
         let catalog;
         try {
             catalog = await fetch(`https://${factoryPrefix}.pistis-market.eu/srv/repo/catalogues/${catalogId}`, {
                 headers: {
                     'Content-Type': 'text/turtle',
-                    'X-API-Key': 'b857b3c5-ccc4-4e1d-b378-32c6b879942d',
-                    Authorization: `Bearer ${token}`,
+                    'X-API-Key': this.options.apiKey,
                 },
             })
                 .then((res) => {
@@ -59,7 +58,7 @@ export class MetadataRepositoryService {
         return catalog;
     }
 
-    async createMetadata(metadata: any, catalogId: string, factoryPrefix: string, token: string) {
+    async createMetadata(metadata: any, catalogId: string, factoryPrefix: string) {
         let newMetadata;
 
         const getValue = (key: string, value: string) => {
@@ -124,8 +123,7 @@ export class MetadataRepositoryService {
                         {
                             headers: {
                                 'Content-Type': 'text/turtle',
-                                'X-API-Key': 'b857b3c5-ccc4-4e1d-b378-32c6b879942d',
-                                Authorization: `Bearer ${token}`,
+                                'X-API-Key': this.options.apiKey,
                             },
                         },
                     )
@@ -146,7 +144,7 @@ export class MetadataRepositoryService {
         return newMetadata;
     }
 
-    async createCatalog(catalogId: string, factory: any, token: string) {
+    async createCatalog(catalogId: string, factory: any) {
         const rdfData = `
         @prefix dcat: <http://www.w3.org/ns/dcat#> .
         @prefix dct:  <http://purl.org/dc/terms/> .
@@ -173,8 +171,7 @@ export class MetadataRepositoryService {
                 .put(`https://${factory.factoryPrefix}.pistis-market.eu/srv/repo/catalogues/${catalogId}`, rdfData, {
                     headers: {
                         'Content-Type': 'text/turtle',
-                        'X-API-Key': 'b857b3c5-ccc4-4e1d-b378-32c6b879942d',
-                        Authorization: `Bearer ${token}`,
+                        'X-API-Key': this.options.apiKey,
                     },
                 })
                 .pipe(

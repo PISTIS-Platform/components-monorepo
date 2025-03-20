@@ -1,7 +1,7 @@
 import { EntityRepository } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { HttpService } from '@nestjs/axios';
-import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
+import { BadGatewayException, BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Column, DataStorageService } from '@pistis/data-storage';
 import { MetadataRepositoryService } from '@pistis/metadata-repository';
 import { getHeaders } from '@pistis/shared';
@@ -33,21 +33,21 @@ export class ConsumerService {
             factory = await this.retrieveFactory(token);
         } catch (err) {
             this.logger.error('Factory retrieval error:', err);
-            throw new Error(`Factory retrieval error: ${err}`);
+            return new NotFoundException(`Factory not found: ${err}`);
         }
 
         try {
             metadata = await this.metadataRepositoryService.retrieveMetadata(assetId);
         } catch (err) {
             this.logger.error('Metadata retrieval error:', err);
-            throw new Error(`Metadata retrieval error: ${err}`);
+            return new BadGatewayException('Metadata retrieval error');
         }
 
         try {
             providerFactory = await this.retrieveProviderFactory(data.assetFactory, token);
         } catch (err) {
             this.logger.error('Provider factory retrieval error:', err);
-            throw new Error(`Provider factory retrieval error: ${err}`);
+            return new NotFoundException(`Provider factory not found: ${err}`);
         }
 
         const storageUrl = `https://${factory.factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api`;
@@ -133,7 +133,7 @@ export class ConsumerService {
                 });
             } catch (err) {
                 this.logger.error('Transfer SQL data error:', err);
-                throw new Error(`Transfer SQL data error: ${err}`);
+                return new BadGatewayException('Transfer SQL data error');
             }
         } else {
             try {
@@ -162,7 +162,7 @@ export class ConsumerService {
                 await this.repo.getEntityManager().persistAndFlush(assetInfo);
             } catch (err) {
                 this.logger.error('Transfer file data error:', err);
-                throw new Error(`Transfer file data error: ${err}`);
+                return new BadGatewayException('Transfer file data error');
             }
         }
 
@@ -171,12 +171,11 @@ export class ConsumerService {
             await this.metadataRepositoryService.createMetadata(
                 metadata,
                 this.options.catalogId,
-                factory.factoryPrefix,
-                token,
+                factory.factoryPrefix
             );
         } catch (err) {
             this.logger.error('Metadata creation error:', err);
-            throw new Error(`Metadata creation error: ${err}`);
+            return new BadGatewayException('Metadata creation error');
         }
 
         const notification = {
