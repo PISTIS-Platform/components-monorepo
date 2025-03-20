@@ -7,7 +7,7 @@ import {
     ApiTags,
     ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { ADMIN_ROLE, AuthToken, NOTIFICATION_CLIENT, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
+import { ADMIN_ROLE, AuthToken, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
 import type { Response } from 'express';
 import { createReadStream } from 'fs';
 import { AuthenticatedUser, Roles } from 'nest-keycloak-connect';
@@ -75,7 +75,6 @@ export class FactoriesRegistrantController {
     }
 
     @Get('org-factories')
-    @Roles({ roles: [NOTIFICATION_CLIENT] })
     @ApiOkResponse({
         description: 'Factories',
         schema: {
