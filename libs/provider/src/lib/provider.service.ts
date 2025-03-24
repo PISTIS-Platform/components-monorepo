@@ -23,7 +23,7 @@ export class ProviderService {
             metadata = await this.metadataRepositoryService.retrieveMetadata(assetId);
         } catch (err) {
             this.logger.error('Metadata retrieval error:', err);
-            return new BadGatewayException('Metadata retrieval error');
+            throw new BadGatewayException('Metadata retrieval error');
         }
 
 
@@ -89,7 +89,7 @@ export class ProviderService {
 
             } catch (err) {
                 this.logger.error('Provider SQL retrieval error:', err);
-                return new BadGatewayException('Provider SQL retrieval error');
+                throw new BadGatewayException('Provider SQL retrieval error');
             }
 
 
@@ -104,7 +104,7 @@ export class ProviderService {
                 }
             } catch (err) {
                 this.logger.error('Provider File retrieval error:', err);
-                return new BadGatewayException('Provider File retrieval error');
+                throw new BadGatewayException('Provider File retrieval error');
             }
 
         }
