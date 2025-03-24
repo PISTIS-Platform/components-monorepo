@@ -16,4 +16,8 @@ export class CreateServiceMappingDTO {
     @IsBoolean()
     @ApiProperty()
     sar!: boolean;
+
+    @IsBoolean()
+    @ApiProperty()
+    clientAuthentication!: boolean;
 }

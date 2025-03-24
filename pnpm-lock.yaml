@@ -4971,18 +4971,9 @@ packages:
   /call-bind-apply-helpers@1.0.2:
     resolution: {integrity: sha512-Sp1ablJ0ivDkSzjcaJdxEunN5/XvksFJ2sMBFfq6x0ryhQV/2b/KwFe21cMpmHtPOSij8K99/wSfoEuTObmuMQ==}
     engines: {node: '>= 0.4'}
-<<<<<<< HEAD
-    requiresBuild: true
     dependencies:
       es-errors: 1.3.0
       function-bind: 1.1.2
-    dev: false
-    optional: true
-=======
-    dependencies:
-      es-errors: 1.3.0
-      function-bind: 1.1.2
->>>>>>> 0a2191137176ea6b3c503a07546bf0b54c6b7472
 
   /call-bind@1.0.7:
     resolution: {integrity: sha512-GHTSNSYICQ7scH7sZ+M2rFopRoLh8t2bLSW6BbgrtLsahOIB5iyAVJf9GjWK3cYTDaMj4XdBpM1cA6pIS0Kv2w==}
@@ -5000,7 +4991,7 @@ packages:
     requiresBuild: true
     dependencies:
       call-bind-apply-helpers: 1.0.2
-      get-intrinsic: 1.2.7
+      get-intrinsic: 1.3.0
     dev: false
     optional: true
 
@@ -5145,13 +5136,8 @@ packages:
     engines: {node: '>=6.0'}
     dev: true
 
-<<<<<<< HEAD
-  /chromedriver@133.0.1:
-    resolution: {integrity: sha512-Z9VrJ9547daetazzP4k+7COj0PTtkomvtt8OZr8swTzsqDOzG0Xymdxg0dUtptc4da3X9Zts1iZoxOkm7blx/g==}
-=======
-  /chromedriver@134.0.2:
-    resolution: {integrity: sha512-r1yIHP0Lo61CdFGjZXITSY2ZGYBS5B/qwOs8NMm0r31qnyS4MAuSmMiIiZKhu+ThxfcT8zPrGPGT6RmM0LWljQ==}
->>>>>>> 0a2191137176ea6b3c503a07546bf0b54c6b7472
+  /chromedriver@134.0.5:
+    resolution: {integrity: sha512-edXbiuShAvH6Elx8Hobl4NQkgNRMIozcW7ZlEiE8TBynZHRazrepO9hfftQzZgztPvjMQiSWeWjZaDV3SecYaw==}
     engines: {node: '>=18'}
     hasBin: true
     requiresBuild: true
@@ -6142,19 +6128,10 @@ packages:
   /dunder-proto@1.0.1:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
     engines: {node: '>= 0.4'}
-<<<<<<< HEAD
-    requiresBuild: true
-=======
->>>>>>> 0a2191137176ea6b3c503a07546bf0b54c6b7472
     dependencies:
       call-bind-apply-helpers: 1.0.2
       es-errors: 1.3.0
       gopd: 1.2.0
-<<<<<<< HEAD
-    dev: false
-    optional: true
-=======
->>>>>>> 0a2191137176ea6b3c503a07546bf0b54c6b7472
 
   /duplexer@0.1.2:
     resolution: {integrity: sha512-jtD6YG370ZCIi/9GTaJKQxWTZD045+4R4hTk/x1UyoqadyJ9x9CgSi1RlVDQF8U2sxLLSnFkCaMihqljHIWgMg==}
@@ -6315,12 +6292,6 @@ packages:
   /es-define-property@1.0.1:
     resolution: {integrity: sha512-e3nRfgfUZ4rNGL232gUgX06QNyyez04KdjFrF+LTRoOXmrOgFKDg4BCdsjW8EnT69eqdYGmRpJwiPVYNrCaW3g==}
     engines: {node: '>= 0.4'}
-<<<<<<< HEAD
-    requiresBuild: true
-    dev: false
-    optional: true
-=======
->>>>>>> 0a2191137176ea6b3c503a07546bf0b54c6b7472
 
   /es-errors@1.3.0:
     resolution: {integrity: sha512-Zf5H2Kxt2xjTvbJvP2ZWLEICxA6j+hAmMzIlypy4xcBg1vKVnx89Wy0GbS+kf5cwCVFFzdCFh2XSCFNULS6csw==}
@@ -6333,13 +6304,6 @@ packages:
   /es-object-atoms@1.1.1:
     resolution: {integrity: sha512-FGgH2h8zKNim9ljj7dankFPcICIK9Cp5bm+c2gQSYePhpaG5+esrLODihIorn+Pe6FGJzWhXQotPv73jTaldXA==}
     engines: {node: '>= 0.4'}
-<<<<<<< HEAD
-    requiresBuild: true
-    dependencies:
-      es-errors: 1.3.0
-    dev: false
-    optional: true
-=======
     dependencies:
       es-errors: 1.3.0
 
@@ -6351,7 +6315,6 @@ packages:
       get-intrinsic: 1.3.0
       has-tostringtag: 1.0.2
       hasown: 2.0.2
->>>>>>> 0a2191137176ea6b3c503a07546bf0b54c6b7472
 
   /escalade@3.1.2:
     resolution: {integrity: sha512-ErCHMCae19vR8vQGe50xIsVomy19rg6gFu3+r3jkEO46suLMWBksvVyoGgQV+jOfl84ZSOSlmv6Gxa89PmTGmA==}
@@ -7066,16 +7029,9 @@ packages:
       has-symbols: 1.0.3
       hasown: 2.0.1
 
-<<<<<<< HEAD
-  /get-intrinsic@1.2.7:
-    resolution: {integrity: sha512-VW6Pxhsrk0KAOqs3WEd0klDiF/+V7gQOpAvY1jVU/LHmaD/kQO4523aiJuikX/QAKYiW6x8Jh+RJej1almdtCA==}
-    engines: {node: '>= 0.4'}
-    requiresBuild: true
-=======
   /get-intrinsic@1.3.0:
     resolution: {integrity: sha512-9fSjSaos/fRIVIp+xSJlE6lfwhES7LNtKaCBIamHsjr2na1BiABJPo0mOjjz8GJDURarmCPGqaiVg5mfjb98CQ==}
     engines: {node: '>= 0.4'}
->>>>>>> 0a2191137176ea6b3c503a07546bf0b54c6b7472
     dependencies:
       call-bind-apply-helpers: 1.0.2
       es-define-property: 1.0.1
@@ -7087,17 +7043,11 @@ packages:
       has-symbols: 1.1.0
       hasown: 2.0.2
       math-intrinsics: 1.1.0
-<<<<<<< HEAD
-    dev: false
-    optional: true
-=======
->>>>>>> 0a2191137176ea6b3c503a07546bf0b54c6b7472
 
   /get-package-type@0.1.0:
     resolution: {integrity: sha512-pjzuKtY64GYfWizNAJ0fr9VqttZkNiK2iS430LtIHzjBEr6bX8Am2zm4sW4Ro5wjWW5cAlRL1qAMTcXbjNAO2Q==}
     engines: {node: '>=8.0.0'}
 
-<<<<<<< HEAD
   /get-port@5.1.1:
     resolution: {integrity: sha512-g/Q1aTSDOxFpchXC4i8ZWvxA1lnPqx/JHqcpIw0/LX9T8x/GBbi6YnlN5nhaKIFkT8oFsscUKgDJYxfwfS6QsQ==}
     engines: {node: '>=8'}
@@ -7108,12 +7058,9 @@ packages:
   /get-proto@1.0.1:
     resolution: {integrity: sha512-sTSfBjoXBp89JvIKIefqw7U2CCebsc74kiY6awiGogKtoSGbgjYE/G/+l9sF3MWFPNc9IcoOC4ODfKHfxFmp0g==}
     engines: {node: '>= 0.4'}
-    requiresBuild: true
     dependencies:
       dunder-proto: 1.0.1
       es-object-atoms: 1.1.1
-    dev: false
-    optional: true
 
   /get-stream@3.0.0:
     resolution: {integrity: sha512-GlhdIUuVakc8SJ6kK0zAFbiGzRFzNnY4jUuEbV9UROo4Y+0Ny4fjvcZFVTeDA4odpFyOQzaw6hXukJSq/f28sQ==}
@@ -7121,14 +7068,6 @@ packages:
     requiresBuild: true
     dev: false
     optional: true
-=======
-  /get-proto@1.0.1:
-    resolution: {integrity: sha512-sTSfBjoXBp89JvIKIefqw7U2CCebsc74kiY6awiGogKtoSGbgjYE/G/+l9sF3MWFPNc9IcoOC4ODfKHfxFmp0g==}
-    engines: {node: '>= 0.4'}
-    dependencies:
-      dunder-proto: 1.0.1
-      es-object-atoms: 1.1.1
->>>>>>> 0a2191137176ea6b3c503a07546bf0b54c6b7472
 
   /get-stream@5.2.0:
     resolution: {integrity: sha512-nBF+F1rAZVCu/p7rjzgA+Yb4lfYXrpl7a6VmJrU8wF9I1CKvP/QwPNZHnOlwbTkY6dvtFIzFMSyQXbLoTQPRpA==}
@@ -7293,12 +7232,6 @@ packages:
   /gopd@1.2.0:
     resolution: {integrity: sha512-ZUKRh6/kUFoAiTAtTYPZJ3hw9wNxx+BIBOijnlG9PnrJsCcSjs1wyyD6vJpaYtgnzDrKYRSqf3OO6Rfa93xsRg==}
     engines: {node: '>= 0.4'}
-<<<<<<< HEAD
-    requiresBuild: true
-    dev: false
-    optional: true
-=======
->>>>>>> 0a2191137176ea6b3c503a07546bf0b54c6b7472
 
   /graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
@@ -7378,26 +7311,12 @@ packages:
   /has-symbols@1.1.0:
     resolution: {integrity: sha512-1cDNdwJ2Jaohmb3sg4OmKaMBwuC48sYni5HUw2DvsC8LjGTLK9h+eb1X6RyuOHe4hT0ULCW68iomhjUoKUqlPQ==}
     engines: {node: '>= 0.4'}
-<<<<<<< HEAD
-    requiresBuild: true
-    dev: false
-    optional: true
-=======
->>>>>>> 0a2191137176ea6b3c503a07546bf0b54c6b7472
 
   /has-tostringtag@1.0.2:
     resolution: {integrity: sha512-NqADB8VjPFLM2V0VvHUewwwsw0ZWBaIdgo+ieHtK3hasLz4qeCRjYcqfB6AQrBggRKppKF8L52/VqdVsO47Dlw==}
     engines: {node: '>= 0.4'}
-<<<<<<< HEAD
-    requiresBuild: true
     dependencies:
       has-symbols: 1.0.3
-    dev: false
-    optional: true
-=======
-    dependencies:
-      has-symbols: 1.0.3
->>>>>>> 0a2191137176ea6b3c503a07546bf0b54c6b7472
 
   /hash.js@1.1.7:
     resolution: {integrity: sha512-taOaskGt4z4SOANNseOviYDvjEJinIkRgmp7LbKP2YTTmVxWBl87s/uzK9r+44BclBSp2X7K1hqeNfz9JbBeXA==}
@@ -7415,16 +7334,8 @@ packages:
   /hasown@2.0.2:
     resolution: {integrity: sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ==}
     engines: {node: '>= 0.4'}
-<<<<<<< HEAD
-    requiresBuild: true
     dependencies:
       function-bind: 1.1.2
-    dev: false
-    optional: true
-=======
-    dependencies:
-      function-bind: 1.1.2
->>>>>>> 0a2191137176ea6b3c503a07546bf0b54c6b7472
 
   /he@1.2.0:
     resolution: {integrity: sha512-F/1DnUGPopORZi0ni+CvrCgHQ5FyEAHRLSApuYWMmrbSwoN2Mn/7k+Gl38gJnR7yyDZk6WLXwiGod1JOWNDKGw==}
@@ -8727,11 +8638,7 @@ packages:
     dependencies:
       jwk-to-pem: 2.0.5
     optionalDependencies:
-<<<<<<< HEAD
-      chromedriver: 133.0.1
-=======
-      chromedriver: 134.0.2
->>>>>>> 0a2191137176ea6b3c503a07546bf0b54c6b7472
+      chromedriver: 134.0.5
     transitivePeerDependencies:
       - debug
       - supports-color
@@ -8916,6 +8823,8 @@ packages:
       webpack: '*'
     peerDependenciesMeta:
       webpack:
+        optional: true
+      webpack-sources:
         optional: true
     dependencies:
       webpack: 5.90.3(@swc/core@1.3.107)(webpack-cli@5.1.4)
@@ -9262,12 +9171,6 @@ packages:
   /math-intrinsics@1.1.0:
     resolution: {integrity: sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==}
     engines: {node: '>= 0.4'}
-<<<<<<< HEAD
-    requiresBuild: true
-    dev: false
-    optional: true
-=======
->>>>>>> 0a2191137176ea6b3c503a07546bf0b54c6b7472
 
   /mdn-data@2.0.28:
     resolution: {integrity: sha512-aylIc7Z9y4yzHYAJNuESG3hfhC+0Ibp/MAMiaOZgNv4pmEdFyfZhhhny4MNiAfWdBQ1RQ2mfDWmM1x8SvGyp8g==}

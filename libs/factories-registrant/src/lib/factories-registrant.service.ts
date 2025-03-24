@@ -8,7 +8,6 @@ import isBetween from 'dayjs/plugin/isBetween';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import { catchError, firstValueFrom, lastValueFrom, map, mergeMap, of, tap, toArray } from 'rxjs';
-import { v4 as uuid } from 'uuid';
 
 import { CreateFactoryDTO, UpdateFactoryDTO, UpdateFactoryIpDTO } from './dto';
 import { FactoryCreationDTO } from './dto/factory-creation.dto';
@@ -43,7 +42,7 @@ export class FactoriesRegistrantService {
         for (const clientId of client.clientsIds) {
             await firstValueFrom(
                 this.httpService
-                    .get(`${this.options.identityAccessManagementUrl}/factory/${clientId}`, {
+                    .get(`${this.options.identityAccessManagementUrl}/factory/clients/${clientId}`, {
                         headers: getHeaders(token),
                     })
                     .pipe(
@@ -181,7 +180,7 @@ export class FactoriesRegistrantService {
             of(keycloakClients.clientsIds).pipe(
                 (client: Record<string, any>) =>
                     this.httpService.put(
-                        `${this.options.identityAccessManagementUrl}/factory/${client}/enable`,
+                        `${this.options.identityAccessManagementUrl}/factory/clients/${client}/enable`,
                         client,
                         {
                             headers: getHeaders(token),
@@ -217,7 +216,7 @@ export class FactoriesRegistrantService {
         await lastValueFrom(
             of(client.clientsIds).pipe(
                 (client: Record<string, any>) =>
-                    this.httpService.put(`${this.options.identityAccessManagementUrl}/factory/${client}/disable`, {
+                    this.httpService.put(`${this.options.identityAccessManagementUrl}/factory/clients/${client}/disable`, {
                         headers: getHeaders(token),
                     }),
                 catchError((error: any) => {
@@ -305,11 +304,36 @@ export class FactoriesRegistrantService {
     }
 
     async createFactory(data: FactoryCreationDTO, token: string): Promise<FactoriesRegistrant> {
+        const factoryIAM = {
+            name: data.organizationName,
+            prefix: data.factoryPrefix,
+            type: data.type,
+            country: data.country,
+            domain: data.domain,
+            size: data.size,
+            orgAdminFirstname: data.adminFirstName,
+            orgAdminLastname: data.adminLastName,
+            orgAdminEmail: data.adminEmail
+        }
+
+        const factoryID = await firstValueFrom(
+            this.httpService
+                .post(`${this.options.identityAccessManagementUrl}/factory`, factoryIAM, {
+                    headers: getHeaders(token),
+                })
+                .pipe(
+                    map((res) => res.data),
+                    catchError((error: any) => {
+                        this.logger.error('Factory creation error:', error);
+                        throw error;
+                    }),
+                ),
+        );
+
         //transform into object to be saved in DB
         const objToBeSaved: CreateFactoryDTO = {
             organizationName: data.organizationName,
-            //FIXME: Get Organization ID from other call
-            organizationId: uuid(),
+            organizationId: factoryID.id,
             ip: data.ip,
             factoryPrefix: data.factoryPrefix,
             country: data.country,
@@ -364,16 +388,17 @@ export class FactoriesRegistrantService {
         //If client is undefined then we create the clients in keycloak and in DB
         if (!client) {
             //Create object of clients upon discovered services
-            newClients = services.map(({ id, serviceUrl, serviceName, sar }) => ({
+            newClients = services.map(({ id, serviceUrl, serviceName, sar, clientAuthentication }) => ({
                 clientId: `${factory?.organizationId}--${id}`,
                 name: `${factory?.organizationName}: ${serviceName}`,
                 description: `${factory?.organizationName}: ${serviceName}`,
+                publicClient: !clientAuthentication,
                 redirect: true,
                 'service-account': {
                     enabled: sar,
                     roles: ['SRV_NOTIFICATION'],
                 },
-                redirectUris: [`https://${factory?.factoryPrefix}.pistis-market.eu${serviceUrl}/*`],
+                redirectUris: [`https://${factory?.factoryPrefix}.pistis-market.eu${serviceUrl.replace(/\/+$/, '')}}/*`],
                 webOrigins: ['*'],
             }));
 
@@ -407,12 +432,13 @@ export class FactoriesRegistrantService {
                         clientId: `${factory?.organizationId}--${service.id}`,
                         name: `${factory?.organizationName}: ${service.serviceName}`,
                         description: `${factory?.organizationName}: ${service.serviceName}`,
+                        publicClient: !service.clientAuthentication,
                         redirect: true,
                         'service-account': {
                             enabled: service.sar,
                             roles: ['SRV_NOTIFICATION'],
                         },
-                        redirectUris: [`https://${factory?.factoryPrefix}.pistis-market.eu${service.serviceUrl}/*`],
+                        redirectUris: [`https://${factory?.factoryPrefix}.pistis-market.eu${service.serviceUrl.replace(/\/+$/, '')}}/*`],
                         webOrigins: ['*'],
                     },
                 ];
@@ -430,12 +456,13 @@ export class FactoriesRegistrantService {
                         clientId: `${factory?.organizationId}--${service.id}`,
                         name: `${factory?.organizationName}: ${service.serviceName}`,
                         description: `${factory?.organizationName}: ${service.serviceName}`,
+                        publicClient: !service.clientAuthentication,
                         redirect: true,
                         'service-account': {
                             enabled: service.sar,
                             roles: ['SRV_NOTIFICATION'],
                         },
-                        redirectUris: [`https://${factory?.factoryPrefix}.pistis-market.eu${service.serviceUrl}/*`],
+                        redirectUris: [`https://${factory?.factoryPrefix}.pistis-market.eu${service.serviceUrl.replace(/\/+$/, '')}}/*`],
                         webOrigins: ['*'],
                     },
                 ];
@@ -446,7 +473,6 @@ export class FactoriesRegistrantService {
                 await this.clientRepo.getEntityManager().persistAndFlush(client);
             }
         }
-
         return createdClients;
     }
 
@@ -516,8 +542,8 @@ export class FactoriesRegistrantService {
                         //Change url calculation because patch needs every clientId in url
                         url:
                             method === 'post'
-                                ? `${this.options.identityAccessManagementUrl}/factory`
-                                : `${this.options.identityAccessManagementUrl}/factory/${client.clientId}`,
+                                ? `${this.options.identityAccessManagementUrl}/factory/clients`
+                                : `${this.options.identityAccessManagementUrl}/factory/clients/${client.clientId}`,
                         data: client,
                         headers: getHeaders(token),
                     }),
