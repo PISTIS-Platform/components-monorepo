@@ -87,6 +87,20 @@ export class FactoriesRegistrantController {
         return this.factoriesService.retrieveFactories();
     }
 
+    @Get('org-factories')
+    @ApiOkResponse({
+        description: 'Factories',
+        schema: {
+            example: [
+                `'8aff8e9b-1322-4395-a53e-c445d159eb80': 'https://test.pistis-market.eu'`,
+                `'c0604304-a46e-42f9-bec9-7894f5ba73a6': 'https://test2.pistis-market.eu'`,
+            ],
+        },
+    })
+    async findFactoriesMapping() {
+        return this.factoriesService.findFactoriesMapping();
+    }
+
     @Get('list')
     @ApiOkResponse({
         description: 'Accepted Factory',
@@ -259,6 +273,22 @@ export class FactoriesRegistrantController {
         res.send(YAML.stringify(configmap));
     }
 
+    @Get('download-keycloak-clients-admin/:organizationId')
+    @Roles({ roles: [ADMIN_ROLE] })
+    async downloadKeycloakClientsAdmin(
+        @Res({ passthrough: true }) res: Response,
+        @Param('organizationId', new ParseUUIDPipe({ version: '4' })) organizationId: string,
+    ) {
+        const { fileBuffer, factoryPrefix } = await this.factoriesService.getClientsSecretAdmin(organizationId);
+
+        // Set appropriate headers to indicate JSON content
+        res.setHeader('Content-Type', 'application/yaml');
+        res.setHeader('Content-Disposition', `attachment; filename=.env.${factoryPrefix}.factory`);
+
+        // Send file as response
+        res.send(fileBuffer);
+    }
+
     @Get(':factoryId')
     @ApiOkResponse({
         description: 'Factory',
@@ -281,6 +311,30 @@ export class FactoriesRegistrantController {
         @Param('factoryId', new ParseUUIDPipe({ version: '4' })) factoryId: string,
     ): Promise<FactoriesRegistrant> {
         return this.factoriesService.retrieveFactory(factoryId);
+    }
+
+    @Get('/organization/:orgId')
+    @ApiOkResponse({
+        description: 'Factory',
+        schema: {
+            example: {
+                id: '768004e7-33b1-4248-bafe-04688f49f161',
+                organizationName: 'TestOrg',
+                organizationId: '8aff8e9b-1322-4395-a53e-c445d159eb80',
+                ip: '192.168.1.1',
+                country: 'Greece',
+                status: 'live',
+                isAccepted: false,
+                isActive: false,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+        },
+    })
+    async findFactoryInfoByOrganizationId(
+        @Param('orgId', new ParseUUIDPipe({ version: '4' })) orgId: string,
+    ): Promise<FactoriesRegistrant> {
+        return this.factoriesService.findFactoryInfoByOrganizationId(orgId);
     }
 
     @Get('/name/:factoryName')

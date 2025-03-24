@@ -22,7 +22,7 @@ import { ConsumerService } from './consumer.service';
 export class ConsumerModule extends ConfigurableModuleClass {
     static register(options: typeof CONSUMER_OPTIONS_TYPE): DynamicModule {
         return {
-            imports: [DataStorageModule.register({ url: options.dataStorageUrl }), MetadataRepositoryModule.register({ url: options.metadataRepositoryUrl }),],
+            imports: [DataStorageModule.register({ url: options.dataStorageUrl }), MetadataRepositoryModule.register({ url: options.metadataRepositoryUrl, apiKey: options.catalogKey }),],
 
             ...super.register(options),
         };
@@ -48,7 +48,7 @@ export class ConsumerModule extends ConfigurableModuleClass {
                 useFactory: async (config: typeof asyncOptions.inject) => {
                     const options: any = asyncOptions.useFactory ? await asyncOptions.useFactory(config) : {};
 
-                    return { url: options.metadataRepositoryUrl };
+                    return { url: options.metadataRepositoryUrl, apiKey: options.catalogKey };
                 },
             }),
         ];

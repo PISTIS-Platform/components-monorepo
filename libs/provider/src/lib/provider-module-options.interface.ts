@@ -6,4 +6,5 @@ export interface ProviderModuleOptions {
     clientId: string;
     secret: string;
     authServerUrl: string;
+    catalogKey: string;
 }

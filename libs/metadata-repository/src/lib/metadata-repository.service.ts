@@ -30,18 +30,18 @@ export class MetadataRepositoryService {
             );
         } catch (err) {
             this.logger.error('Metadata retrieval from cloud error:', err);
+            throw new Error(`Metadata retrieval from cloud error: ${err}`);
         }
         return metadata;
     }
 
-    async retrieveCatalog(catalogId: string, factoryPrefix: string, token: string) {
+    async retrieveCatalog(catalogId: string, factoryPrefix: string) {
         let catalog;
         try {
             catalog = await fetch(`https://${factoryPrefix}.pistis-market.eu/srv/repo/catalogues/${catalogId}`, {
                 headers: {
                     'Content-Type': 'text/turtle',
-                    'X-API-Key': '781f8a00-5d83-41eb-b778-5a4927ef477e',
-                    Authorization: `Bearer ${token}`,
+                    'X-API-Key': this.options.apiKey,
                 },
             })
                 .then((res) => {
@@ -53,11 +53,12 @@ export class MetadataRepositoryService {
                 .then((response) => response['@graph']);
         } catch (err) {
             this.logger.error('Factory catalog retrieval error:', err);
+            throw new Error(`Factory catalog retrieval error: ${err}`);
         }
         return catalog;
     }
 
-    async createMetadata(metadata: any, catalogId: string, factoryPrefix: string, token: string) {
+    async createMetadata(metadata: any, catalogId: string, factoryPrefix: string) {
         let newMetadata;
 
         const getValue = (key: string, value: string) => {
@@ -68,6 +69,10 @@ export class MetadataRepositoryService {
             const entry = metadata.monetization.find((item: any) => item[key]);
             return entry ? (value !== '' ? entry[key][value] : entry[key]) : '';
         };
+
+        const byteSizeValue = getValue('byte_size', '');
+        const byteSizeEntry = byteSizeValue ? `dcat:byteSize  "${byteSizeValue}"^^xsd:decimal ;` : '';
+
 
         const rdfData = `
             @prefix dcat:                <http://www.w3.org/ns/dcat#> .
@@ -86,9 +91,9 @@ export class MetadataRepositoryService {
                 ? metadata.keywords.map((keyword: any) => `"${keyword.label}"@${keyword.language}`).join(', ')
                 : ''
             } ;
-                dct:publisher       [ a     foaf:${getValue('publisher', 'type')} ;
-                                            foaf:mbox <${getValue('publisher', 'email')}> ;
-                                            foaf:name "${getValue('publisher', 'name')}" ; ] ;
+                dct:publisher       [ a     foaf:${metadata.publisher.type} ;
+                                            foaf:mbox <${metadata.publisher.email}> ;
+                                            foaf:name "${metadata.publisher.name}" ; ] ;
                 dcat:theme          <http://publications.europa.eu/resource/authority/data-theme/EDUC> ;
                 dct:language        <http://publications.europa.eu/resource/authority/language/ENG> ;
                 dct:issued          "${new Date().toISOString()}"^^xsd:dateTime ;
@@ -105,7 +110,7 @@ export class MetadataRepositoryService {
                                     skos:exactMatch <${getValueLicense('license', 'resource')}>
                             ] ;
                 dct:format     <${getValue('format', 'resource')}> ;
-                dcat:byteSize  "${getValue('byte_size', '')}"^^xsd:decimal ;
+                ${byteSizeEntry}
                 dcat:accessURL <${getValue('access_url', '0')}> .
         `;
 
@@ -118,8 +123,7 @@ export class MetadataRepositoryService {
                         {
                             headers: {
                                 'Content-Type': 'text/turtle',
-                                'X-API-Key': '781f8a00-5d83-41eb-b778-5a4927ef477e',
-                                Authorization: `Bearer ${token}`,
+                                'X-API-Key': this.options.apiKey,
                             },
                         },
                     )
@@ -135,11 +139,12 @@ export class MetadataRepositoryService {
             );
         } catch (err) {
             this.logger.error('Metadata creation error:', err);
+            throw new Error(`Metadata creation error: ${err}`);
         }
         return newMetadata;
     }
 
-    async createCatalog(catalogId: string, factory: any, token: string) {
+    async createCatalog(catalogId: string, factory: any) {
         const rdfData = `
         @prefix dcat: <http://www.w3.org/ns/dcat#> .
         @prefix dct:  <http://purl.org/dc/terms/> .
@@ -166,8 +171,7 @@ export class MetadataRepositoryService {
                 .put(`https://${factory.factoryPrefix}.pistis-market.eu/srv/repo/catalogues/${catalogId}`, rdfData, {
                     headers: {
                         'Content-Type': 'text/turtle',
-                        'X-API-Key': '781f8a00-5d83-41eb-b778-5a4927ef477e',
-                        Authorization: `Bearer ${token}`,
+                        'X-API-Key': this.options.apiKey,
                     },
                 })
                 .pipe(
