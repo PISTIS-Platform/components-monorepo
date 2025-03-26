@@ -1,4 +1,16 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Put, Res, StreamableFile } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Param,
+    ParseUUIDPipe,
+    Patch,
+    Post,
+    Put,
+    Res,
+    StreamableFile,
+} from '@nestjs/common';
 import {
     ApiBearerAuth,
     ApiBody,
@@ -16,6 +28,7 @@ import YAML from 'yaml';
 
 import { UpdateFactoryDTO, UpdateFactoryIpDTO } from './dto';
 import { CreateFactoryDTO } from './dto/create-factory.dto';
+import { FactoryCreationDTO } from './dto/factory-creation.dto';
 import { CreateServiceMappingDTO } from './dto/create-service-mapping.dto';
 import { UpdateServiceMappingDTO } from './dto/update-service-mapping.dto';
 import { FactoriesRegistrant } from './entities/factories-registrant.entity';
@@ -47,7 +60,7 @@ export class FactoriesRegistrantController {
     constructor(
         private readonly factoriesService: FactoriesRegistrantService,
         private readonly servicesMappingService: ServicesMappingService,
-    ) { }
+    ) {}
 
     @Get()
     @Roles({ roles: [ADMIN_ROLE] })
@@ -342,12 +355,9 @@ export class FactoriesRegistrantController {
             },
         },
     })
-    async findFactoryInfoByPrefix(
-        @Param('factoryName') factoryName: string,
-    ): Promise<FactoriesRegistrant> {
+    async findFactoryInfoByPrefix(@Param('factoryName') factoryName: string): Promise<FactoriesRegistrant> {
         return this.factoriesService.retrieveFactoryByPrefix(factoryName);
     }
-
 
     @Put('set-ip')
     @ApiOkResponse({
@@ -422,9 +432,9 @@ export class FactoriesRegistrantController {
             },
         },
     })
-    @ApiBody({ type: CreateFactoryDTO })
+    @ApiBody({ type: FactoryCreationDTO })
     @Roles({ roles: [ADMIN_ROLE] })
-    async createFactory(@AuthToken() token: string, @Body() data: CreateFactoryDTO): Promise<FactoriesRegistrant> {
+    async createFactory(@AuthToken() token: string, @Body() data: FactoryCreationDTO): Promise<FactoriesRegistrant> {
         return this.factoriesService.createFactory(data, token);
     }
 
@@ -493,7 +503,11 @@ export class FactoriesRegistrantController {
             example: { message: 'Factory deleted' },
         },
     })
-    async deleteFactory(@Param('factoryId', new ParseUUIDPipe({ version: '4' })) factoryId: string, @AuthToken() token: string, @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,) {
+    async deleteFactory(
+        @Param('factoryId', new ParseUUIDPipe({ version: '4' })) factoryId: string,
+        @AuthToken() token: string,
+        @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
+    ) {
         return this.factoriesService.deleteFactory(token, factoryId, user.id);
     }
 
@@ -505,7 +519,11 @@ export class FactoriesRegistrantController {
             example: { message: 'Client deleted' },
         },
     })
-    async deleteClient(@Param('clientId', new ParseUUIDPipe({ version: '4' })) clientId: string, @Param('organizationId', new ParseUUIDPipe({ version: '4' })) organizationId: string, @AuthToken() token: string) {
+    async deleteClient(
+        @Param('clientId', new ParseUUIDPipe({ version: '4' })) clientId: string,
+        @Param('organizationId', new ParseUUIDPipe({ version: '4' })) organizationId: string,
+        @AuthToken() token: string,
+    ) {
         return this.factoriesService.deleteClient(token, clientId, organizationId);
     }
 }

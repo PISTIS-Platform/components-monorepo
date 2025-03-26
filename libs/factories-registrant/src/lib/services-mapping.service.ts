@@ -62,6 +62,7 @@ export class ServicesMappingService {
         if (data.serviceName) serviceMapping.serviceName = data.serviceName;
         if (data.serviceUrl) serviceMapping.serviceUrl = data.serviceUrl;
         if (data.sar) serviceMapping.sar = data.sar;
+        if (data.clientAuthentication) serviceMapping.clientAuthentication = data.clientAuthentication
 
         await this.servicesMappingRepo.getEntityManager().flush();
 

@@ -255,6 +255,16 @@
           "default": "false",
           "mappedType": "boolean"
         },
+        "client_authentication": {
+          "name": "client_authentication",
+          "type": "boolean",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "default": "true",
+          "mappedType": "boolean"
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamptz",
