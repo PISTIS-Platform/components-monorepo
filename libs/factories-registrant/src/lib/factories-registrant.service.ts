@@ -462,7 +462,7 @@ export class FactoriesRegistrantService {
                             enabled: service.sar,
                             roles: ['SRV_NOTIFICATION'],
                         },
-                        redirectUris: [`https://${factory?.factoryPrefix}.pistis-market.eu${service.serviceUrl.replace(/\/+$/, '')}}/*`],
+                        redirectUris: [`https://${factory?.factoryPrefix}.pistis-market.eu${service.serviceUrl.replace(/\/+$/, '')}/*`],
                         webOrigins: ['*'],
                     },
                 ];
