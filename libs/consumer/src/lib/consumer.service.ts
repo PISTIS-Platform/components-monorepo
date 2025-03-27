@@ -5,7 +5,7 @@ import { BadGatewayException, BadRequestException, Inject, Injectable, Logger, N
 import { Column, DataStorageService } from '@pistis/data-storage';
 import { MetadataRepositoryService } from '@pistis/metadata-repository';
 import { getHeaders } from '@pistis/shared';
-import { catchError, firstValueFrom, map, of, tap } from 'rxjs';
+import { catchError, firstValueFrom, map, of, tap, throwError } from 'rxjs';
 
 import { AssetRetrievalInfo } from './asset-retrieval-info.entity';
 import { CONSUMER_MODULE_OPTIONS } from './consumer.module-definition';
@@ -33,21 +33,21 @@ export class ConsumerService {
             factory = await this.retrieveFactory(token);
         } catch (err) {
             this.logger.error('Factory retrieval error:', err);
-            return new NotFoundException(`Factory not found: ${err}`);
+            throw new NotFoundException(`Factory not found: ${err}`);
         }
 
         try {
             metadata = await this.metadataRepositoryService.retrieveMetadata(assetId);
         } catch (err) {
             this.logger.error('Metadata retrieval error:', err);
-            return new BadGatewayException('Metadata retrieval error');
+            throw new BadGatewayException('Metadata retrieval error');
         }
 
         try {
             providerFactory = await this.retrieveProviderFactory(data.assetFactory, token);
         } catch (err) {
             this.logger.error('Provider factory retrieval error:', err);
-            return new NotFoundException(`Provider factory not found: ${err}`);
+            throw new NotFoundException(`Provider factory not found: ${err}`);
         }
 
         const storageUrl = `https://${factory.factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api`;
@@ -133,7 +133,7 @@ export class ConsumerService {
                 });
             } catch (err) {
                 this.logger.error('Transfer SQL data error:', err);
-                return new BadGatewayException('Transfer SQL data error');
+                throw new BadGatewayException('Transfer SQL data error');
             }
         } else {
             try {
@@ -162,7 +162,7 @@ export class ConsumerService {
                 await this.repo.getEntityManager().persistAndFlush(assetInfo);
             } catch (err) {
                 this.logger.error('Transfer file data error:', err);
-                return new BadGatewayException('Transfer file data error');
+                throw new BadGatewayException('Transfer file data error');
             }
         }
 
@@ -175,7 +175,7 @@ export class ConsumerService {
             );
         } catch (err) {
             this.logger.error('Metadata creation error:', err);
-            return new BadGatewayException('Metadata creation error');
+            throw new BadGatewayException('Metadata creation error');
         }
 
         const notification = {
@@ -210,7 +210,7 @@ export class ConsumerService {
                     // Catch any error occurred during the notification creation
                     catchError((error) => {
                         this.logger.error('Error occurred during notification creation: ', error);
-                        return of({ error: 'Error occurred during notification creation' });
+                        return throwError(() => new BadRequestException('Error occurred during notification creation'));
                     }),
                 ),
         );
