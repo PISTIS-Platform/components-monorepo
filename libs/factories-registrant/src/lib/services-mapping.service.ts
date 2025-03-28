@@ -59,12 +59,13 @@ export class ServicesMappingService {
     async update(id: string, data: UpdateServiceMappingDTO) {
         const serviceMapping: RegisteredService = await this.servicesMappingRepo.findOneOrFail({ id });
 
-        if (data.serviceName) serviceMapping.serviceName = data.serviceName;
-        if (data.serviceUrl) serviceMapping.serviceUrl = data.serviceUrl;
-        if (data.sar) serviceMapping.sar = data.sar;
-        if (data.clientAuthentication) serviceMapping.clientAuthentication = data.clientAuthentication
+        serviceMapping.serviceName = data.serviceName ?? serviceMapping.serviceName;
+        serviceMapping.serviceUrl = data.serviceUrl ?? serviceMapping.serviceUrl;
+        serviceMapping.sar = data.sar ?? serviceMapping.sar;
+        serviceMapping.clientAuthentication = data.clientAuthentication ?? serviceMapping.clientAuthentication;
+        serviceMapping.updatedAt = new Date()
 
-        await this.servicesMappingRepo.getEntityManager().flush();
+        await this.servicesMappingRepo.getEntityManager().persistAndFlush(serviceMapping);
 
         return serviceMapping;
     }
