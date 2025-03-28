@@ -1,4 +1,16 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Put, Res, StreamableFile } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Param,
+    ParseUUIDPipe,
+    Patch,
+    Post,
+    Put,
+    Res,
+    StreamableFile,
+} from '@nestjs/common';
 import {
     ApiBearerAuth,
     ApiBody,
@@ -16,6 +28,7 @@ import YAML from 'yaml';
 
 import { UpdateFactoryDTO, UpdateFactoryIpDTO } from './dto';
 import { CreateFactoryDTO } from './dto/create-factory.dto';
+import { FactoryCreationDTO } from './dto/factory-creation.dto';
 import { CreateServiceMappingDTO } from './dto/create-service-mapping.dto';
 import { UpdateServiceMappingDTO } from './dto/update-service-mapping.dto';
 import { FactoriesRegistrant } from './entities/factories-registrant.entity';
@@ -47,7 +60,7 @@ export class FactoriesRegistrantController {
     constructor(
         private readonly factoriesService: FactoriesRegistrantService,
         private readonly servicesMappingService: ServicesMappingService,
-    ) { }
+    ) {}
 
     @Get()
     @Roles({ roles: [ADMIN_ROLE] })
@@ -72,6 +85,20 @@ export class FactoriesRegistrantController {
     })
     async findFactories(): Promise<FactoriesRegistrant[]> {
         return this.factoriesService.retrieveFactories();
+    }
+
+    @Get('org-factories')
+    @ApiOkResponse({
+        description: 'Factories',
+        schema: {
+            example: [
+                `'8aff8e9b-1322-4395-a53e-c445d159eb80': 'https://test.pistis-market.eu'`,
+                `'c0604304-a46e-42f9-bec9-7894f5ba73a6': 'https://test2.pistis-market.eu'`,
+            ],
+        },
+    })
+    async findFactoriesMapping() {
+        return this.factoriesService.findFactoriesMapping();
     }
 
     @Get('list')
@@ -246,6 +273,22 @@ export class FactoriesRegistrantController {
         res.send(YAML.stringify(configmap));
     }
 
+    @Get('download-keycloak-clients-admin/:organizationId')
+    @Roles({ roles: [ADMIN_ROLE] })
+    async downloadKeycloakClientsAdmin(
+        @Res({ passthrough: true }) res: Response,
+        @Param('organizationId', new ParseUUIDPipe({ version: '4' })) organizationId: string,
+    ) {
+        const { fileBuffer, factoryPrefix } = await this.factoriesService.getClientsSecretAdmin(organizationId);
+
+        // Set appropriate headers to indicate JSON content
+        res.setHeader('Content-Type', 'application/yaml');
+        res.setHeader('Content-Disposition', `attachment; filename=.env.${factoryPrefix}.factory`);
+
+        // Send file as response
+        res.send(fileBuffer);
+    }
+
     @Get(':factoryId')
     @ApiOkResponse({
         description: 'Factory',
@@ -270,6 +313,30 @@ export class FactoriesRegistrantController {
         return this.factoriesService.retrieveFactory(factoryId);
     }
 
+    @Get('/organization/:orgId')
+    @ApiOkResponse({
+        description: 'Factory',
+        schema: {
+            example: {
+                id: '768004e7-33b1-4248-bafe-04688f49f161',
+                organizationName: 'TestOrg',
+                organizationId: '8aff8e9b-1322-4395-a53e-c445d159eb80',
+                ip: '192.168.1.1',
+                country: 'Greece',
+                status: 'live',
+                isAccepted: false,
+                isActive: false,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+        },
+    })
+    async findFactoryInfoByOrganizationId(
+        @Param('orgId', new ParseUUIDPipe({ version: '4' })) orgId: string,
+    ): Promise<FactoriesRegistrant> {
+        return this.factoriesService.findFactoryInfoByOrganizationId(orgId);
+    }
+
     @Get('/name/:factoryName')
     @ApiOkResponse({
         description: 'Factory',
@@ -288,12 +355,9 @@ export class FactoriesRegistrantController {
             },
         },
     })
-    async findFactoryInfoByPrefix(
-        @Param('factoryName') factoryName: string,
-    ): Promise<FactoriesRegistrant> {
+    async findFactoryInfoByPrefix(@Param('factoryName') factoryName: string): Promise<FactoriesRegistrant> {
         return this.factoriesService.retrieveFactoryByPrefix(factoryName);
     }
-
 
     @Put('set-ip')
     @ApiOkResponse({
@@ -368,9 +432,9 @@ export class FactoriesRegistrantController {
             },
         },
     })
-    @ApiBody({ type: CreateFactoryDTO })
+    @ApiBody({ type: FactoryCreationDTO })
     @Roles({ roles: [ADMIN_ROLE] })
-    async createFactory(@AuthToken() token: string, @Body() data: CreateFactoryDTO): Promise<FactoriesRegistrant> {
+    async createFactory(@AuthToken() token: string, @Body() data: FactoryCreationDTO): Promise<FactoriesRegistrant> {
         return this.factoriesService.createFactory(data, token);
     }
 
@@ -439,7 +503,11 @@ export class FactoriesRegistrantController {
             example: { message: 'Factory deleted' },
         },
     })
-    async deleteFactory(@Param('factoryId', new ParseUUIDPipe({ version: '4' })) factoryId: string, @AuthToken() token: string, @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,) {
+    async deleteFactory(
+        @Param('factoryId', new ParseUUIDPipe({ version: '4' })) factoryId: string,
+        @AuthToken() token: string,
+        @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
+    ) {
         return this.factoriesService.deleteFactory(token, factoryId, user.id);
     }
 
@@ -451,7 +519,11 @@ export class FactoriesRegistrantController {
             example: { message: 'Client deleted' },
         },
     })
-    async deleteClient(@Param('clientId', new ParseUUIDPipe({ version: '4' })) clientId: string, @Param('organizationId', new ParseUUIDPipe({ version: '4' })) organizationId: string, @AuthToken() token: string) {
+    async deleteClient(
+        @Param('clientId', new ParseUUIDPipe({ version: '4' })) clientId: string,
+        @Param('organizationId', new ParseUUIDPipe({ version: '4' })) organizationId: string,
+        @AuthToken() token: string,
+    ) {
         return this.factoriesService.deleteClient(token, clientId, organizationId);
     }
 }
