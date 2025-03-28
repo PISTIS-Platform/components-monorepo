@@ -7,7 +7,7 @@ import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
-import { catchError, firstValueFrom, lastValueFrom, map, mergeMap, of, tap, toArray } from 'rxjs';
+import { catchError, firstValueFrom, map, mergeMap, of, tap, toArray } from 'rxjs';
 
 import { CreateFactoryDTO, UpdateFactoryDTO, UpdateFactoryIpDTO } from './dto';
 import { FactoryCreationDTO } from './dto/factory-creation.dto';
@@ -29,9 +29,8 @@ export class FactoriesRegistrantService {
         private readonly clientRepo: EntityRepository<ClientInfo>,
         private readonly httpService: HttpService,
         private readonly servicesMappingService: ServicesMappingService,
-        @Inject(MODULE_OPTIONS_TOKEN) private options: FactoryModuleOptions,
-        // private readonly mailerService: MailerService,
-    ) { }
+        @Inject(MODULE_OPTIONS_TOKEN) private options: FactoryModuleOptions, // private readonly mailerService: MailerService,
+    ) {}
 
     async checkClient(organizationId: string, token: string) {
         // check if the information already exist in our database
@@ -99,9 +98,8 @@ export class FactoriesRegistrantService {
     async getClientsSecretAdmin(organizationId: string) {
         // check if the information already exist in our database
         const { clientsIds } = await this.clientRepo.findOneOrFail({ organizationId: organizationId });
-        const { factoryPrefix, organizationName } = await this.findLoggedInUserFactory(organizationId)
+        const { factoryPrefix, organizationName } = await this.findLoggedInUserFactory(organizationId);
         const services = await this.servicesMappingService.findServicesMappingForAdmin();
-
 
         const fileContent = `
                 ######################################################################
@@ -132,7 +130,8 @@ export class FactoriesRegistrantService {
                     ? 'FACTORY_UI'
                     : service.serviceUrl.replace('/srv/', '').replace(/-/g, '_').toUpperCase();
 
-            data += `
+            data +=
+                `
                     PISTIS_KC_${prefix}_ID=${id}
                     PISTIS_KC_${prefix}_SECRET=${secret}
                     `.trim() + '\n';
@@ -142,18 +141,14 @@ export class FactoriesRegistrantService {
 
         // Remove whitespaces from generated string
         const cleanedFileContent = updatedFileContent
-            .split("\n") // Split into lines
-            .map(line => line.trim()) // Trim each line
-            .join("\n"); // Join them back
+            .split('\n') // Split into lines
+            .map((line) => line.trim()) // Trim each line
+            .join('\n'); // Join them back
 
         return { fileBuffer: Buffer.from(cleanedFileContent, 'utf-8'), factoryPrefix };
     }
 
-    async activateFactory(
-        factoryId: string,
-        token: string,
-        userId: string,
-    ) {
+    async activateFactory(factoryId: string, token: string, userId: string) {
         //Search db if factory exist
         const factory = await this.repo.findOneOrFail({ id: factoryId });
 
@@ -175,19 +170,16 @@ export class FactoriesRegistrantService {
 
         //Create object of clients upon discovered services
         const keycloakClients = await this.clientRepo.findOneOrFail({ organizationId: factory.organizationId });
-        const clientIds = keycloakClients.clientsIds.map((client: any) => JSON.parse(client)[0])
+        const clientIds = keycloakClients.clientsIds.map((client: any) => JSON.parse(client)[0]);
 
-        //Enable clients in keycloak
-        for (const client of clientIds) {
-            await lastValueFrom(
-                this.httpService.put(`${this.options.identityAccessManagementUrl}/factory/clients/${client}/enable`, {
+        for (let i = 0; i < clientIds.length; i++) {
+            this.logger.debug(`Enabling client '${clientIds[i]}'`);
+            await this.httpService.axiosRef.put(
+                `${this.options.identityAccessManagementUrl}/factory/clients/${clientIds[i]}/enable`,
+                undefined,
+                {
                     headers: getHeaders(token),
-                }).pipe(
-                    catchError((error: any) => {
-                        this.logger.error('Client activation error:', error);
-                        return of({ error: 'Error occurred during Client activation' });
-                    }),
-                )
+                },
             );
         }
 
@@ -210,19 +202,16 @@ export class FactoriesRegistrantService {
 
         //Find all clients and disable them.
         const client = await this.clientRepo.findOneOrFail({ organizationId: factory.organizationId });
-        const clientIds = client.clientsIds.map((client: any) => JSON.parse(client)[0])
+        const clientIds = client.clientsIds.map((client: any) => JSON.parse(client)[0]);
 
-        for (const client of clientIds) {
-
-            await lastValueFrom(
-                this.httpService.put(`${this.options.identityAccessManagementUrl}/factory/clients/${client}/disable`, {
+        for (let i = 0; i < clientIds.length; i++) {
+            this.logger.debug(`Disabling client '${clientIds[i]}'`);
+            await this.httpService.axiosRef.put(
+                `${this.options.identityAccessManagementUrl}/factory/clients/${clientIds[i]}/disable`,
+                undefined,
+                {
                     headers: getHeaders(token),
-                }).pipe(
-                    catchError((error: any) => {
-                        this.logger.error('Client disable error:', error);
-                        return of({ error: 'Error occurred during disabling client' });
-                    }),
-                )
+                },
             );
         }
 
@@ -267,7 +256,7 @@ export class FactoriesRegistrantService {
     }
 
     async findFactoryInfoByOrganizationId(orgId: string): Promise<FactoriesRegistrant> {
-        return this.repo.findOneOrFail({ organizationId: orgId })
+        return this.repo.findOneOrFail({ organizationId: orgId });
     }
 
     async retrieveFactoryByPrefix(name: string): Promise<FactoriesRegistrant> {
@@ -313,8 +302,8 @@ export class FactoriesRegistrantService {
             size: data.size,
             orgAdminFirstname: data.adminFirstName,
             orgAdminLastname: data.adminLastName,
-            orgAdminEmail: data.adminEmail
-        }
+            orgAdminEmail: data.adminEmail,
+        };
 
         const factoryID = await firstValueFrom(
             this.httpService
@@ -387,7 +376,6 @@ export class FactoriesRegistrantService {
 
         //If client is undefined then we create the clients in keycloak and in DB
         if (!client) {
-
             //Create object of clients upon discovered services
             newClients = services.map(({ id, serviceUrl, serviceName, sar, clientAuthentication }) => ({
                 clientId: `${factory?.organizationId}--${id}`,
@@ -439,7 +427,12 @@ export class FactoriesRegistrantService {
                             enabled: service.sar,
                             roles: ['SRV_NOTIFICATION'],
                         },
-                        redirectUris: [`https://${factory?.factoryPrefix}.pistis-market.eu${service.serviceUrl.replace(/\/+$/, '')}}/*`],
+                        redirectUris: [
+                            `https://${factory?.factoryPrefix}.pistis-market.eu${service.serviceUrl.replace(
+                                /\/+$/,
+                                '',
+                            )}}/*`,
+                        ],
                         webOrigins: ['*'],
                     },
                 ];
@@ -463,7 +456,12 @@ export class FactoriesRegistrantService {
                             enabled: service.sar,
                             roles: ['SRV_NOTIFICATION'],
                         },
-                        redirectUris: [`https://${factory?.factoryPrefix}.pistis-market.eu${service.serviceUrl.replace(/\/+$/, '')}/*`],
+                        redirectUris: [
+                            `https://${factory?.factoryPrefix}.pistis-market.eu${service.serviceUrl.replace(
+                                /\/+$/,
+                                '',
+                            )}/*`,
+                        ],
                         webOrigins: ['*'],
                     },
                 ];
