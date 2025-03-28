@@ -175,23 +175,21 @@ export class FactoriesRegistrantService {
 
         //Create object of clients upon discovered services
         const keycloakClients = await this.clientRepo.findOneOrFail({ organizationId: factory.organizationId });
+        const clientIds = keycloakClients.clientsIds.map((client: any) => JSON.parse(client)[0])
+
         //Enable clients in keycloak
-        await lastValueFrom(
-            of(keycloakClients.clientsIds).pipe(
-                (client: Record<string, any>) =>
-                    this.httpService.put(
-                        `${this.options.identityAccessManagementUrl}/factory/clients/${client}/enable`,
-                        client,
-                        {
-                            headers: getHeaders(token),
-                        },
-                    ),
-                catchError((error: any) => {
-                    this.logger.error('Client activation error:', error);
-                    return of({ error: 'Error occurred during Client activation' });
-                }),
-            ),
-        );
+        for (const client of clientIds) {
+            await lastValueFrom(
+                this.httpService.put(`${this.options.identityAccessManagementUrl}/factory/clients/${client}/enable`, {
+                    headers: getHeaders(token),
+                }).pipe(
+                    catchError((error: any) => {
+                        this.logger.error('Client activation error:', error);
+                        return of({ error: 'Error occurred during Client activation' });
+                    }),
+                )
+            );
+        }
 
         const notification = {
             userId: userId,
@@ -212,19 +210,21 @@ export class FactoriesRegistrantService {
 
         //Find all clients and disable them.
         const client = await this.clientRepo.findOneOrFail({ organizationId: factory.organizationId });
+        const clientIds = client.clientsIds.map((client: any) => JSON.parse(client)[0])
 
-        await lastValueFrom(
-            of(client.clientsIds).pipe(
-                (client: Record<string, any>) =>
-                    this.httpService.put(`${this.options.identityAccessManagementUrl}/factory/clients/${client}/disable`, {
-                        headers: getHeaders(token),
+        for (const client of clientIds) {
+
+            await lastValueFrom(
+                this.httpService.put(`${this.options.identityAccessManagementUrl}/factory/clients/${client}/disable`, {
+                    headers: getHeaders(token),
+                }).pipe(
+                    catchError((error: any) => {
+                        this.logger.error('Client disable error:', error);
+                        return of({ error: 'Error occurred during disabling client' });
                     }),
-                catchError((error: any) => {
-                    this.logger.error('Client disable error:', error);
-                    return of({ error: 'Error occurred during disabling client' });
-                }),
-            ),
-        );
+                )
+            );
+        }
 
         const notification = {
             userId: userId,
@@ -387,6 +387,7 @@ export class FactoriesRegistrantService {
 
         //If client is undefined then we create the clients in keycloak and in DB
         if (!client) {
+
             //Create object of clients upon discovered services
             newClients = services.map(({ id, serviceUrl, serviceName, sar, clientAuthentication }) => ({
                 clientId: `${factory?.organizationId}--${id}`,
@@ -469,7 +470,7 @@ export class FactoriesRegistrantService {
 
                 //Call the function to create the new client in keycloak
                 createdClients = await this.keycloakClients(updatedClients, token, 'patch');
-                //Update client
+                // Update client
                 await this.clientRepo.getEntityManager().persistAndFlush(client);
             }
         }
