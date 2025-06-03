@@ -2,18 +2,18 @@ import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
 import { ConsumerModule } from '@pistis/consumer';
+import { KubernetesModule } from '@pistis/kubernetes';
 import { ProviderModule } from '@pistis/provider';
 import { IAppConfig, MorganMiddleware } from '@pistis/shared';
-import { AuthGuard, KeycloakConnectModule, PolicyEnforcementMode, RoleGuard, TokenValidation } from 'nest-keycloak-connect';
+import { KeycloakConnectModule, PolicyEnforcementMode, TokenValidation } from 'nest-keycloak-connect';
 
 import { AppConfig, IConnectorConfig } from './app.config';
+import { KubernetesConfig } from './kubernetes.config';
 
 @Module({
     imports: [
-        ConfigModule.forRoot({ isGlobal: true }),
-        ConfigModule.forFeature(AppConfig),
+        ConfigModule.forRoot({ isGlobal: true, load: [AppConfig, KubernetesConfig] }),
         MikroOrmModule.forRootAsync({
             imports: [ConfigModule.forFeature(AppConfig)],
             useFactory: async (options: IAppConfig) => ({
@@ -66,17 +66,18 @@ import { AppConfig, IConnectorConfig } from './app.config';
                 tokenValidation: TokenValidation.OFFLINE,
             }),
         }),
+        KubernetesModule,
     ],
-    providers: [
-        {
-            provide: APP_GUARD,
-            useClass: AuthGuard,
-        },
-        {
-            provide: APP_GUARD,
-            useClass: RoleGuard,
-        },
-    ],
+    // providers: [
+    //     {
+    //         provide: APP_GUARD,
+    //         useClass: AuthGuard,
+    //     },
+    //     {
+    //         provide: APP_GUARD,
+    //         useClass: RoleGuard,
+    //     },
+    // ],
 })
 export class AppModule implements NestModule {
     configure(consumer: MiddlewareConsumer) {

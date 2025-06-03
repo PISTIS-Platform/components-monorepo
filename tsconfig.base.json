@@ -21,12 +21,13 @@
             "@pistis/data-storage": ["libs/data-storage/src/index.ts"],
             "@pistis/factories-registrant": ["libs/factories-registrant/src/index.ts"],
             "@pistis/intention-analytics": ["libs/intention-analytics/src/index.ts"],
+            "@pistis/kubernetes": ["libs/kubernetes/src/index.ts"],
             "@pistis/metadata-repository": ["libs/metadata-repository/src/index.ts"],
             "@pistis/models-repository": ["libs/models-repository/src/index.ts"],
             "@pistis/notifications": ["libs/notifications/src/index.ts"],
             "@pistis/provider": ["libs/provider/src/index.ts"],
-            "@pistis/shared": ["libs/shared/src/index.ts"],
-            "@pistis/sctc": ["libs/sctc/src/index.ts"]
+            "@pistis/sctc": ["libs/sctc/src/index.ts"],
+            "@pistis/shared": ["libs/shared/src/index.ts"]
         }
     },
     "exclude": ["node_modules", "tmp"]
