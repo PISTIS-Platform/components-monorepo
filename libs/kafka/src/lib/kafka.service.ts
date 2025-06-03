@@ -9,9 +9,9 @@ import { generatePassword } from './kafka.utils';
 const STRIMZI_API_GROUP = 'kafka.strimzi.io';
 const STRIMZI_API_VERSION = 'v1beta2';
 const STRIMZI_API = `${STRIMZI_API_GROUP}/${STRIMZI_API_VERSION}`;
+const STRIMZI_CLUSTER_NAME = 'kafka-cluster';
 
 const KAFKA_NAMESPACE = 'default';
-const KAFKA_STRIMZI_CLUSTER_NAME = 'kafka-cluster';
 const KAFKA_TOPIC_PLURAL = 'kafkatopics';
 const KAFKA_USER_PLURAL = 'kafkausers';
 
@@ -59,7 +59,7 @@ export class KafkaService {
                 name,
                 namespace: KAFKA_NAMESPACE,
                 labels: {
-                    'strimzi.io/cluster': KAFKA_STRIMZI_CLUSTER_NAME,
+                    'strimzi.io/cluster': STRIMZI_CLUSTER_NAME,
                 },
             },
             spec: {
@@ -134,7 +134,7 @@ export class KafkaService {
                 name,
                 namespace: KAFKA_NAMESPACE,
                 labels: {
-                    'strimzi.io/cluster': KAFKA_STRIMZI_CLUSTER_NAME,
+                    'strimzi.io/cluster': STRIMZI_CLUSTER_NAME,
                 },
             },
             spec: {
