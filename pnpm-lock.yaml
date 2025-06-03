@@ -104,6 +104,9 @@ dependencies:
   rxjs:
     specifier: ^7.8.0
     version: 7.8.1
+  secure-random-password:
+    specifier: ^0.2.3
+    version: 0.2.3
   tslib:
     specifier: ^2.3.0
     version: 2.6.2
@@ -196,6 +199,9 @@ devDependencies:
   '@types/node':
     specifier: 18.16.9
     version: 18.16.9
+  '@types/secure-random-password':
+    specifier: ^0.2.3
+    version: 0.2.3
   '@types/uuid':
     specifier: ^9.0.8
     version: 9.0.8
@@ -3975,6 +3981,10 @@ packages:
     resolution: {integrity: sha512-wWKOClTTiizcZhXnPY4wikVAwmdYHp8q6DmC+EJUzAMsycb7HB32Kh9RN4+0gExjmPmZSAQjgURXIGATPegAvA==}
     dev: true
 
+  /@types/secure-random-password@0.2.3:
+    resolution: {integrity: sha512-xTNP0ia98PBlRC592TTAGS+gTqQxjY/DYMf/CdlM5OtSbBrqO1gHTMOY+Myahu9x+QsKPwFIOQbH9YbgZdVmwg==}
+    dev: true
+
   /@types/semver@7.5.8:
     resolution: {integrity: sha512-I8EUhyrgfLrcTkzV3TSsGyl1tSuPrEDzr0yd5m90UgNxQkyDXULk3b6MlQqTCpZpNtWe1K0hzclnZkTcLBe2UQ==}
     dev: true
@@ -5220,9 +5230,9 @@ packages:
     engines: {node: '>=6.0'}
     dev: true
 
-  /chromedriver@137.0.0:
-    resolution: {integrity: sha512-RyyIQOXaDfCc0IZrGx9EpNYCepvJca+fvreJqFgNaWBLIzLj5UInn85mWMecborYCBMtRhMZuxwNuzNXgoCIFg==}
-    engines: {node: '>=18'}
+  /chromedriver@137.0.1:
+    resolution: {integrity: sha512-H4amLfsU3zubwD9X7me9Ajd8z3+MARfJ90gLV6PEKdad0Jgmh3fAGnCuz8Ew8yeuoSJ5ycb/vGEvyqgGVFAjJQ==}
+    engines: {node: '>=20'}
     hasBin: true
     requiresBuild: true
     dependencies:
@@ -6897,6 +6907,7 @@ packages:
 
   /filelist@1.0.4:
     resolution: {integrity: sha512-w1cEuf3S+DrLCQL7ET6kz+gmlJdbq9J7yXCSjK/OZCPA+qEN1WyF4ZAf0YYJa4/shHJra2t/d/r8SV4Ji+x+8Q==}
+    requiresBuild: true
     dependencies:
       minimatch: 5.1.6
 
@@ -8851,7 +8862,7 @@ packages:
     dependencies:
       jwk-to-pem: 2.0.5
     optionalDependencies:
-      chromedriver: 137.0.0
+      chromedriver: 137.0.1
     transitivePeerDependencies:
       - debug
       - supports-color
@@ -11972,6 +11983,16 @@ packages:
   /secure-compare@3.0.1:
     resolution: {integrity: sha512-AckIIV90rPDcBcglUwXPF3kg0P0qmPsPXAj6BBEENQE1p5yA1xfmDJzfi1Tappj37Pv2mVbKpL3Z1T+Nn7k1Qw==}
     dev: true
+
+  /secure-random-password@0.2.3:
+    resolution: {integrity: sha512-2zpmr6pK3CZGIS9fgApFw00/tKEBVbJTqe4AZLrLNgahCK6ueIR5uMzvbERNibr8hkWneMcOqDcm4wpHWUxrYw==}
+    dependencies:
+      secure-random: 1.1.2
+    dev: false
+
+  /secure-random@1.1.2:
+    resolution: {integrity: sha512-H2bdSKERKdBV1SwoqYm6C0y+9EA94v6SUBOWO8kDndc4NoUih7Dv6Tsgma7zO1lv27wIvjlD0ZpMQk7um5dheQ==}
+    dev: false
 
   /selderee@0.11.0:
     resolution: {integrity: sha512-5TF+l7p4+OsnP8BCCvSyZiSPc4x4//p5uPwK8TCnVPJYRmU2aYKMpOXvw8zM5a5JvuuCGN1jmsMwuU2W02ukfA==}

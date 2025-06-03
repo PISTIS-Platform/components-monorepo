@@ -2,18 +2,25 @@ import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { ConsumerModule } from '@pistis/consumer';
-import { KubernetesModule } from '@pistis/kubernetes';
+import { KafkaModule } from '@pistis/kafka';
 import { ProviderModule } from '@pistis/provider';
 import { IAppConfig, MorganMiddleware } from '@pistis/shared';
-import { KeycloakConnectModule, PolicyEnforcementMode, TokenValidation } from 'nest-keycloak-connect';
+import {
+    AuthGuard,
+    KeycloakConnectModule,
+    PolicyEnforcementMode,
+    RoleGuard,
+    TokenValidation,
+} from 'nest-keycloak-connect';
 
 import { AppConfig, IConnectorConfig } from './app.config';
-import { KubernetesConfig } from './kubernetes.config';
+import { KafkaConfig } from './kafka.config';
 
 @Module({
     imports: [
-        ConfigModule.forRoot({ isGlobal: true, load: [AppConfig, KubernetesConfig] }),
+        ConfigModule.forRoot({ isGlobal: true, load: [AppConfig, KafkaConfig] }),
         MikroOrmModule.forRootAsync({
             imports: [ConfigModule.forFeature(AppConfig)],
             useFactory: async (options: IAppConfig) => ({
@@ -66,18 +73,18 @@ import { KubernetesConfig } from './kubernetes.config';
                 tokenValidation: TokenValidation.OFFLINE,
             }),
         }),
-        KubernetesModule,
+        KafkaModule,
     ],
-    // providers: [
-    //     {
-    //         provide: APP_GUARD,
-    //         useClass: AuthGuard,
-    //     },
-    //     {
-    //         provide: APP_GUARD,
-    //         useClass: RoleGuard,
-    //     },
-    // ],
+    providers: [
+        {
+            provide: APP_GUARD,
+            useClass: AuthGuard,
+        },
+        {
+            provide: APP_GUARD,
+            useClass: RoleGuard,
+        },
+    ],
 })
 export class AppModule implements NestModule {
     configure(consumer: MiddlewareConsumer) {

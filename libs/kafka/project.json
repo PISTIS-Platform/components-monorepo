@@ -1,7 +1,7 @@
 {
-    "name": "kubernetes",
+    "name": "kafka",
     "$schema": "../../node_modules/nx/schemas/project-schema.json",
-    "sourceRoot": "libs/kubernetes/src",
+    "sourceRoot": "libs/kafka/src",
     "projectType": "library",
     "targets": {},
     "tags": []
