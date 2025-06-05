@@ -242,7 +242,6 @@ export class KafkaService {
             },
         };
 
-        console.log(kafkaConnectorManifest);
         await this.customObjectsApi.createNamespacedCustomObject(
             STRIMZI_API_GROUP,
             STRIMZI_API_VERSION,
