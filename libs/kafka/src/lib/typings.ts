@@ -4,15 +4,23 @@ export type KafkaAclOperation = 'All' | 'Read' | 'Write' | 'Create' | 'Delete' |
 
 export type KafkaAclResourcePatternType = 'literal' | 'prefix';
 
-export interface StrimziAclResource {
+export type StrimziAclResource = {
     type: KafkaAclResourceType;
     name: string;
     patternType?: KafkaAclResourcePatternType;
-}
+};
 
-export interface StrimziAcl {
+export type StrimziAcl = {
     resource: StrimziAclResource;
     operations: KafkaAclOperation[];
     host?: string; // Defaults to '*' (all hosts) if omitted in the KafkaUser.
     type?: 'allow' | 'deny';
-}
+};
+
+export type KafkaConnectorConfig = {
+    sourceId: string;
+    targetId: string;
+    consumerUsername: string;
+    consumerSecret: string;
+    consumerBootstrapServers: string;
+};

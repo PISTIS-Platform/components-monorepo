@@ -1,19 +1,21 @@
-import { CoreV1Api, CustomObjectsApi, KubeConfig, V1Secret } from '@kubernetes/client-node';
+import { CoreV1Api, CustomObjectsApi, KubeConfig, PatchUtils, V1Secret } from '@kubernetes/client-node';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { generatePassword } from '@pistis/shared';
 import { IncomingMessage } from 'http';
 
-import { StrimziAcl } from './kafka.interface';
-import { generatePassword } from './kafka.utils';
+import { KafkaConnectorConfig, StrimziAcl } from './typings';
 
 const STRIMZI_API_GROUP = 'kafka.strimzi.io';
 const STRIMZI_API_VERSION = 'v1beta2';
 const STRIMZI_API = `${STRIMZI_API_GROUP}/${STRIMZI_API_VERSION}`;
 const STRIMZI_CLUSTER_NAME = 'kafka-cluster';
+const KAFKA_CONNECT_CLUSTER_NAME = 'kafka-connect';
 
-const KAFKA_NAMESPACE = 'default';
+const KAFKA_NAMESPACE = 'kafka';
 const KAFKA_TOPIC_PLURAL = 'kafkatopics';
 const KAFKA_USER_PLURAL = 'kafkausers';
+const KAFKA_CONNECTOR_PLURAL = 'kafkaconnectors';
 
 @Injectable()
 export class KafkaService {
@@ -110,8 +112,6 @@ export class KafkaService {
         this.logger.debug(`Creating Kafka user with name: ${name}`);
 
         const secret = generatePassword(32);
-        console.log(secret);
-
         const secretManifest: V1Secret = {
             apiVersion: 'v1',
             kind: 'Secret',
@@ -182,60 +182,52 @@ export class KafkaService {
     }
 
     /**
-     * Create a Mirror Source Kafka Connector in the Kubernetes cluster.
-     * The connector is used to mirror topic messages from one topic to another.
-     * @param sourceFactoryId
-     * @param sourceTopic
-     * @param targetTopic
-     * @param namespace
+     * Create a MirrorSource Kafka connector in the Kubernetes cluster
+     * @param config The configuration for the Kafka connector
      */
-    async createMirrorSourceKafkaConnector(
-        sourceFactoryId: string,
-        sourceTopic: string,
-        sourceFactoryUsername: string,
-        sourceFactoryPassword: string,
-        targetTopic: string,
-        targetFactoryUsername: string,
-        targetFactoryPassword: string,
-        namespace: string = this.config.get<string>('k8s.namespace') ?? 'default',
-    ): Promise<void> {
-        this.logger.debug('Creating Mirror Source Kafka Connector');
+    async createMM2Connector(config: KafkaConnectorConfig): Promise<void> {
+        this.logger.debug('Creating MirrorSource Kafka connector');
 
-        const bootstrapServers = this.config.get<string>('k8s.kafkaBootstrapServers');
-        const targetClusterAlias = 'kafka-target-factory-cluster';
+        const sourceBootstrapServers = this.config.get<string>('kafka.bootstrapServers');
+        const targetClusterAlias = 'kafka-connector-target';
+        const sourceClusterAlias = `kafka-connector-source-${generatePassword(10)}`;
+        const providerTopic = `ds-${config.sourceId}`;
+        const consumerTopic = `ds-${config.targetId}`;
+        const providerUsername = `kuser-${config.sourceId}`;
+        const providerSecret = await this.getDecodedSecret(providerUsername);
 
         const kafkaConnectorManifest = {
-            apiVersion: `${STRIMZI_API_GROUP}/${STRIMZI_API_VERSION}`,
+            apiVersion: STRIMZI_API,
             kind: 'KafkaConnector',
             metadata: {
-                name: `kafka-factory-connector-${sourceFactoryId}`,
-                namespace,
+                name: `kafka-connector-${config.targetId}`,
+                namespace: KAFKA_NAMESPACE,
                 labels: {
-                    'strimzi.io/cluster': this.config.get<string>('k8s.strimziClusterName'),
+                    'strimzi.io/cluster': KAFKA_CONNECT_CLUSTER_NAME,
                 },
             },
             spec: {
                 class: 'org.apache.kafka.connect.mirror.MirrorSourceConnector',
                 tasksMax: 1,
                 config: {
-                    topics: sourceTopic,
+                    topics: providerTopic,
                     'target.cluster.alias': targetClusterAlias,
-                    'source.cluster.alias': `kafka-source-factory-cluster-${sourceFactoryId}`,
-                    'source.cluster.bootstrap.servers': bootstrapServers,
+                    'source.cluster.alias': sourceClusterAlias,
+                    'source.cluster.bootstrap.servers': sourceBootstrapServers,
+                    'source.consumer.auto.offset.reset': 'latest',
                     'source.cluster.security.protocol': 'SASL_PLAINTEXT',
                     'source.cluster.sasl.mechanism': 'SCRAM-SHA-512',
-                    'source.cluster.sasl.jaas.config': `org.apache.kafka.common.security.scram.ScramLoginModule required username="${sourceFactoryUsername}" password="${sourceFactoryPassword}";`,
-                    'target.cluster.bootstrap.servers': bootstrapServers,
+                    'source.cluster.sasl.jaas.config': `org.apache.kafka.common.security.scram.ScramLoginModule required username="${providerUsername}" password="${providerSecret}";`,
+                    'target.cluster.bootstrap.servers': config.consumerBootstrapServers,
                     'target.cluster.security.protocol': 'SASL_PLAINTEXT',
                     'target.cluster.sasl.mechanism': 'SCRAM-SHA-512',
-                    'target.cluster.sasl.jaas.config': `org.apache.kafka.common.security.scram.ScramLoginModule required username="${targetFactoryUsername}" password="${targetFactoryPassword}";`,
-                    'consumer.override.auto.offset.reset': 'latest',
+                    'target.cluster.sasl.jaas.config': `org.apache.kafka.common.security.scram.ScramLoginModule required username="${config.consumerUsername}" password="${config.consumerSecret}";`,
                     'consumer.override.sasl.mechanism': 'SCRAM-SHA-512',
                     'consumer.override.security.protocol': 'SASL_PLAINTEXT',
-                    'consumer.override.sasl.jaas.config': `org.apache.kafka.common.security.scram.ScramLoginModule required username="${sourceFactoryUsername}" password="${sourceFactoryPassword}";`,
+                    'consumer.override.sasl.jaas.config': `org.apache.kafka.common.security.scram.ScramLoginModule required username="${providerUsername}" password="${providerSecret}";`,
                     'producer.override.sasl.mechanism': 'SCRAM-SHA-512',
                     'producer.override.security.protocol': 'SASL_PLAINTEXT',
-                    'producer.override.sasl.jaas.config': `org.apache.kafka.common.security.scram.ScramLoginModule required username="${targetFactoryUsername}" password="${targetFactoryPassword}";`,
+                    'producer.override.sasl.jaas.config': `org.apache.kafka.common.security.scram.ScramLoginModule required username="${config.consumerUsername}" password="${config.consumerSecret}";`,
                     'key.converter': 'org.apache.kafka.connect.converters.ByteArrayConverter',
                     'value.converter': 'org.apache.kafka.connect.converters.ByteArrayConverter',
                     'sync.group.offsets.enabled': false,
@@ -244,92 +236,133 @@ export class KafkaService {
                     'replication.policy.class': 'org.apache.kafka.connect.mirror.IdentityReplicationPolicy',
                     transforms: 'RenameTopic',
                     'transforms.RenameTopic.type': 'org.apache.kafka.connect.transforms.RegexRouter',
-                    'transforms.RenameTopic.regex': sourceTopic,
-                    'transforms.RenameTopic.replacement': targetTopic,
+                    'transforms.RenameTopic.regex': providerTopic,
+                    'transforms.RenameTopic.replacement': consumerTopic,
                 },
             },
         };
 
+        console.log(kafkaConnectorManifest);
         await this.customObjectsApi.createNamespacedCustomObject(
             STRIMZI_API_GROUP,
             STRIMZI_API_VERSION,
-            namespace,
-            'kafkaconnectors',
+            KAFKA_NAMESPACE,
+            KAFKA_CONNECTOR_PLURAL,
             kafkaConnectorManifest,
         );
 
-        await this.patchKafkaUserInternalAcls(sourceFactoryUsername, targetClusterAlias, namespace);
+        await this.patchMM2OffsetSyncsAcls(providerUsername, targetClusterAlias);
     }
 
-    async deleteKafkaConnector() {
-        //
-        return;
+    /**
+     * Delete a MirrorSource Kafka connector from the Kubernetes cluster
+     * @param id The unique identifier for the Kafka connector
+     */
+    async deleteMM2Connector(id: string): Promise<void> {
+        const name = `kafka-connector-${id}`;
+        this.logger.debug(`Deleting Kafka connector with name: ${name}`);
+
+        await this.customObjectsApi.deleteNamespacedCustomObject(
+            STRIMZI_API_GROUP,
+            STRIMZI_API_VERSION,
+            KAFKA_NAMESPACE,
+            KAFKA_CONNECTOR_PLURAL,
+            name,
+        );
     }
 
     /**
      * Retrieve a Kafka user from the Kubernetes cluster.
      * @param name The name of the Kafka user.
-     * @param namespace The namespace in which the Kafka user exists. Defaults to 'default' if not provided.
      * @returns
      */
-    async getKafkaUser(
-        name: string,
-        namespace: string = this.config.get<string>('k8s.namespace') ?? 'default',
-    ): Promise<{
-        response: IncomingMessage;
-        body: object;
-    }> {
+    async getUser(name: string): Promise<{ response: IncomingMessage; body: object }> {
         this.logger.debug(`Retrieving Kafka user with name: ${name}`);
         return this.customObjectsApi.getNamespacedCustomObject(
             STRIMZI_API_GROUP,
             STRIMZI_API_VERSION,
-            namespace,
+            KAFKA_NAMESPACE,
             KAFKA_USER_PLURAL,
             name,
         );
     }
 
     /**
-     * Update a Kafka user's ACLs to include access to internal MirrorMaker 2 topic for offest synchronization.
-     * @param name The name of the Kafka user to patch.
-     * @param targetClusterAlias The alias of the target cluster.
-     * @param namespace The namespace in which the Kafka user exists. Defaults to 'default' if not provided.
+     * Retrieve a Kafka user secret from the Kubernetes cluster
+     * @param name
+     * @returns
      */
-    private async patchKafkaUserInternalAcls(
-        name: string,
-        targetClusterAlias: string,
-        namespace: string = this.config.get<string>('k8s.namespace') ?? 'default',
-    ): Promise<void> {
+    private async getSecret(name: string): Promise<{ response: IncomingMessage; body: V1Secret }> {
+        this.logger.debug('Retrieving Kafka user secret');
+        const secret = await this.coreApi.readNamespacedSecret(name, KAFKA_NAMESPACE);
+        return secret;
+    }
+
+    /**
+     * Decode the password from the Kafka user secret
+     * @param name
+     * @returns
+     */
+    private async getDecodedSecret(name: string): Promise<string | null> {
+        const response = await this.getSecret(name);
+        const encodedPassword = response.body.data ? response.body.data['password'] : null;
+
+        if (!encodedPassword) {
+            this.logger.warn(`No password found for Kafka user secret: ${name}`);
+            return null;
+        }
+
+        return Buffer.from(encodedPassword, 'base64').toString('utf-8');
+    }
+
+    /**
+     * Update a Kafka user's ACLs to include access to internal MirrorMaker 2 topic for offest synchronization
+     * @param name The name of the Kafka user to patch
+     * @param targetClusterAlias The alias of the target cluster
+     */
+    private async patchMM2OffsetSyncsAcls(name: string, targetClusterAlias: string): Promise<void> {
         this.logger.debug(`Patching Kafka user ${name} with internal ACLs for cluster alias ${targetClusterAlias}`);
 
-        const response = await this.getKafkaUser(name, namespace);
+        const response = await this.getUser(name);
+        const existingAcls: StrimziAcl[] = (response.body as any).spec.authorization.acls ?? [];
 
-        const acls: StrimziAcl[] = (response.body as any).spec.authorization.acls ?? [];
-        acls.push({
-            resource: {
-                type: 'topic',
-                name: `mm2-offset-syncs.${targetClusterAlias}.internal`,
-                patternType: 'literal',
+        const topic = `mm2-offset-syncs.${targetClusterAlias}.internal`;
+        const topicExists = existingAcls.some((acl) => acl.resource.type === 'topic' && acl.resource.name === topic);
+        if (topicExists) {
+            this.logger.debug(`Kafka user ${name} already has ACL for topic ${topic}`);
+            return;
+        }
+
+        const patchPayload = [
+            {
+                op: 'replace',
+                path: '/spec/authorization/acls',
+                value: [
+                    existingAcls[0],
+                    {
+                        resource: {
+                            type: 'topic',
+                            name: topic,
+                            patternType: 'literal',
+                        },
+                        operations: ['Write', 'Create', 'Describe'],
+                    },
+                ],
             },
-            operations: ['Write', 'Create', 'Describe'],
-        });
+        ];
 
-        const patchPayload = {
-            spec: {
-                authorization: {
-                    type: 'simple',
-                    acls,
-                },
-            },
-        };
-
+        const options = { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_PATCH } };
         await this.customObjectsApi.patchNamespacedCustomObject(
             STRIMZI_API_GROUP,
             STRIMZI_API_VERSION,
-            namespace,
+            KAFKA_NAMESPACE,
             KAFKA_USER_PLURAL,
             name,
             patchPayload,
+            undefined,
+            undefined,
+            undefined,
+            options,
         );
     }
 }

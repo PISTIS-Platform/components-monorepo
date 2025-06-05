@@ -7,3 +7,4 @@ export * from './lib/logger/winston';
 export * from './lib/logger/winston';
 export * from './lib/pipes';
 export * from './lib/utils/headers';
+export * from './lib/utils/security';
