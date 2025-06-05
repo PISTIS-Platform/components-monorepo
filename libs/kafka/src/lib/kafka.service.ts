@@ -10,6 +10,7 @@ const STRIMZI_API_GROUP = 'kafka.strimzi.io';
 const STRIMZI_API_VERSION = 'v1beta2';
 const STRIMZI_API = `${STRIMZI_API_GROUP}/${STRIMZI_API_VERSION}`;
 const STRIMZI_CLUSTER_NAME = 'kafka-cluster';
+
 const KAFKA_NAMESPACE = 'default';
 const KAFKA_TOPIC_PLURAL = 'kafkatopics';
 const KAFKA_USER_PLURAL = 'kafkausers';
@@ -108,7 +109,7 @@ export class KafkaService {
      */
     async createKafkaUser(id: string, acls: StrimziAcl[]): Promise<{ name: string; secret: string }> {
         const name = `kuser-${id}`;
-        this.logger.debug(`Creating Kafka user with name: ${name}`);
+        this.logger.debug(`Creating Kafka user "${name}"`);
 
         const secret = generatePassword(32);
         const secretManifest: V1Secret = {
@@ -169,7 +170,7 @@ export class KafkaService {
      */
     async deleteKafkaUser(id: string): Promise<void> {
         const name = `kuser-${id}`;
-        this.logger.debug(`Deleting Kafka user with name: ${name}`);
+        this.logger.debug(`Deleting Kafka user "${name}"`);
 
         await this.customObjectsApi.deleteNamespacedCustomObject(
             STRIMZI_API_GROUP,
@@ -185,21 +186,24 @@ export class KafkaService {
      * @param config The configuration for the Kafka connector
      */
     async createMM2Connector(config: KafkaConnectorConfig): Promise<void> {
-        this.logger.debug('Creating MirrorSource Kafka connector');
+        const name = `kc-${config.sourceId}--${config.targetId}`;
+        this.logger.debug(`Creating MirrorSource Kafka connector "${name}"`);
 
         const sourceBootstrapServers = this.config.get<string>('kafka.bootstrapServers');
-        const targetClusterAlias = 'kafka-connector-target';
-        const sourceClusterAlias = `kafka-connector-source-${generatePassword(10)}`;
+        const sourceClusterAlias = `kc-source-${generatePassword(10)}`;
+        const targetClusterAlias = 'kc-target';
+
         const providerTopic = `ds-${config.sourceId}`;
-        const consumerTopic = `ds-${config.targetId}`;
         const providerUsername = `kuser-${config.sourceId}`;
         const providerSecret = await this.getDecodedSecret(providerUsername);
+
+        const consumerTopic = `ds-${config.targetId}`;
 
         const kafkaConnectorManifest = {
             apiVersion: STRIMZI_API,
             kind: 'KafkaConnector',
             metadata: {
-                name: `kafka-connector-${config.targetId}`,
+                name,
                 namespace: KAFKA_NAMESPACE,
                 labels: {
                     'strimzi.io/cluster': KAFKA_CONNECT_CLUSTER_NAME,
@@ -254,11 +258,12 @@ export class KafkaService {
 
     /**
      * Delete a MirrorSource Kafka connector from the Kubernetes cluster
-     * @param id The unique identifier for the Kafka connector
+     * @param sourceId The unique identifier for the source
+     * @param targetId The unique identifier for the target
      */
-    async deleteMM2Connector(id: string): Promise<void> {
-        const name = `kafka-connector-${id}`;
-        this.logger.debug(`Deleting Kafka connector with name: ${name}`);
+    async deleteMM2Connector(sourceId: string, targetId: string): Promise<void> {
+        const name = `kc-${sourceId}--${targetId}`;
+        this.logger.debug(`Deleting Kafka connector "${name}"`);
 
         await this.customObjectsApi.deleteNamespacedCustomObject(
             STRIMZI_API_GROUP,
@@ -275,7 +280,7 @@ export class KafkaService {
      * @returns
      */
     async getUser(name: string): Promise<{ response: IncomingMessage; body: object }> {
-        this.logger.debug(`Retrieving Kafka user with name: ${name}`);
+        this.logger.debug(`Retrieving Kafka user "${name}"`);
         return this.customObjectsApi.getNamespacedCustomObject(
             STRIMZI_API_GROUP,
             STRIMZI_API_VERSION,
@@ -291,7 +296,7 @@ export class KafkaService {
      * @returns
      */
     private async getSecret(name: string): Promise<{ response: IncomingMessage; body: V1Secret }> {
-        this.logger.debug('Retrieving Kafka user secret');
+        this.logger.debug(`Retrieving Kafka user secret "${name}"`);
         const secret = await this.coreApi.readNamespacedSecret(name, KAFKA_NAMESPACE);
         return secret;
     }
@@ -319,7 +324,7 @@ export class KafkaService {
      * @param targetClusterAlias The alias of the target cluster
      */
     private async patchMM2OffsetSyncsAcls(name: string, targetClusterAlias: string): Promise<void> {
-        this.logger.debug(`Patching Kafka user ${name} with internal ACLs for cluster alias ${targetClusterAlias}`);
+        this.logger.debug(`Patching Kafka user "${name}" with internal ACLs for cluster alias "${targetClusterAlias}"`);
 
         const response = await this.getUser(name);
         const existingAcls: StrimziAcl[] = (response.body as any).spec.authorization.acls ?? [];
@@ -327,7 +332,7 @@ export class KafkaService {
         const topic = `mm2-offset-syncs.${targetClusterAlias}.internal`;
         const topicExists = existingAcls.some((acl) => acl.resource.type === 'topic' && acl.resource.name === topic);
         if (topicExists) {
-            this.logger.debug(`Kafka user ${name} already has ACL for topic ${topic}`);
+            this.logger.debug(`Kafka user "${name}" already has ACL for topic "${topic}"`);
             return;
         }
 
