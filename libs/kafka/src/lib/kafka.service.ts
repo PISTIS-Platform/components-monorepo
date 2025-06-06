@@ -107,7 +107,7 @@ export class KafkaService {
      * @param acls The ACLs to assign to the Kafka user
      * @returns The name and secret of the created Kafka user
      */
-    async createKafkaUser(id: string, acls: StrimziAcl[]): Promise<{ name: string; secret: string }> {
+    async createUser(id: string, acls: StrimziAcl[]): Promise<{ name: string; secret: string }> {
         const name = `kuser-${id}`;
         this.logger.debug(`Creating Kafka user "${name}"`);
 
@@ -168,7 +168,7 @@ export class KafkaService {
      * Delete a Kafka user from the Kubernetes cluster
      * @param id The unique identifier for the Kafka user
      */
-    async deleteKafkaUser(id: string): Promise<void> {
+    async deleteUser(id: string): Promise<void> {
         const name = `kuser-${id}`;
         this.logger.debug(`Deleting Kafka user "${name}"`);
 
