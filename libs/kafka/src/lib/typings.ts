@@ -17,10 +17,14 @@ export type StrimziAcl = {
     type?: 'allow' | 'deny';
 };
 
-export type KafkaConnectorConfig = {
-    sourceId: string;
-    targetId: string;
-    consumerUsername: string;
-    consumerSecret: string;
-    consumerBootstrapServers: string;
+export type MM2ConnectorConfig = {
+    source: {
+        id: string;
+    };
+    target: {
+        id: string;
+        username: string;
+        password: string;
+        bootstrapServers: string;
+    };
 };

@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { generatePassword } from '@pistis/shared';
 import { IncomingMessage } from 'http';
 
-import { KafkaConnectorConfig, StrimziAcl } from './typings';
+import { MM2ConnectorConfig, StrimziAcl } from './typings';
 
 const STRIMZI_API_GROUP = 'kafka.strimzi.io';
 const STRIMZI_API_VERSION = 'v1beta2';
@@ -185,19 +185,21 @@ export class KafkaService {
      * Create a MirrorSource Kafka connector in the Kubernetes cluster
      * @param config The configuration for the Kafka connector
      */
-    async createMM2Connector(config: KafkaConnectorConfig): Promise<void> {
-        const name = `kc-${config.sourceId}--${config.targetId}`;
+    async createMM2Connector(config: MM2ConnectorConfig): Promise<void> {
+        const name = `kc-${config.source.id}--${config.target.id}`;
         this.logger.debug(`Creating MirrorSource Kafka connector "${name}"`);
 
         const sourceBootstrapServers = this.config.get<string>('kafka.bootstrapServers');
         const sourceClusterAlias = `kc-source-${generatePassword(10)}`;
         const targetClusterAlias = 'kc-target';
 
-        const providerTopic = `ds-${config.sourceId}`;
-        const providerUsername = `kuser-${config.sourceId}`;
-        const providerSecret = await this.getDecodedSecret(providerUsername);
+        const providerTopic = `ds-${config.source.id}`;
+        const providerUsername = `kuser-${config.source.id}`;
 
-        const consumerTopic = `ds-${config.targetId}`;
+        const providerSecret = await this.getSecret(providerUsername);
+        const providerPassword = this.decodeSecret(providerSecret);
+
+        const consumerTopic = `ds-${config.target.id}`;
 
         const kafkaConnectorManifest = {
             apiVersion: STRIMZI_API,
@@ -220,17 +222,17 @@ export class KafkaService {
                     'source.consumer.auto.offset.reset': 'latest',
                     'source.cluster.security.protocol': 'SASL_PLAINTEXT',
                     'source.cluster.sasl.mechanism': 'SCRAM-SHA-512',
-                    'source.cluster.sasl.jaas.config': `org.apache.kafka.common.security.scram.ScramLoginModule required username="${providerUsername}" password="${providerSecret}";`,
-                    'target.cluster.bootstrap.servers': config.consumerBootstrapServers,
+                    'source.cluster.sasl.jaas.config': `org.apache.kafka.common.security.scram.ScramLoginModule required username="${providerUsername}" password="${providerPassword}";`,
+                    'target.cluster.bootstrap.servers': config.target.bootstrapServers,
                     'target.cluster.security.protocol': 'SASL_PLAINTEXT',
                     'target.cluster.sasl.mechanism': 'SCRAM-SHA-512',
-                    'target.cluster.sasl.jaas.config': `org.apache.kafka.common.security.scram.ScramLoginModule required username="${config.consumerUsername}" password="${config.consumerSecret}";`,
+                    'target.cluster.sasl.jaas.config': `org.apache.kafka.common.security.scram.ScramLoginModule required username="${config.target.username}" password="${config.target.password}";`,
                     'consumer.override.sasl.mechanism': 'SCRAM-SHA-512',
                     'consumer.override.security.protocol': 'SASL_PLAINTEXT',
-                    'consumer.override.sasl.jaas.config': `org.apache.kafka.common.security.scram.ScramLoginModule required username="${providerUsername}" password="${providerSecret}";`,
+                    'consumer.override.sasl.jaas.config': `org.apache.kafka.common.security.scram.ScramLoginModule required username="${providerUsername}" password="${providerPassword}";`,
                     'producer.override.sasl.mechanism': 'SCRAM-SHA-512',
                     'producer.override.security.protocol': 'SASL_PLAINTEXT',
-                    'producer.override.sasl.jaas.config': `org.apache.kafka.common.security.scram.ScramLoginModule required username="${config.consumerUsername}" password="${config.consumerSecret}";`,
+                    'producer.override.sasl.jaas.config': `org.apache.kafka.common.security.scram.ScramLoginModule required username="${config.target.username}" password="${config.target.password}";`,
                     'key.converter': 'org.apache.kafka.connect.converters.ByteArrayConverter',
                     'value.converter': 'org.apache.kafka.connect.converters.ByteArrayConverter',
                     'sync.group.offsets.enabled': false,
@@ -292,30 +294,12 @@ export class KafkaService {
 
     /**
      * Retrieve a Kafka user secret from the Kubernetes cluster
-     * @param name
+     * @param name The name of the Kafka user secret
      * @returns
      */
-    private async getSecret(name: string): Promise<{ response: IncomingMessage; body: V1Secret }> {
+    private async getSecret(name: string): Promise<V1Secret> {
         this.logger.debug(`Retrieving Kafka user secret "${name}"`);
-        const secret = await this.coreApi.readNamespacedSecret(name, KAFKA_NAMESPACE);
-        return secret;
-    }
-
-    /**
-     * Decode the password from the Kafka user secret
-     * @param name
-     * @returns
-     */
-    private async getDecodedSecret(name: string): Promise<string | null> {
-        const response = await this.getSecret(name);
-        const encodedPassword = response.body.data ? response.body.data['password'] : null;
-
-        if (!encodedPassword) {
-            this.logger.warn(`No password found for Kafka user secret: ${name}`);
-            return null;
-        }
-
-        return Buffer.from(encodedPassword, 'base64').toString('utf-8');
+        return (await this.coreApi.readNamespacedSecret(name, KAFKA_NAMESPACE)).body;
     }
 
     /**
@@ -367,5 +351,21 @@ export class KafkaService {
             undefined,
             options,
         );
+    }
+
+    /**
+     * Decode the password from the Kafka user secret
+     * @param name The name of the Kafka user secret
+     * @returns
+     */
+    private decodeSecret(secret: V1Secret): string | null {
+        const password = secret.data ? secret.data['password'] : null;
+
+        if (!password) {
+            this.logger.warn(`No password found for Kafka user secret: ${name}`);
+            return null;
+        }
+
+        return Buffer.from(password, 'base64').toString('utf-8');
     }
 }
