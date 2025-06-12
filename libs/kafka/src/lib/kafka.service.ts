@@ -17,6 +17,9 @@ const KAFKA_USER_PLURAL = 'kafkausers';
 const KAFKA_CONNECTOR_PLURAL = 'kafkaconnectors';
 const KAFKA_CONNECT_CLUSTER_NAME = 'kafka-connect';
 
+const KAFKA_TOPIC_PREFIX = 'ds';
+const KAFKA_USER_PREFIX = 'kuser';
+
 @Injectable()
 export class KafkaService {
     private readonly logger = new Logger(KafkaService.name);
@@ -51,7 +54,7 @@ export class KafkaService {
      * @returns The name of the created Kafka topic
      */
     async createTopic(id: string): Promise<string> {
-        const name = `ds-${id}`;
+        const name = `${KAFKA_TOPIC_PREFIX}-${id}`;
         this.logger.debug(`Creating Kafka topic "${name}"`);
 
         const kafkaTopicManifest = {
@@ -89,7 +92,7 @@ export class KafkaService {
      * @param id The unique identifier for the Kafka topic
      */
     async deleteTopic(id: string): Promise<void> {
-        const name = `ds-${id}`;
+        const name = `${KAFKA_TOPIC_PREFIX}-${id}`;
         this.logger.debug(`Deleting Kafka topic "${name}"`);
 
         await this.customObjectsApi.deleteNamespacedCustomObject(
@@ -108,7 +111,7 @@ export class KafkaService {
      * @returns The name and secret of the created Kafka user
      */
     async createUser(id: string, acls: StrimziAcl[]): Promise<{ name: string; secret: string }> {
-        const name = `kuser-${id}`;
+        const name = `${KAFKA_USER_PREFIX}-${id}`;
         this.logger.debug(`Creating Kafka user "${name}"`);
 
         const secret = generatePassword(32);
@@ -165,11 +168,41 @@ export class KafkaService {
     }
 
     /**
+     * Create a Kafka provider user in the Kubernetes cluster
+     * @param id The unique identifier for the Kafka user
+     * @returns
+     */
+    async createProviderUser(id: string) {
+        return await this.createUser(id, [
+            {
+                resource: { type: 'topic', name: `${KAFKA_TOPIC_PREFIX}-${id}`, patternType: 'literal' },
+                operations: ['Read', 'Write', 'Create'],
+                type: 'allow',
+            },
+        ]);
+    }
+
+    /**
+     * Create a Kafka consumer user in the Kubernetes cluster
+     * @param id The unique identifier for the Kafka user
+     * @returns
+     */
+    async createConsumerUser(id: string) {
+        return await this.createUser(id, [
+            {
+                resource: { type: 'topic', name: `${KAFKA_TOPIC_PREFIX}-${id}`, patternType: 'literal' },
+                operations: ['Write', 'Create'],
+                type: 'allow',
+            },
+        ]);
+    }
+
+    /**
      * Delete a Kafka user from the Kubernetes cluster
      * @param id The unique identifier for the Kafka user
      */
     async deleteUser(id: string): Promise<void> {
-        const name = `kuser-${id}`;
+        const name = `${KAFKA_USER_PREFIX}-${id}`;
         this.logger.debug(`Deleting Kafka user "${name}"`);
 
         await this.customObjectsApi.deleteNamespacedCustomObject(
@@ -193,13 +226,11 @@ export class KafkaService {
         const sourceClusterAlias = `kc-source-${generatePassword(10)}`;
         const targetClusterAlias = 'kc-target';
 
-        const providerTopic = `ds-${config.source.id}`;
-        const providerUsername = `kuser-${config.source.id}`;
+        const providerTopic = `${KAFKA_TOPIC_PREFIX}-${config.source.id}`;
+        const providerUsername = `${KAFKA_USER_PREFIX}-${config.source.id}`;
+        const providerPassword = this.getDecodedSecret(providerUsername);
 
-        const providerSecret = await this.getSecret(providerUsername);
-        const providerPassword = this.decodeSecret(providerSecret);
-
-        const consumerTopic = `ds-${config.target.id}`;
+        const consumerTopic = `${KAFKA_TOPIC_PREFIX}-${config.target.id}`;
 
         const kafkaConnectorManifest = {
             apiVersion: STRIMZI_API,
@@ -290,6 +321,16 @@ export class KafkaService {
             KAFKA_USER_PLURAL,
             name,
         );
+    }
+
+    /**
+     * Retrieve decoded secret for a Kafka user
+     * @param id The unique identifier for the Kafka secret
+     * @returns
+     */
+    async getDecodedSecret(id: string): Promise<string | null> {
+        const secret = await this.getSecret(`${KAFKA_USER_PREFIX}-${id}`);
+        return this.decodeSecret(secret);
     }
 
     /**
