@@ -5,6 +5,6 @@ import { KafkaService } from './kafka.service';
 @Module({
     controllers: [],
     providers: [KafkaService],
-    exports: [],
+    exports: [KafkaService],
 })
 export class KafkaModule {}

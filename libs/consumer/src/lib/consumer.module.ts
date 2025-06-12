@@ -2,6 +2,7 @@ import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { HttpModule } from '@nestjs/axios';
 import { DynamicModule, Module } from '@nestjs/common';
 import { DataStorageModule } from '@pistis/data-storage';
+import { KafkaModule } from '@pistis/kafka';
 import { MetadataRepositoryModule } from '@pistis/metadata-repository';
 
 import { AssetRetrievalInfo } from './asset-retrieval-info.entity';
@@ -14,7 +15,7 @@ import {
 import { ConsumerService } from './consumer.service';
 
 @Module({
-    imports: [MikroOrmModule.forFeature([AssetRetrievalInfo]), HttpModule],
+    imports: [MikroOrmModule.forFeature([AssetRetrievalInfo]), HttpModule, KafkaModule],
     controllers: [ConsumerController],
     providers: [ConsumerService],
     exports: [],
@@ -22,7 +23,10 @@ import { ConsumerService } from './consumer.service';
 export class ConsumerModule extends ConfigurableModuleClass {
     static register(options: typeof CONSUMER_OPTIONS_TYPE): DynamicModule {
         return {
-            imports: [DataStorageModule.register({ url: options.dataStorageUrl }), MetadataRepositoryModule.register({ url: options.metadataRepositoryUrl, apiKey: options.catalogKey }),],
+            imports: [
+                DataStorageModule.register({ url: options.dataStorageUrl }),
+                MetadataRepositoryModule.register({ url: options.metadataRepositoryUrl, apiKey: options.catalogKey }),
+            ],
 
             ...super.register(options),
         };

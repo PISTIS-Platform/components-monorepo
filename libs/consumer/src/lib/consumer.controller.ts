@@ -28,7 +28,7 @@ import { RetrieveDataDTO } from './retrieveData.dto';
     },
 })
 export class ConsumerController {
-    constructor(private readonly consumerService: ConsumerService) { }
+    constructor(private readonly consumerService: ConsumerService) {}
 
     @Post('/retrieve/:assetId')
     @ApiOkResponse({
@@ -42,5 +42,19 @@ export class ConsumerController {
         @AuthToken() token: string,
     ) {
         return await this.consumerService.retrieveData(assetId, user, token, data);
+    }
+
+    @Post('kafka-user/:assetId')
+    @ApiOkResponse({
+        description: 'Create Kafka user',
+        schema: {
+            example: {
+                username: 'kafka-user',
+                password: 'secure-password',
+            },
+        },
+    })
+    async createKafkaUser(@Param('assetId') assetId: string) {
+        return await this.consumerService.createKafkaUserAndTopic(assetId);
     }
 }
