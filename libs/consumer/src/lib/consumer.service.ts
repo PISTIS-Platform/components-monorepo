@@ -36,7 +36,7 @@ export class ConsumerService {
     async retrieveData(assetId: string, user: any, token: string, data: RetrieveDataDTO) {
         let factory: any;
         let metadata;
-        let streamingData: boolean;
+        let isStreamingData: boolean;
 
         let providerFactory: any;
         try {
@@ -197,16 +197,12 @@ export class ConsumerService {
         }
 
         try {
-            if (format[0] === 'SQL' || format[0] === 'CSV') {
-                streamingData = false;
-            } else {
-                streamingData = true;
-            }
+            isStreamingData = !(format[0] === 'SQL' || format[0] === 'CSV');
             await this.metadataRepositoryService.createMetadata(
                 metadata,
                 this.options.catalogId,
                 factory.factoryPrefix,
-                streamingData,
+                isStreamingData,
             );
         } catch (err) {
             this.logger.error('Metadata creation error:', err);
@@ -337,13 +333,7 @@ export class ConsumerService {
 
         try {
             const topic = await this.kafkaService.createTopic(assetId);
-            const kafkaUser = await this.kafkaService.createUser(assetId, [
-                {
-                    resource: { type: 'topic', name: 'topic', patternType: 'literal' },
-                    operations: ['Read', 'Write', 'Create', 'Delete', 'Describe'],
-                    type: 'allow',
-                },
-            ]);
+            const kafkaUser = await this.kafkaService.createConsumerUser(assetId);
             return { topic, kafkaUser };
         } catch (e) {
             this.logger.error('Error creating Kafka user and topic:', e);

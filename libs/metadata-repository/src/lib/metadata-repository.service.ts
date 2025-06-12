@@ -58,7 +58,7 @@ export class MetadataRepositoryService {
         return catalog;
     }
 
-    async createMetadata(metadata: any, catalogId: string, factoryPrefix: string, streamingData: boolean) {
+    async createMetadata(metadata: any, catalogId: string, factoryPrefix: string, isStreamingData: boolean) {
         let newMetadata;
 
         const getValue = (key: string, value: string) => {
@@ -115,7 +115,7 @@ export class MetadataRepositoryService {
         `;
 
         try {
-            if (streamingData) {
+            if (isStreamingData) {
                 newMetadata = await firstValueFrom(
                     this.httpService
                         .put(
