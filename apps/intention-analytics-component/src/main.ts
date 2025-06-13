@@ -1,3 +1,5 @@
+/* eslint-disable simple-import-sort/imports */
+import { oTelemetry } from '@pistis/shared';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
@@ -8,6 +10,7 @@ import { WinstonModule } from 'nest-winston';
 import { AppModule } from '../../intention-analytics-component/src/app/app.module';
 
 async function bootstrap() {
+    await oTelemetry('intention-analytics-component', '1.0.0', '', ''); //TODO ADD ISDEVELOPMENT AND FACTORY
     const app = await NestFactory.create(AppModule, {
         cors: true,
         logger: WinstonModule.createLogger({

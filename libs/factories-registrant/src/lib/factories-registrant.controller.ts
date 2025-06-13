@@ -19,6 +19,7 @@ import {
     ApiTags,
     ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 import { ADMIN_ROLE, AuthToken, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
 import type { Response } from 'express';
 import { createReadStream } from 'fs';
@@ -27,9 +28,8 @@ import { join } from 'path';
 import YAML from 'yaml';
 
 import { UpdateFactoryDTO, UpdateFactoryIpDTO } from './dto';
-import { CreateFactoryDTO } from './dto/create-factory.dto';
-import { FactoryCreationDTO } from './dto/factory-creation.dto';
 import { CreateServiceMappingDTO } from './dto/create-service-mapping.dto';
+import { FactoryCreationDTO } from './dto/factory-creation.dto';
 import { UpdateServiceMappingDTO } from './dto/update-service-mapping.dto';
 import { FactoriesRegistrant } from './entities/factories-registrant.entity';
 import { FactoriesRegistrantService } from './factories-registrant.service';
@@ -57,6 +57,7 @@ import { ServicesMappingService } from './services-mapping.service';
     },
 })
 export class FactoriesRegistrantController {
+    private readonly logger = logs.getLogger(FactoriesRegistrantController.name);
     constructor(
         private readonly factoriesService: FactoriesRegistrantService,
         private readonly servicesMappingService: ServicesMappingService,
@@ -84,6 +85,12 @@ export class FactoriesRegistrantController {
         },
     })
     async findFactories(): Promise<FactoriesRegistrant[]> {
+        this.logger.emit({
+            severityNumber: SeverityNumber.TRACE,
+            severityText: 'trace',
+            body: ``,
+            attributes: { route: `/api/factories/`, method: 'GET', timestamp: new Date().toISOString() },
+        });
         return this.factoriesService.retrieveFactories();
     }
 
@@ -98,6 +105,12 @@ export class FactoriesRegistrantController {
         },
     })
     async findFactoriesMapping() {
+        this.logger.emit({
+            severityNumber: SeverityNumber.TRACE,
+            severityText: 'trace',
+            body: ``,
+            attributes: { route: `/api/factories/org-factories`, method: 'GET', timestamp: new Date().toISOString() },
+        });
         return this.factoriesService.findFactoriesMapping();
     }
 
@@ -109,6 +122,12 @@ export class FactoriesRegistrantController {
         },
     })
     async findAcceptedFactories() {
+        this.logger.emit({
+            severityNumber: SeverityNumber.TRACE,
+            severityText: 'trace',
+            body: ``,
+            attributes: { route: `/api/factories/list`, method: 'GET', timestamp: new Date().toISOString() },
+        });
         return this.factoriesService.retrieveAcceptedFactories();
     }
 
@@ -134,6 +153,12 @@ export class FactoriesRegistrantController {
     async findLoggedInUserFactory(
         @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
     ): Promise<FactoriesRegistrant> {
+        this.logger.emit({
+            severityNumber: SeverityNumber.TRACE,
+            severityText: 'trace',
+            body: ``,
+            attributes: { route: `/api/factories/user-factory`, method: 'GET', timestamp: new Date().toISOString() },
+        });
         return this.factoriesService.findLoggedInUserFactory(user.organizationId);
     }
 
@@ -148,6 +173,16 @@ export class FactoriesRegistrantController {
         },
     })
     async findServicesMappingForGeneralUsers() {
+        this.logger.emit({
+            severityNumber: SeverityNumber.TRACE,
+            severityText: 'trace',
+            body: ``,
+            attributes: {
+                route: `/api/factories/services-mapping`,
+                method: 'GET',
+                timestamp: new Date().toISOString(),
+            },
+        });
         return this.servicesMappingService.findServicesMappingForGeneralUsers();
     }
 
@@ -168,6 +203,12 @@ export class FactoriesRegistrantController {
     })
     @Roles({ roles: [ADMIN_ROLE] })
     async findServicesMappingForAdmin() {
+        this.logger.emit({
+            severityNumber: SeverityNumber.TRACE,
+            severityText: 'trace',
+            body: ``,
+            attributes: { route: `/api/factories/services`, method: 'GET', timestamp: new Date().toISOString() },
+        });
         return this.servicesMappingService.findServicesMappingForAdmin();
     }
 
@@ -186,6 +227,12 @@ export class FactoriesRegistrantController {
     })
     @Roles({ roles: [ADMIN_ROLE] })
     async findServiceMapping(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
+        this.logger.emit({
+            severityNumber: SeverityNumber.TRACE,
+            severityText: 'trace',
+            body: ``,
+            attributes: { route: `/api/factories/services/${id}`, method: 'GET', timestamp: new Date().toISOString() },
+        });
         return this.servicesMappingService.find(id);
     }
 
@@ -206,6 +253,12 @@ export class FactoriesRegistrantController {
     })
     @ApiBody({ type: CreateServiceMappingDTO })
     async createServiceMapping(@Body() data: CreateServiceMappingDTO) {
+        this.logger.emit({
+            severityNumber: SeverityNumber.TRACE,
+            severityText: 'trace',
+            body: ``,
+            attributes: { route: `/api/factories/services`, method: 'POST', timestamp: new Date().toISOString() },
+        });
         return await this.servicesMappingService.create(data);
     }
 
@@ -228,6 +281,16 @@ export class FactoriesRegistrantController {
         @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
         @Body() data: UpdateServiceMappingDTO,
     ) {
+        this.logger.emit({
+            severityNumber: SeverityNumber.TRACE,
+            severityText: 'trace',
+            body: ``,
+            attributes: {
+                route: `/api/factories/services/${id}`,
+                method: 'PATCH',
+                timestamp: new Date().toISOString(),
+            },
+        });
         return await this.servicesMappingService.update(id, data);
     }
 
@@ -244,11 +307,31 @@ export class FactoriesRegistrantController {
     async findOrganisationServices(
         @Param('organizationId', new ParseUUIDPipe({ version: '4' })) organizationId: string,
     ) {
+        this.logger.emit({
+            severityNumber: SeverityNumber.TRACE,
+            severityText: 'trace',
+            body: ``,
+            attributes: {
+                route: `/api/factories/${organizationId}/services`,
+                method: 'GET',
+                timestamp: new Date().toISOString(),
+            },
+        });
         return this.servicesMappingService.findOrganizationServices(organizationId);
     }
 
     @Get('download-instructions')
     downloadSetUpInstructions(@Res({ passthrough: true }) res: Response): StreamableFile {
+        this.logger.emit({
+            severityNumber: SeverityNumber.TRACE,
+            severityText: 'trace',
+            body: ``,
+            attributes: {
+                route: `/api/factories/download-instructions`,
+                method: 'GET',
+                timestamp: new Date().toISOString(),
+            },
+        });
         //TODO: test.txt is a dummy file we will change it when we have a first example from the actual file
         const file = createReadStream(join(process.cwd(), '/apps/factories-registrant-component/src/assets/test.txt'));
 
@@ -263,6 +346,16 @@ export class FactoriesRegistrantController {
         @Res({ passthrough: true }) res: Response,
         @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
     ) {
+        this.logger.emit({
+            severityNumber: SeverityNumber.TRACE,
+            severityText: 'trace',
+            body: ``,
+            attributes: {
+                route: `/api/factories/download-keycloak-clients`,
+                method: 'GET',
+                timestamp: new Date().toISOString(),
+            },
+        });
         const configmap = await this.factoriesService.getClientsSecret(user.organizationId);
 
         // Set appropriate headers to indicate JSON content
@@ -279,6 +372,16 @@ export class FactoriesRegistrantController {
         @Res({ passthrough: true }) res: Response,
         @Param('organizationId', new ParseUUIDPipe({ version: '4' })) organizationId: string,
     ) {
+        this.logger.emit({
+            severityNumber: SeverityNumber.TRACE,
+            severityText: 'trace',
+            body: ``,
+            attributes: {
+                route: `/api/factories/download-keycloak-clients-admin/${organizationId}`,
+                method: 'GET',
+                timestamp: new Date().toISOString(),
+            },
+        });
         const { fileBuffer, factoryPrefix } = await this.factoriesService.getClientsSecretAdmin(organizationId);
 
         // Set appropriate headers to indicate JSON content
@@ -310,6 +413,12 @@ export class FactoriesRegistrantController {
     async findFactoryInfo(
         @Param('factoryId', new ParseUUIDPipe({ version: '4' })) factoryId: string,
     ): Promise<FactoriesRegistrant> {
+        this.logger.emit({
+            severityNumber: SeverityNumber.TRACE,
+            severityText: 'trace',
+            body: ``,
+            attributes: { route: `/api/factories/${factoryId}`, method: 'GET', timestamp: new Date().toISOString() },
+        });
         return this.factoriesService.retrieveFactory(factoryId);
     }
 
@@ -334,6 +443,16 @@ export class FactoriesRegistrantController {
     async findFactoryInfoByOrganizationId(
         @Param('orgId', new ParseUUIDPipe({ version: '4' })) orgId: string,
     ): Promise<FactoriesRegistrant> {
+        this.logger.emit({
+            severityNumber: SeverityNumber.TRACE,
+            severityText: 'trace',
+            body: ``,
+            attributes: {
+                route: `/api/factories/organization/${orgId}`,
+                method: 'GET',
+                timestamp: new Date().toISOString(),
+            },
+        });
         return this.factoriesService.findFactoryInfoByOrganizationId(orgId);
     }
 
@@ -356,6 +475,16 @@ export class FactoriesRegistrantController {
         },
     })
     async findFactoryInfoByPrefix(@Param('factoryName') factoryName: string): Promise<FactoriesRegistrant> {
+        this.logger.emit({
+            severityNumber: SeverityNumber.TRACE,
+            severityText: 'trace',
+            body: ``,
+            attributes: {
+                route: `/api/factories/name/${factoryName}`,
+                method: 'GET',
+                timestamp: new Date().toISOString(),
+            },
+        });
         return this.factoriesService.retrieveFactoryByPrefix(factoryName);
     }
 
@@ -382,6 +511,12 @@ export class FactoriesRegistrantController {
         @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
         @Body() data: UpdateFactoryIpDTO,
     ): Promise<FactoriesRegistrant> {
+        this.logger.emit({
+            severityNumber: SeverityNumber.TRACE,
+            severityText: 'trace',
+            body: ``,
+            attributes: { route: `/api/factories/set-ip`, method: 'PUT', timestamp: new Date().toISOString() },
+        });
         return this.factoriesService.setFactoryIp(data, user.organizationId);
     }
 
@@ -411,6 +546,16 @@ export class FactoriesRegistrantController {
         @AuthToken() token: string,
         @Body() data: UpdateFactoryDTO,
     ): Promise<FactoriesRegistrant> {
+        this.logger.emit({
+            severityNumber: SeverityNumber.TRACE,
+            severityText: 'trace',
+            body: ``,
+            attributes: {
+                route: `/api/factories/${factoryId}/update`,
+                method: 'PUT',
+                timestamp: new Date().toISOString(),
+            },
+        });
         return this.factoriesService.updateFactory(data, token, factoryId, user.id);
     }
 
@@ -435,6 +580,12 @@ export class FactoriesRegistrantController {
     @ApiBody({ type: FactoryCreationDTO })
     @Roles({ roles: [ADMIN_ROLE] })
     async createFactory(@AuthToken() token: string, @Body() data: FactoryCreationDTO): Promise<FactoriesRegistrant> {
+        this.logger.emit({
+            severityNumber: SeverityNumber.TRACE,
+            severityText: 'trace',
+            body: ``,
+            attributes: { route: `/api/factories/`, method: 'POST', timestamp: new Date().toISOString() },
+        });
         return this.factoriesService.createFactory(data, token);
     }
 
@@ -460,6 +611,16 @@ export class FactoriesRegistrantController {
         @AuthToken() token: string,
         @Param('organizationId', new ParseUUIDPipe()) organizationId: string,
     ): Promise<string[] | undefined> {
+        this.logger.emit({
+            severityNumber: SeverityNumber.TRACE,
+            severityText: 'trace',
+            body: ``,
+            attributes: {
+                route: `/api/factories/recreate/${organizationId}`,
+                method: 'PUT',
+                timestamp: new Date().toISOString(),
+            },
+        });
         return this.factoriesService.recreateClients(token, organizationId);
     }
 
@@ -476,6 +637,16 @@ export class FactoriesRegistrantController {
         @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
         @AuthToken() token: string,
     ) {
+        this.logger.emit({
+            severityNumber: SeverityNumber.TRACE,
+            severityText: 'trace',
+            body: ``,
+            attributes: {
+                route: `/api/factories/${factoryId}/activate`,
+                method: 'PATCH',
+                timestamp: new Date().toISOString(),
+            },
+        });
         return this.factoriesService.activateFactory(factoryId, token, user.id);
     }
 
@@ -492,6 +663,16 @@ export class FactoriesRegistrantController {
         @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
         @AuthToken() token: string,
     ) {
+        this.logger.emit({
+            severityNumber: SeverityNumber.TRACE,
+            severityText: 'trace',
+            body: ``,
+            attributes: {
+                route: `/api/factories/${factoryId}/suspend`,
+                method: 'PATCH',
+                timestamp: new Date().toISOString(),
+            },
+        });
         return this.factoriesService.suspendFactory(factoryId, token, user.id);
     }
 
@@ -508,6 +689,12 @@ export class FactoriesRegistrantController {
         @AuthToken() token: string,
         @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
     ) {
+        this.logger.emit({
+            severityNumber: SeverityNumber.TRACE,
+            severityText: 'trace',
+            body: ``,
+            attributes: { route: `/api/factories/${factoryId}`, method: 'DELETE', timestamp: new Date().toISOString() },
+        });
         return this.factoriesService.deleteFactory(token, factoryId, user.id);
     }
 
@@ -524,6 +711,16 @@ export class FactoriesRegistrantController {
         @Param('organizationId', new ParseUUIDPipe({ version: '4' })) organizationId: string,
         @AuthToken() token: string,
     ) {
+        this.logger.emit({
+            severityNumber: SeverityNumber.TRACE,
+            severityText: 'trace',
+            body: ``,
+            attributes: {
+                route: `/api/factories//client/${clientId}/${organizationId}`,
+                method: 'DELETE',
+                timestamp: new Date().toISOString(),
+            },
+        });
         return this.factoriesService.deleteClient(token, clientId, organizationId);
     }
 }

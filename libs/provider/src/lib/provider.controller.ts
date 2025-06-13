@@ -7,6 +7,7 @@ import {
     ApiTags,
     ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 import { AuthToken } from '@pistis/shared';
 
 import { PaginationDto } from './dto/pagination.dto';
@@ -34,7 +35,8 @@ import { ProviderService } from './provider.service';
     },
 })
 export class ProviderController {
-    constructor(private readonly providerService: ProviderService) { }
+    private readonly logger = logs.getLogger(ProviderController.name);
+    constructor(private readonly providerService: ProviderService) {}
 
     @Post(':assetId')
     @ApiOkResponse({
@@ -68,6 +70,12 @@ export class ProviderController {
         @Body() paginationData: PaginationDto,
         @AuthToken() token: string,
     ) {
+        this.logger.emit({
+            severityNumber: SeverityNumber.TRACE,
+            severityText: 'trace',
+            body: ``,
+            attributes: { route: `/api/provider/${assetId}`, method: 'POST', timestamp: new Date().toISOString() },
+        });
         return await this.providerService.downloadDataset(assetId, paginationData, token);
     }
 }

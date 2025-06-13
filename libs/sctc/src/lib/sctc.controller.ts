@@ -1,5 +1,6 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 import { ORGANISATION_MEMBER } from '@pistis/shared';
 import { Roles } from 'nest-keycloak-connect';
 
@@ -10,6 +11,7 @@ import { SCTCService } from './sctc.service';
 @ApiTags('sctc')
 @ApiBearerAuth()
 export class SCTCController {
+    private readonly logger = logs.getLogger(SCTCController.name);
     constructor(private readonly service: SCTCService) {}
 
     @Post('/compose')
@@ -69,6 +71,12 @@ export class SCTCController {
     @ApiBody({ type: ContractComposerDto })
     @ApiUnauthorizedResponse()
     async create(@Body() data: ContractComposerDto) {
+        this.logger.emit({
+            severityNumber: SeverityNumber.TRACE,
+            severityText: 'trace',
+            body: ``,
+            attributes: { route: `/api/sctc/compose`, method: 'POST', timestamp: new Date().toISOString() },
+        });
         return this.service.composeContract(data);
     }
 }

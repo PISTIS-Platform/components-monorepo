@@ -7,6 +7,7 @@ import {
     ApiTags,
     ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 import { ADMIN_ROLE } from '@pistis/shared';
 import { Response } from 'express';
 import { Public, Roles } from 'nest-keycloak-connect';
@@ -19,6 +20,7 @@ import { ModelsRepositoryService } from './models-repository.service';
 @ApiTags('models-repository')
 @ApiBearerAuth()
 export class ModelsRepositoryController {
+    private readonly logger = logs.getLogger(ModelsRepositoryController.name);
     constructor(private readonly modelsService: ModelsRepositoryService) {}
 
     @Post()
@@ -55,6 +57,12 @@ export class ModelsRepositoryController {
     @ApiUnauthorizedResponse()
     @ApiBody({ type: CreateModelDTO })
     async createModel(@Body() file: CreateModelDTO) {
+        this.logger.emit({
+            severityNumber: SeverityNumber.TRACE,
+            severityText: 'trace',
+            body: ``,
+            attributes: { route: `/api/models`, method: 'POST', timestamp: new Date().toISOString() },
+        });
         return await this.modelsService.createModel(file);
     }
 
@@ -91,6 +99,12 @@ export class ModelsRepositoryController {
     @ApiUnauthorizedResponse()
     @ApiBody({ type: UpdateModelDTO })
     async updateModel(@Param('modelId') modelId: string, @Body() model: UpdateModelDTO) {
+        this.logger.emit({
+            severityNumber: SeverityNumber.TRACE,
+            severityText: 'trace',
+            body: ``,
+            attributes: { route: `/api/models/${modelId}`, method: 'PUT', timestamp: new Date().toISOString() },
+        });
         return await this.modelsService.updateModel(modelId, model);
     }
 
@@ -125,6 +139,12 @@ export class ModelsRepositoryController {
     })
     @ApiUnauthorizedResponse()
     async findAllModels() {
+        this.logger.emit({
+            severityNumber: SeverityNumber.TRACE,
+            severityText: 'trace',
+            body: ``,
+            attributes: { route: `/api/models`, method: 'GET', timestamp: new Date().toISOString() },
+        });
         return await this.modelsService.findAllModels();
     }
 
@@ -133,6 +153,16 @@ export class ModelsRepositoryController {
     @ApiOkResponse({})
     @ApiUnauthorizedResponse()
     async downloadModel(@Param('modelId') modelId: string, @Res() res: Response) {
+        this.logger.emit({
+            severityNumber: SeverityNumber.TRACE,
+            severityText: 'trace',
+            body: ``,
+            attributes: {
+                route: `/api/models/${modelId}/download`,
+                method: 'GET',
+                timestamp: new Date().toISOString(),
+            },
+        });
         return await this.modelsService.downloadModel(modelId, res);
     }
 
@@ -167,6 +197,12 @@ export class ModelsRepositoryController {
     })
     @ApiUnauthorizedResponse()
     async findModelById(@Param('modelId') modelId: string) {
+        this.logger.emit({
+            severityNumber: SeverityNumber.TRACE,
+            severityText: 'trace',
+            body: ``,
+            attributes: { route: `/api/models/${modelId}`, method: 'GET', timestamp: new Date().toISOString() },
+        });
         return await this.modelsService.findModelByIdWithSpecificFields(modelId);
     }
 
@@ -175,6 +211,12 @@ export class ModelsRepositoryController {
     @ApiOkResponse({ description: 'Model delete', schema: { example: 'Model deleted' } })
     @ApiUnauthorizedResponse()
     async deleteModel(@Param('modelId') modelId: string) {
+        this.logger.emit({
+            severityNumber: SeverityNumber.TRACE,
+            severityText: 'trace',
+            body: ``,
+            attributes: { route: `/api/models/${modelId}`, method: 'DELETE', timestamp: new Date().toISOString() },
+        });
         return await this.modelsService.deleteModel(modelId);
     }
 }
