@@ -51,9 +51,10 @@ export class KafkaService {
     /**
      * Create a Kafka topic in the Kubernetes cluster
      * @param id The unique identifier for the Kafka topic
+     * @param retentionMs The duration in ms for how long the messages will remain stored within topic
      * @returns The name of the created Kafka topic
      */
-    async createTopic(id: string): Promise<string> {
+    async createTopic(id: string, retentionMs?: number): Promise<string> {
         const name = `${KAFKA_TOPIC_PREFIX}-${id}`;
         this.logger.debug(`Creating Kafka topic "${name}"`);
 
@@ -71,7 +72,7 @@ export class KafkaService {
                 partitions: this.config.get<number>('kafka.topicPartition'),
                 replicas: this.config.get<number>('kafka.topicReplicas'),
                 config: {
-                    'retention.ms': this.config.get<number>('kafka.topicRetentionMs'),
+                    'retention.ms': retentionMs ?? this.config.get<number>('kafka.topicRetentionMs'),
                     'segment.bytes': this.config.get<number>('kafka.topicSegmentBytes'),
                 },
             },
