@@ -37,6 +37,22 @@ import { ProviderService } from './provider.service';
 export class ProviderController {
     constructor(private readonly providerService: ProviderService) {}
 
+    @Post('streaming')
+    @ApiOkResponse({
+        description: 'Streaming data',
+        schema: {
+            example: {
+                id: 'streaming-id',
+                title: 'Streaming Title',
+                description: 'Streaming Description',
+            },
+        },
+    })
+    @ApiBody({ type: StreamingDataDto })
+    async createStreamingData(@Body() streamingData: StreamingDataDto, @AuthToken() token: string) {
+        return await this.providerService.createStreamingMetadata(token, streamingData);
+    }
+
     @Post(':assetId')
     @ApiOkResponse({
         description: 'Download dataset',
@@ -70,35 +86,5 @@ export class ProviderController {
         @AuthToken() token: string,
     ) {
         return await this.providerService.downloadDataset(assetId, paginationData, token);
-    }
-
-    @Post('kafka-user/:assetId')
-    @ApiOkResponse({
-        description: 'Create Kafka user',
-        schema: {
-            example: {
-                username: 'kafka-user',
-                password: 'secure-password',
-            },
-        },
-    })
-    async createKafkaUser(@Param('assetId') assetId: string) {
-        return await this.providerService.createKafkaUserAndTopic(assetId);
-    }
-
-    @Post('streaming')
-    @ApiOkResponse({
-        description: 'Streaming data',
-        schema: {
-            example: {
-                id: 'streaming-id',
-                title: 'Streaming Title',
-                description: 'Streaming Description',
-            },
-        },
-    })
-    @ApiBody({ type: StreamingDataDto })
-    async createStreamingData(@Body() streamingData: StreamingDataDto, @AuthToken() token: string) {
-        return await this.providerService.createStreamingMetadata(token, streamingData);
     }
 }

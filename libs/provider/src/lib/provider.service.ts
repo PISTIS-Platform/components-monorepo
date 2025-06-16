@@ -12,6 +12,7 @@ import { KafkaService } from '@pistis/kafka';
 import { MetadataRepositoryService } from '@pistis/metadata-repository';
 import { getHeaders } from '@pistis/shared';
 import { catchError, firstValueFrom, map, of } from 'rxjs';
+import { v4 as uuidV4 } from 'uuid';
 
 import { PaginationDto } from './dto/pagination.dto';
 import { StreamingDataDto } from './dto/streaming-data.dto';
@@ -145,7 +146,8 @@ export class ProviderService {
 
     async createStreamingMetadata(token: string, data: StreamingDataDto) {
         let factory;
-
+        const assetId = uuidV4();
+        let kafkaResponse;
         try {
             factory = await this.retrieveFactory(token);
         } catch (err) {
@@ -154,22 +156,30 @@ export class ProviderService {
         }
 
         const metadata = {
-            id: data.id,
+            id: assetId,
             title: { en: data.title },
             description: { en: data.description },
-            monetization: {
-                license: {
-                    id: '_:g1',
-                    lable: 'Subscription License',
-                    prefLabel: 'Subscription License',
-                    resource: 'https://pistis-market.eu/license/497c3001-8ab2-4a3f-8e3d-5dba6ac0760b',
-                },
+            publisher: {
+                type: 'Organization',
+                email: 'mailto:admin@pistis.eu',
+                name: factory.factoryPrefix.toUpperCase(),
             },
+            monetization: [
+                {
+                    license: {
+                        id: '_:g1',
+                        label: 'Subscription License',
+                        description: 'Subscription License',
+                        resource: 'https://pistis-market.eu/license/497c3001-8ab2-4a3f-8e3d-5dba6ac0760b',
+                    },
+                },
+            ],
             distributions: [
                 {
                     title: { en: 'Streaming Data Distribution' },
-                    access_url: [`http://${factory.factoryPrefix}.pistis-market.eu:9092`],
+                    access_url: [`http://develop.pistis-market.eu:9092`],
                     format: { resource: 'Kafka-stream' },
+                    byte_size: '0',
                 },
             ],
         };
@@ -180,6 +190,15 @@ export class ProviderService {
             this.logger.error('Error creating streaming metadata:', e);
             throw new BadGatewayException('Error creating streaming metadata');
         }
+
+        try {
+            kafkaResponse = await this.createKafkaUserAndTopic(assetId);
+        } catch (e) {
+            this.logger.error('Error creating kafka user and topic:', e);
+            throw new BadGatewayException('Error creating kafka user and topic');
+        }
+
+        return kafkaResponse;
     }
 
     private async retrieveFactory(token: string) {

@@ -60,6 +60,7 @@ export class MetadataRepositoryService {
 
     async createMetadata(metadata: any, catalogId: string, factoryPrefix: string, isStreamingData: boolean) {
         let newMetadata;
+        let byteSizeValue;
 
         const getValue = (key: string, value: string) => {
             const entry = metadata.distributions.find((item: any) => item[key]);
@@ -70,7 +71,11 @@ export class MetadataRepositoryService {
             return entry ? (value !== '' ? entry[key][value] : entry[key]) : '';
         };
 
-        const byteSizeValue = getValue('byte_size', '');
+        if (isStreamingData) {
+            byteSizeValue = '';
+        } else {
+            byteSizeValue = getValue('byte_size', '');
+        }
         const byteSizeEntry = byteSizeValue ? `dcat:byteSize  "${byteSizeValue}"^^xsd:decimal ;` : '';
 
         const rdfData = `
@@ -113,21 +118,16 @@ export class MetadataRepositoryService {
                 ${byteSizeEntry}
                 dcat:accessURL <${getValue('access_url', '0')}> .
         `;
-
         try {
             if (isStreamingData) {
                 newMetadata = await firstValueFrom(
                     this.httpService
-                        .put(
-                            `https://${factoryPrefix}.pistis-market.eu/srv/repo/catalogues/${catalogId}/datasets`,
-                            rdfData,
-                            {
-                                headers: {
-                                    'Content-Type': 'text/turtle',
-                                    'X-API-Key': this.options.apiKey,
-                                },
+                        .put(`https://${factoryPrefix}.pistis-market.eu/srv/repo/datasets/${metadata.id}`, rdfData, {
+                            headers: {
+                                'Content-Type': 'text/turtle',
+                                'X-API-Key': this.options.apiKey,
                             },
-                        )
+                        })
                         .pipe(
                             map((res) => {
                                 return res;
