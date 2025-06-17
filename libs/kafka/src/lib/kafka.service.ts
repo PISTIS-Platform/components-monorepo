@@ -335,6 +335,32 @@ export class KafkaService {
     }
 
     /**
+     * Retrieve the Read-Only access user and connection details
+     * @param name The factory name which matches the user and secret name in Kubernetes cluster
+     * @returns
+     */
+    async getFactoryConnectionDetails(name: string): Promise<{
+        username: string;
+        password: string;
+        brokerUrl: string;
+        securityProtocol: string;
+        saslMechanism: string;
+    }> {
+        // fetch user to validate if exists with the given name
+        await this.getUser(name);
+        // retrieve decoded password from secret
+        const password = (await this.getDecodedSecret(name)) ?? '';
+
+        return {
+            username: name,
+            password,
+            brokerUrl: `kafka.${name}.pistis-market.eu:9094`,
+            securityProtocol: 'SASL_PLAINTEXT',
+            saslMechanism: 'SCRAM-SHA-512',
+        };
+    }
+
+    /**
      * Retrieve a Kafka user secret from the Kubernetes cluster
      * @param name The name of the Kafka user secret
      * @returns
