@@ -74,6 +74,7 @@
         "@opentelemetry/sdk-metrics": "^2.0.0",
         "@opentelemetry/sdk-node": "^0.200.0",
         "@opentelemetry/sdk-trace-node": "^2.0.0",
+        "@opentelemetry/winston-transport": "^0.13.0",
         "@types/jsonld": "^1.5.15",
         "axios": "^1.6.7",
         "body-parser": "^1.20.2",

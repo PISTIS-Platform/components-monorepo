@@ -1,4 +1,4 @@
-import { Body, Controller, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import {
     ApiBearerAuth,
     ApiBody,
@@ -7,7 +7,7 @@ import {
     ApiTags,
     ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { logs, SeverityNumber } from '@opentelemetry/api-logs';
+import { logs } from '@opentelemetry/api-logs';
 import { AuthToken } from '@pistis/shared';
 
 import { PaginationDto } from './dto/pagination.dto';
@@ -70,12 +70,11 @@ export class ProviderController {
         @Body() paginationData: PaginationDto,
         @AuthToken() token: string,
     ) {
-        this.logger.emit({
-            severityNumber: SeverityNumber.TRACE,
-            severityText: 'trace',
-            body: ``,
-            attributes: { route: `/api/provider/${assetId}`, method: 'POST', timestamp: new Date().toISOString() },
-        });
         return await this.providerService.downloadDataset(assetId, paginationData, token);
+    }
+
+    @Get()
+    async getAllAssets() {
+        return 'ok';
     }
 }

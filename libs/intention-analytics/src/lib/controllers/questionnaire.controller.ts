@@ -19,7 +19,7 @@ import {
     ApiTags,
     ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { logs, SeverityNumber } from '@opentelemetry/api-logs';
+import { logs } from '@opentelemetry/api-logs';
 import { ADMIN_ROLE, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
 import { AuthenticatedUser, Roles } from 'nest-keycloak-connect';
 
@@ -75,12 +75,6 @@ export class QuestionnaireController {
         status: 200,
     })
     async getVersions() {
-        this.logger.emit({
-            severityNumber: SeverityNumber.TRACE,
-            severityText: 'trace',
-            body: ``,
-            attributes: { route: `/api/questionnaire/`, method: 'GET', timestamp: new Date().toISOString() },
-        });
         return this.questionnairesService.getVersions();
     }
 
@@ -119,16 +113,6 @@ export class QuestionnaireController {
         @Param('assetId') assetId: string,
         @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
     ) {
-        this.logger.emit({
-            severityNumber: SeverityNumber.TRACE,
-            severityText: 'trace',
-            body: ``,
-            attributes: {
-                route: `/api/questionnaire/${assetId}/active-questionnaire/verified-buyers`,
-                method: 'GET',
-                timestamp: new Date().toISOString(),
-            },
-        });
         return await this.answersService.getUserQuestionnaire(assetId, user.id, true);
     }
 
@@ -167,16 +151,6 @@ export class QuestionnaireController {
         @Param('assetId') assetId: string,
         @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
     ) {
-        this.logger.emit({
-            severityNumber: SeverityNumber.TRACE,
-            severityText: 'trace',
-            body: ``,
-            attributes: {
-                route: `/api/questionnaire/${assetId}/active-questionnaire/general-users`,
-                method: 'GET',
-                timestamp: new Date().toISOString(),
-            },
-        });
         return await this.answersService.getUserQuestionnaire(assetId, user.id, false);
     }
 
@@ -213,16 +187,6 @@ export class QuestionnaireController {
         status: 200,
     })
     async findActiveVersionForVerifiedBuyers() {
-        this.logger.emit({
-            severityNumber: SeverityNumber.TRACE,
-            severityText: 'trace',
-            body: ``,
-            attributes: {
-                route: `/api/questionnaire/active-version/verified-buyers`,
-                method: 'GET',
-                timestamp: new Date().toISOString(),
-            },
-        });
         return this.answersService.findActiveVersion(true);
     }
 
@@ -259,16 +223,6 @@ export class QuestionnaireController {
         status: 200,
     })
     async findActiveVersionForGeneralUsers() {
-        this.logger.emit({
-            severityNumber: SeverityNumber.TRACE,
-            severityText: 'trace',
-            body: ``,
-            attributes: {
-                route: `/api/questionnaire/active-version/general-users`,
-                method: 'GET',
-                timestamp: new Date().toISOString(),
-            },
-        });
         return this.answersService.findActiveVersion(false);
     }
 
@@ -288,16 +242,6 @@ export class QuestionnaireController {
         status: 200,
     })
     async getAnswers(@Param('assetId') assetId: string) {
-        this.logger.emit({
-            severityNumber: SeverityNumber.TRACE,
-            severityText: 'trace',
-            body: ``,
-            attributes: {
-                route: `/api/questionnaire/${assetId}/answers`,
-                method: 'GET',
-                timestamp: new Date().toISOString(),
-            },
-        });
         return this.answersService.getAnswers(assetId);
     }
 
@@ -347,12 +291,6 @@ export class QuestionnaireController {
         status: 200,
     })
     async create(@Body() data: CreateQuestionnaireDto) {
-        this.logger.emit({
-            severityNumber: SeverityNumber.TRACE,
-            severityText: 'trace',
-            body: ``,
-            attributes: { route: `/api/questionnaire/`, method: 'POST', timestamp: new Date().toISOString() },
-        });
         return this.questionnairesService.create(data);
     }
 
@@ -375,16 +313,6 @@ export class QuestionnaireController {
         @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
         @Param('version', new ParseIntPipe()) version: number,
     ) {
-        this.logger.emit({
-            severityNumber: SeverityNumber.TRACE,
-            severityText: 'trace',
-            body: ``,
-            attributes: {
-                route: `/api/questionnaire/${id}/${version}/activate`,
-                method: 'PATCH',
-                timestamp: new Date().toISOString(),
-            },
-        });
         return this.questionnairesService.activate(id, version);
     }
 
@@ -405,16 +333,6 @@ export class QuestionnaireController {
         @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
         @Param('version', new ParseIntPipe()) version: number,
     ) {
-        this.logger.emit({
-            severityNumber: SeverityNumber.TRACE,
-            severityText: 'trace',
-            body: ``,
-            attributes: {
-                route: `/api/questionnaire/${id}/${version}/deactivate`,
-                method: 'PATCH',
-                timestamp: new Date().toISOString(),
-            },
-        });
         return this.questionnairesService.deactivate(id, version);
     }
 
@@ -447,16 +365,6 @@ export class QuestionnaireController {
         @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
         @Param('version', new ParseIntPipe()) version: number,
     ) {
-        this.logger.emit({
-            severityNumber: SeverityNumber.TRACE,
-            severityText: 'trace',
-            body: ``,
-            attributes: {
-                route: `/api/questionnaire/${id}/${version}`,
-                method: 'GET',
-                timestamp: new Date().toISOString(),
-            },
-        });
         return this.questionnairesService.find(id, version);
     }
 
@@ -476,16 +384,6 @@ export class QuestionnaireController {
         @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
         @Param('version', new ParseIntPipe()) version: number,
     ) {
-        this.logger.emit({
-            severityNumber: SeverityNumber.TRACE,
-            severityText: 'trace',
-            body: ``,
-            attributes: {
-                route: `/api/questionnaire/${id}/${version}`,
-                method: 'DELETE',
-                timestamp: new Date().toISOString(),
-            },
-        });
         return this.questionnairesService.delete(id, version);
     }
 
@@ -528,16 +426,6 @@ export class QuestionnaireController {
         @Param('version', new ParseIntPipe()) version: number,
         @Body() data: CreateAnswerDto,
     ): Promise<Answer> {
-        this.logger.emit({
-            severityNumber: SeverityNumber.TRACE,
-            severityText: 'trace',
-            body: ``,
-            attributes: {
-                route: `/api/questionnaire/${id}/${version}/answers`,
-                method: 'POST',
-                timestamp: new Date().toISOString(),
-            },
-        });
         return this.answersService.submitAnswers(id, version, data, user.id);
     }
 }

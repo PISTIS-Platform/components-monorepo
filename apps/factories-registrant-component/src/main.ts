@@ -1,12 +1,13 @@
 /* eslint-disable simple-import-sort/imports */
-import { oTelemetry } from '@pistis/shared';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { oTelemetry } = require('../../../libs/shared/src/lib/telemetry/telemetry');
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { consoleTransport } from '@pistis/shared';
 import { WinstonModule } from 'nest-winston';
-
+import { OpenTelemetryTransportV3 } from '@opentelemetry/winston-transport';
 import { AppModule } from './app/app.module';
 
 async function bootstrap() {
@@ -15,7 +16,7 @@ async function bootstrap() {
         cors: true,
         logger: WinstonModule.createLogger({
             level: 'debug',
-            transports: [consoleTransport],
+            transports: [consoleTransport, new OpenTelemetryTransportV3()],
         }),
     });
     app.setGlobalPrefix('api');

@@ -1,6 +1,6 @@
 import { Body, Controller, Param, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiNotFoundResponse, ApiOkResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
-import { logs, SeverityNumber } from '@opentelemetry/api-logs';
+import { logs } from '@opentelemetry/api-logs';
 import { AuthToken, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
 import { AuthenticatedUser } from 'nest-keycloak-connect';
 
@@ -43,16 +43,6 @@ export class ConsumerController {
         @Body() data: RetrieveDataDTO,
         @AuthToken() token: string,
     ) {
-        this.logger.emit({
-            severityNumber: SeverityNumber.TRACE,
-            severityText: 'trace',
-            body: ``,
-            attributes: {
-                route: `/api/consumer/retrieve/${assetId}`,
-                method: 'POST',
-                timestamp: new Date().toISOString(),
-            },
-        });
         return await this.consumerService.retrieveData(assetId, user, token, data);
     }
 }

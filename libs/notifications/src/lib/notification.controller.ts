@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
-import { logs, SeverityNumber } from '@opentelemetry/api-logs';
+import { logs } from '@opentelemetry/api-logs';
 import { ADMIN_ROLE, NOTIFICATION_CLIENT, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
 import { AuthenticatedUser, Roles } from 'nest-keycloak-connect';
 
@@ -36,12 +36,6 @@ export class NotificationController {
     })
     @ApiUnauthorizedResponse()
     async create(@Body() data: CreateNotificationDto): Promise<Notification> {
-        this.logger.emit({
-            severityNumber: SeverityNumber.TRACE,
-            severityText: 'trace',
-            body: ``,
-            attributes: { route: `/api/notifications/`, method: 'POST', timestamp: new Date().toISOString() },
-        });
         return this.notificationsService.create(data);
     }
 
@@ -68,24 +62,12 @@ export class NotificationController {
     async findNotifications(
         @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
     ): Promise<[Notification[], number]> {
-        this.logger.emit({
-            severityNumber: SeverityNumber.TRACE,
-            severityText: 'trace',
-            body: ``,
-            attributes: { route: `/api/notifications/`, method: 'GET', timestamp: new Date().toISOString() },
-        });
         return this.notificationsService.findByUserId(user.id);
     }
 
     @Get('count')
     @ApiUnauthorizedResponse()
     async countNotifications(@AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo): Promise<number> {
-        this.logger.emit({
-            severityNumber: SeverityNumber.TRACE,
-            severityText: 'trace',
-            body: ``,
-            attributes: { route: `/api/notifications/count`, method: 'GET', timestamp: new Date().toISOString() },
-        });
         return this.notificationsService.countByUserId(user.id);
     }
 
@@ -95,16 +77,6 @@ export class NotificationController {
         @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
         @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     ): Promise<void> {
-        this.logger.emit({
-            severityNumber: SeverityNumber.TRACE,
-            severityText: 'trace',
-            body: ``,
-            attributes: {
-                route: `/api/notifications/${id}/read`,
-                method: 'PATCH',
-                timestamp: new Date().toISOString(),
-            },
-        });
         return this.notificationsService.markAsRead(id, user.id);
     }
 
@@ -114,16 +86,6 @@ export class NotificationController {
         @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
         @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     ): Promise<void> {
-        this.logger.emit({
-            severityNumber: SeverityNumber.TRACE,
-            severityText: 'trace',
-            body: ``,
-            attributes: {
-                route: `/api/notifications/${id}/hide`,
-                method: 'PATCH',
-                timestamp: new Date().toISOString(),
-            },
-        });
         return this.notificationsService.hide(id, user.id);
     }
 }
