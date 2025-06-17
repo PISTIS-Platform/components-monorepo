@@ -177,7 +177,7 @@ export class ProviderService {
             distributions: [
                 {
                     title: { en: 'Streaming Data Distribution' },
-                    access_url: [`http://develop.pistis-market.eu:9092`],
+                    access_url: [`http://kafka.${factory.factoryPrefix}.pistis-market.eu:9092`],
                     format: { resource: 'Kafka-stream' },
                     byte_size: '0',
                 },
