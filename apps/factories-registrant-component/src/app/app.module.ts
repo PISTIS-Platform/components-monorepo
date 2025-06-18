@@ -3,9 +3,16 @@ import { PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
+import { ComponentHealthModule } from '@pistis/component-health';
 import { FactoriesRegistrantModule } from '@pistis/factories-registrant';
 import { IAppConfig, MorganMiddleware } from '@pistis/shared';
-import { AuthGuard, KeycloakConnectModule, PolicyEnforcementMode, RoleGuard, TokenValidation } from 'nest-keycloak-connect';
+import {
+    AuthGuard,
+    KeycloakConnectModule,
+    PolicyEnforcementMode,
+    RoleGuard,
+    TokenValidation,
+} from 'nest-keycloak-connect';
 
 import { AppConfig, IFactoryConfig } from './app.config';
 
@@ -50,6 +57,7 @@ const isDevelopment = process.env.NODE_ENV !== 'production';
                 tokenValidation: TokenValidation.OFFLINE,
             }),
         }),
+        ComponentHealthModule,
         // MailerModule.forRoot({
         //     transport: isDevelopment
         //         ? {
