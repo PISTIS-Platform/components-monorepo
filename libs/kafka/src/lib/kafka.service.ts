@@ -1,9 +1,10 @@
 import { CoreV1Api, CustomObjectsApi, KubeConfig, PatchUtils, V1Secret } from '@kubernetes/client-node';
+import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { FactoriesRegistrantService } from '@pistis/factories-registrant';
-import { generatePassword, UserInfo } from '@pistis/shared';
+import { generatePassword, getHeaders } from '@pistis/shared';
 import { IncomingMessage } from 'http';
+import { catchError, firstValueFrom, map, of } from 'rxjs';
 
 import { MM2ConnectorConfig, StrimziAcl } from './typings';
 
@@ -27,10 +28,7 @@ export class KafkaService {
     private readonly coreApi: CoreV1Api;
     private readonly customObjectsApi: CustomObjectsApi;
 
-    constructor(
-        private readonly config: ConfigService,
-        private readonly factoriesRegistrantService: FactoriesRegistrantService,
-    ) {
+    constructor(private readonly config: ConfigService, private readonly httpService: HttpService) {
         const kc = new KubeConfig();
         const kubeDevContext = this.config.get<string>('kafka.k8sDevContext');
 
@@ -340,26 +338,40 @@ export class KafkaService {
 
     /**
      * Retrieve the Read-Only access user and connection details
-     * @param user The factory authenticated user
+     * @param token The factory authenticated user token for retrieving factory data
      * @returns
      */
-    async getFactoryConnectionDetails(user: UserInfo): Promise<{
+    async getFactoryConnectionDetails(token: string): Promise<{
         username: string;
         password: string;
         bootstrapServers: string;
         securityProtocol: string;
         saslMechanism: string;
     }> {
-        // retrieve factory info
-        const factory = await this.factoriesRegistrantService.findFactoryInfoByOrganizationId(user.organizationId);
-        const name = factory.factoryPrefix;
-        // retrieve user to validate if exists with the given name
-        await this.getUser(name);
-        // retrieve decoded password from secret
-        const password = (await this.getDecodedSecret(name)) ?? '';
+        // retrieve factory data
+        const factory = await firstValueFrom(
+            this.httpService
+                .get(`${this.config.get('app.factoryRegistryUrl')}/api/factories/user-factory`, {
+                    headers: getHeaders(token),
+                })
+                .pipe(
+                    map(async (res) => res.data),
+                    catchError((e) => of({ error: `'Error occurred during retrieving factory: ${e}` })),
+                ),
+        );
+
+        const factoryName = factory.factoryPrefix;
+        let password = '';
+
+        if (factoryName) {
+            // retrieve user to validate if exists with the given name
+            await this.getUser(factoryName);
+            // retrieve decoded password from secret
+            password = (await this.getDecodedSecret(factoryName)) ?? '';
+        }
 
         return {
-            username: name,
+            username: factoryName,
             password,
             bootstrapServers: this.config.get<string>('kafka.factoryBootstrapServers') ?? '',
             securityProtocol: 'SASL_PLAINTEXT',
