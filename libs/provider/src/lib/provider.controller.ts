@@ -7,8 +7,7 @@ import {
     ApiTags,
     ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { AuthToken, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
-import { AuthenticatedUser } from 'nest-keycloak-connect';
+import { AuthToken } from '@pistis/shared';
 
 import { PaginationDto } from './dto/pagination.dto';
 import { StreamingDataDto } from './dto/streaming-data.dto';
@@ -91,7 +90,7 @@ export class ProviderController {
 
     @Get()
     @ApiOkResponse({
-        description: 'Download dataset',
+        description: 'Retrieve connection details for kafka',
         schema: {
             example: {
                 username: 'develop',
@@ -102,7 +101,7 @@ export class ProviderController {
             },
         },
     })
-    async getFactoryConnectionDetails(@AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo) {
-        return this.providerService.getFactoryConnectionDetails(user);
+    async getFactoryConnectionDetails(@AuthToken() token: string) {
+        return this.providerService.getFactoryConnectionDetails(token);
     }
 }
