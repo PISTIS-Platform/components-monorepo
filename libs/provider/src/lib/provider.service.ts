@@ -10,7 +10,7 @@ import {
 import { DataStorageService } from '@pistis/data-storage';
 import { KafkaService } from '@pistis/kafka';
 import { MetadataRepositoryService } from '@pistis/metadata-repository';
-import { getHeaders } from '@pistis/shared';
+import { getHeaders, UserInfo } from '@pistis/shared';
 import { catchError, firstValueFrom, map, of } from 'rxjs';
 import { v4 as uuidV4 } from 'uuid';
 
@@ -199,6 +199,10 @@ export class ProviderService {
         }
 
         return kafkaResponse;
+    }
+
+    async getFactoryConnectionDetails(user: UserInfo) {
+        return await this.kafkaService.getFactoryConnectionDetails(user);
     }
 
     private async retrieveFactory(token: string) {
