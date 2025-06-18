@@ -342,7 +342,7 @@ export class KafkaService {
     async getFactoryConnectionDetails(name: string): Promise<{
         username: string;
         password: string;
-        brokerUrl: string;
+        bootstrapServers: string;
         securityProtocol: string;
         saslMechanism: string;
     }> {
@@ -354,7 +354,7 @@ export class KafkaService {
         return {
             username: name,
             password,
-            brokerUrl: `kafka.${name}.pistis-market.eu:9094`,
+            bootstrapServers: this.config.get<string>('kafka.factoryBootstrapServers') ?? '',
             securityProtocol: 'SASL_PLAINTEXT',
             saslMechanism: 'SCRAM-SHA-512',
         };
