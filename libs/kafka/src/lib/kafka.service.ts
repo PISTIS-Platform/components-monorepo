@@ -1,7 +1,8 @@
 import { CoreV1Api, CustomObjectsApi, KubeConfig, PatchUtils, V1Secret } from '@kubernetes/client-node';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { generatePassword } from '@pistis/shared';
+import { FactoriesRegistrantService } from '@pistis/factories-registrant';
+import { generatePassword, UserInfo } from '@pistis/shared';
 import { IncomingMessage } from 'http';
 
 import { MM2ConnectorConfig, StrimziAcl } from './typings';
@@ -26,7 +27,10 @@ export class KafkaService {
     private readonly coreApi: CoreV1Api;
     private readonly customObjectsApi: CustomObjectsApi;
 
-    constructor(private readonly config: ConfigService) {
+    constructor(
+        private readonly config: ConfigService,
+        private readonly factoriesRegistrantService: FactoriesRegistrantService,
+    ) {
         const kc = new KubeConfig();
         const kubeDevContext = this.config.get<string>('kafka.k8sDevContext');
 
@@ -336,17 +340,20 @@ export class KafkaService {
 
     /**
      * Retrieve the Read-Only access user and connection details
-     * @param name The factory name which matches the user and secret name in Kubernetes cluster
+     * @param user The factory authenticated user
      * @returns
      */
-    async getFactoryConnectionDetails(name: string): Promise<{
+    async getFactoryConnectionDetails(user: UserInfo): Promise<{
         username: string;
         password: string;
         bootstrapServers: string;
         securityProtocol: string;
         saslMechanism: string;
     }> {
-        // fetch user to validate if exists with the given name
+        // retrieve factory info
+        const factory = await this.factoriesRegistrantService.findFactoryInfoByOrganizationId(user.organizationId);
+        const name = factory.factoryPrefix;
+        // retrieve user to validate if exists with the given name
         await this.getUser(name);
         // retrieve decoded password from secret
         const password = (await this.getDecodedSecret(name)) ?? '';
