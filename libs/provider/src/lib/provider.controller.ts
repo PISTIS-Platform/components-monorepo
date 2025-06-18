@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Param, Post } from '@nestjs/common';
 import {
     ApiBearerAuth,
     ApiBody,
@@ -86,22 +86,5 @@ export class ProviderController {
         @AuthToken() token: string,
     ) {
         return await this.providerService.downloadDataset(assetId, paginationData, token);
-    }
-
-    @Get()
-    @ApiOkResponse({
-        description: 'Retrieve connection details for kafka',
-        schema: {
-            example: {
-                username: 'develop',
-                password: 'Test password',
-                bootstrapServers: 'kafka:9092',
-                securityProtocol: 'SASL_SSL',
-                saslMechanism: 'SCRAM-SHA-512',
-            },
-        },
-    })
-    async getFactoryConnectionDetails(@AuthToken() token: string) {
-        return this.providerService.getFactoryConnectionDetails(token);
     }
 }

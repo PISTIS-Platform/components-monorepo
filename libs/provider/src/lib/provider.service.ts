@@ -201,10 +201,6 @@ export class ProviderService {
         return kafkaResponse;
     }
 
-    async getFactoryConnectionDetails(token: string) {
-        return await this.kafkaService.getFactoryConnectionDetails(token);
-    }
-
     private async retrieveFactory(token: string) {
         return await firstValueFrom(
             this.httpService

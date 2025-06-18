@@ -340,4 +340,8 @@ export class ConsumerService {
             throw new BadGatewayException('Error creating Kafka user and topic');
         }
     }
+
+    async getFactoryConnectionDetails(token: string) {
+        return await this.kafkaService.getFactoryConnectionDetails(token);
+    }
 }

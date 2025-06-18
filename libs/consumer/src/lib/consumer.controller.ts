@@ -1,4 +1,4 @@
-import { Body, Controller, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiNotFoundResponse, ApiOkResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { AuthToken, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
 import { AuthenticatedUser } from 'nest-keycloak-connect';
@@ -56,5 +56,22 @@ export class ConsumerController {
     })
     async createKafkaUser(@Param('assetId') assetId: string) {
         return await this.consumerService.createKafkaUserAndTopic(assetId);
+    }
+
+    @Get()
+    @ApiOkResponse({
+        description: 'Retrieve connection details for kafka',
+        schema: {
+            example: {
+                username: 'develop',
+                password: 'Test password',
+                bootstrapServers: 'kafka:9092',
+                securityProtocol: 'SASL_SSL',
+                saslMechanism: 'SCRAM-SHA-512',
+            },
+        },
+    })
+    async getFactoryConnectionDetails(@AuthToken() token: string) {
+        return this.consumerService.getFactoryConnectionDetails(token);
     }
 }
