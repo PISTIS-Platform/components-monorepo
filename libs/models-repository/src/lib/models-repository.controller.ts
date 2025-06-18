@@ -7,7 +7,6 @@ import {
     ApiTags,
     ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { logs } from '@opentelemetry/api-logs';
 import { ADMIN_ROLE } from '@pistis/shared';
 import { Response } from 'express';
 import { Public, Roles } from 'nest-keycloak-connect';
@@ -20,7 +19,6 @@ import { ModelsRepositoryService } from './models-repository.service';
 @ApiTags('models-repository')
 @ApiBearerAuth()
 export class ModelsRepositoryController {
-    private readonly logger = logs.getLogger(ModelsRepositoryController.name);
     constructor(private readonly modelsService: ModelsRepositoryService) {}
 
     @Post()

@@ -1,6 +1,5 @@
 import { Body, Controller, Param, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiNotFoundResponse, ApiOkResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
-import { logs } from '@opentelemetry/api-logs';
 import { AuthToken, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
 import { AuthenticatedUser } from 'nest-keycloak-connect';
 
@@ -29,7 +28,6 @@ import { RetrieveDataDTO } from './retrieveData.dto';
     },
 })
 export class ConsumerController {
-    private readonly logger = logs.getLogger(ConsumerController.name);
     constructor(private readonly consumerService: ConsumerService) {}
 
     @Post('/retrieve/:assetId')

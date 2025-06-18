@@ -7,7 +7,6 @@ import {
     ApiTags,
     ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { logs } from '@opentelemetry/api-logs';
 import { AuthToken } from '@pistis/shared';
 
 import { PaginationDto } from './dto/pagination.dto';
@@ -35,7 +34,6 @@ import { ProviderService } from './provider.service';
     },
 })
 export class ProviderController {
-    private readonly logger = logs.getLogger(ProviderController.name);
     constructor(private readonly providerService: ProviderService) {}
 
     @Post(':assetId')

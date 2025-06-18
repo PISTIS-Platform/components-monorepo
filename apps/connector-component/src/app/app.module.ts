@@ -2,6 +2,7 @@ import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ComponentHealthModule } from '@pistis/component-health';
 import { ConsumerModule } from '@pistis/consumer';
 import { ProviderModule } from '@pistis/provider';
 import { IAppConfig, MorganMiddleware } from '@pistis/shared';
@@ -10,6 +11,7 @@ import { AppConfig, IConnectorConfig } from './app.config';
 
 @Module({
     imports: [
+        ComponentHealthModule,
         ConfigModule.forRoot({ isGlobal: true }),
         ConfigModule.forFeature(AppConfig),
         MikroOrmModule.forRootAsync({

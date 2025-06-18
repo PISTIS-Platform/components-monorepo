@@ -1,6 +1,5 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
-import { logs } from '@opentelemetry/api-logs';
 import { ADMIN_ROLE, NOTIFICATION_CLIENT, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
 import { AuthenticatedUser, Roles } from 'nest-keycloak-connect';
 
@@ -12,7 +11,6 @@ import { NotificationService } from './notification.service';
 @ApiTags('notifications')
 @ApiBearerAuth()
 export class NotificationController {
-    private readonly logger = logs.getLogger(NotificationController.name);
     constructor(private readonly notificationsService: NotificationService) {}
 
     @Post()

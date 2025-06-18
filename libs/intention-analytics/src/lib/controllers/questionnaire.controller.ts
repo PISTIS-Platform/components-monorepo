@@ -19,7 +19,6 @@ import {
     ApiTags,
     ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { logs } from '@opentelemetry/api-logs';
 import { ADMIN_ROLE, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
 import { AuthenticatedUser, Roles } from 'nest-keycloak-connect';
 
@@ -51,7 +50,6 @@ import { AnswersService, QuestionnaireService } from '../services';
     },
 })
 export class QuestionnaireController {
-    private readonly logger = logs.getLogger(QuestionnaireController.name);
     constructor(
         private readonly questionnairesService: QuestionnaireService,
         private readonly answersService: AnswersService,

@@ -19,7 +19,6 @@ import {
     ApiTags,
     ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { logs } from '@opentelemetry/api-logs';
 import { ADMIN_ROLE, AuthToken, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
 import type { Response } from 'express';
 import { createReadStream } from 'fs';
@@ -57,7 +56,6 @@ import { ServicesMappingService } from './services-mapping.service';
     },
 })
 export class FactoriesRegistrantController {
-    private readonly logger = logs.getLogger(FactoriesRegistrantController.name);
     constructor(
         private readonly factoriesService: FactoriesRegistrantService,
         private readonly servicesMappingService: ServicesMappingService,
