@@ -3,7 +3,6 @@ import { PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
-import { ComponentHealthModule } from '@pistis/component-health';
 import { NotificationsModule } from '@pistis/notifications';
 import { IAppConfig, MorganMiddleware } from '@pistis/shared';
 import {
@@ -44,7 +43,6 @@ import { AppConfig } from './app.config';
                 tokenValidation: TokenValidation.OFFLINE,
             }),
         }),
-        ComponentHealthModule,
     ],
     providers: [
         {
