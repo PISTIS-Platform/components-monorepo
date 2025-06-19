@@ -11,7 +11,7 @@ import { OpenTelemetryTransportV3 } from '@opentelemetry/winston-transport';
 import { AppModule } from './app/app.module';
 
 async function bootstrap() {
-    await oTelemetry('notifications-component', '1.0.0', '', ''); //TODO ADD ISDEVELOPMENT AND FACTORY
+    await oTelemetry(process.env.APP_NAME, '1.0.0', process.env.IS_DEVELOPMENT, 'develop'); //TODO ADD ISDEVELOPMENT AND FACTORY
     const app = await NestFactory.create(AppModule, {
         cors: true,
         logger: WinstonModule.createLogger({

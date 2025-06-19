@@ -1,6 +1,6 @@
 /* eslint-disable simple-import-sort/imports */
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { oTelemetry } = require('../../../libs/shared/src/lib/telemetry/telemetry');
+const { oTelemetry } = require('@pistis/shared');
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
@@ -11,7 +11,7 @@ import { OpenTelemetryTransportV3 } from '@opentelemetry/winston-transport';
 import { AppModule } from './app/app.module';
 
 async function bootstrap() {
-    await oTelemetry('connector-component', '1.0.0', 'development', 'develop'); //TODO ADD ISDEVELOPMENT AND FACTORY
+    await oTelemetry();
     const app = await NestFactory.create(AppModule, {
         cors: true,
         logger: WinstonModule.createLogger({

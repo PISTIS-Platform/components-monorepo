@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Param, Post } from '@nestjs/common';
 import {
     ApiBearerAuth,
     ApiBody,
@@ -69,10 +69,5 @@ export class ProviderController {
         @AuthToken() token: string,
     ) {
         return await this.providerService.downloadDataset(assetId, paginationData, token);
-    }
-
-    @Get()
-    async getAllAssets() {
-        return 'ok';
     }
 }

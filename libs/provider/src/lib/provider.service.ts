@@ -12,10 +12,6 @@ export class ProviderService {
         private readonly metadataRepositoryService: MetadataRepositoryService,
     ) {}
 
-    async getAllAssets() {
-        return 'ok';
-    }
-
     async downloadDataset(assetId: string, paginationData: PaginationDto, token: string) {
         let data;
         let returnedValue;

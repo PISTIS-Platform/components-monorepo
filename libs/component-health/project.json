@@ -1,8 +1,0 @@
-{
-    "name": "component-health",
-    "$schema": "../../node_modules/nx/schemas/project-schema.json",
-    "sourceRoot": "libs/component-health/src",
-    "projectType": "library",
-    "targets": {},
-    "tags": []
-}
