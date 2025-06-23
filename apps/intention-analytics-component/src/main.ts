@@ -11,7 +11,7 @@ import { OpenTelemetryTransportV3 } from '@opentelemetry/winston-transport';
 import { AppModule } from '../../intention-analytics-component/src/app/app.module';
 
 async function bootstrap() {
-    await oTelemetry();
+    await oTelemetry(process.env.OTEL_EXPORTER_ENDPOINT);
     const app = await NestFactory.create(AppModule, {
         cors: true,
         logger: WinstonModule.createLogger({

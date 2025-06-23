@@ -4,14 +4,14 @@ import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
 import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 
-export const oTelemetry = async () => {
+export const oTelemetry = async (endpoint: string) => {
     const sdk = new NodeSDK({
         traceExporter: new OTLPTraceExporter({
-            url: 'http://127.0.0.1:4318/v1/traces',
+            url: `${endpoint}/traces`,
         }),
         metricReader: new PeriodicExportingMetricReader({
             exporter: new OTLPMetricExporter({
-                url: 'http://127.0.0.1:4318/v1/metrics',
+                url: `${endpoint}/metrics`,
                 headers: {},
                 concurrencyLimit: 1,
             }),
