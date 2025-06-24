@@ -1,10 +1,12 @@
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { HttpModule } from '@nestjs/axios';
 import { DynamicModule, Module } from '@nestjs/common';
+import { TerminusModule } from '@nestjs/terminus';
 import { DataStorageModule } from '@pistis/data-storage';
 import { MetadataRepositoryModule } from '@pistis/metadata-repository';
 
 import { AssetRetrievalInfo } from './asset-retrieval-info.entity';
+import { ComponentHealthController } from './component-health.controller';
 import { ConsumerController } from './consumer.controller';
 import {
     ConfigurableModuleClass,
@@ -14,15 +16,18 @@ import {
 import { ConsumerService } from './consumer.service';
 
 @Module({
-    imports: [MikroOrmModule.forFeature([AssetRetrievalInfo]), HttpModule],
-    controllers: [ConsumerController],
+    imports: [MikroOrmModule.forFeature([AssetRetrievalInfo]), HttpModule, TerminusModule],
+    controllers: [ConsumerController, ComponentHealthController],
     providers: [ConsumerService],
     exports: [],
 })
 export class ConsumerModule extends ConfigurableModuleClass {
     static register(options: typeof CONSUMER_OPTIONS_TYPE): DynamicModule {
         return {
-            imports: [DataStorageModule.register({ url: options.dataStorageUrl }), MetadataRepositoryModule.register({ url: options.metadataRepositoryUrl, apiKey: options.catalogKey }),],
+            imports: [
+                DataStorageModule.register({ url: options.dataStorageUrl }),
+                MetadataRepositoryModule.register({ url: options.metadataRepositoryUrl, apiKey: options.catalogKey }),
+            ],
 
             ...super.register(options),
         };

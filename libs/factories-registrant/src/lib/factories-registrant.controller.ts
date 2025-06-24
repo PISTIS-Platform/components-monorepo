@@ -27,9 +27,8 @@ import { join } from 'path';
 import YAML from 'yaml';
 
 import { UpdateFactoryDTO, UpdateFactoryIpDTO } from './dto';
-import { CreateFactoryDTO } from './dto/create-factory.dto';
-import { FactoryCreationDTO } from './dto/factory-creation.dto';
 import { CreateServiceMappingDTO } from './dto/create-service-mapping.dto';
+import { FactoryCreationDTO } from './dto/factory-creation.dto';
 import { UpdateServiceMappingDTO } from './dto/update-service-mapping.dto';
 import { FactoriesRegistrant } from './entities/factories-registrant.entity';
 import { FactoriesRegistrantService } from './factories-registrant.service';

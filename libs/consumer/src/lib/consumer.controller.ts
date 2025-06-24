@@ -28,7 +28,7 @@ import { RetrieveDataDTO } from './retrieveData.dto';
     },
 })
 export class ConsumerController {
-    constructor(private readonly consumerService: ConsumerService) { }
+    constructor(private readonly consumerService: ConsumerService) {}
 
     @Post('/retrieve/:assetId')
     @ApiOkResponse({

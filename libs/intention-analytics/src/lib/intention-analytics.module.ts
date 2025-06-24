@@ -1,9 +1,11 @@
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { HttpModule } from '@nestjs/axios';
 import { DynamicModule, Module } from '@nestjs/common';
+import { TerminusModule } from '@nestjs/terminus';
 import { BlockchainModule } from '@pistis/blockchain';
 
 import { QuestionnaireController } from './controllers';
+import { ComponentHealthController } from './controllers/component-health.controller';
 import { Answer } from './entities';
 import { Question } from './entities/question.entity';
 import { Questionnaire } from './entities/questionnaire.entity';
@@ -16,8 +18,8 @@ import { QuestionnaireService } from './services';
 import { AnswersService } from './services/answers.service';
 
 @Module({
-    imports: [MikroOrmModule.forFeature([Questionnaire, Question, Answer]), HttpModule],
-    controllers: [QuestionnaireController],
+    imports: [MikroOrmModule.forFeature([Questionnaire, Question, Answer]), HttpModule, TerminusModule],
+    controllers: [QuestionnaireController, ComponentHealthController],
     providers: [QuestionnaireService, AnswersService],
 })
 export class IntentionAnalyticsModule extends ConfigurableModuleClass {

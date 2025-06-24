@@ -24,6 +24,9 @@ export class MorganMiddleware implements NestMiddleware {
                         this.logger.log(JSON.parse(value));
                     },
                 },
+                skip: (request: Request) => {
+                    return request.originalUrl.startsWith('/api/health');
+                },
             },
         )(req, res, next);
     }
