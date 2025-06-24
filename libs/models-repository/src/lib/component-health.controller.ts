@@ -9,7 +9,7 @@ export class ComponentHealthController {
     @HealthCheck()
     async check() {
         return this.health.check([
-            () => ({ appReadiness: { status: 'up', message: 'ready to serve' } }),
+            () => ({ modelsRepository: { status: 'up', message: 'ready to serve' } }),
             () => this.mikroOrm.pingCheck('database'),
         ]);
     }
