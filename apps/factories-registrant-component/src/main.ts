@@ -8,6 +8,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { consoleTransport } from '@pistis/shared';
 import { WinstonModule } from 'nest-winston';
 import { OpenTelemetryTransportV3 } from '@opentelemetry/winston-transport';
+
 import { AppModule } from './app/app.module';
 
 async function bootstrap() {

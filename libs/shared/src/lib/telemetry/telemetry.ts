@@ -1,8 +1,9 @@
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
+import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-proto';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
 import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
-import { NodeSDK } from '@opentelemetry/sdk-node';
+import { logs, NodeSDK } from '@opentelemetry/sdk-node';
 
 export const oTelemetry = async (endpoint: string) => {
     const sdk = new NodeSDK({
@@ -16,6 +17,11 @@ export const oTelemetry = async (endpoint: string) => {
                 concurrencyLimit: 1,
             }),
         }),
+        logRecordProcessor: new logs.BatchLogRecordProcessor(
+            new OTLPLogExporter({
+                url: `${endpoint}/logs`,
+            }),
+        ),
         instrumentations: [
             getNodeAutoInstrumentations({
                 // Pass configuration for specific instrumentations here
@@ -32,4 +38,11 @@ export const oTelemetry = async (endpoint: string) => {
     });
 
     await sdk.start();
+
+    process.on('SIGTERM', () => {
+        sdk.shutdown()
+            .then(() => console.log('Telemetry terminated'))
+            .catch((error) => console.log('Error terminating telemetry', error))
+            .finally(() => process.exit(0));
+    });
 };
