@@ -8,14 +8,14 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { consoleTransport } from '@pistis/shared';
 import { WinstonModule } from 'nest-winston';
 import { OpenTelemetryTransportV3 } from '@opentelemetry/winston-transport';
+
 import { AppModule } from './app/app.module';
 
 async function bootstrap() {
-    await oTelemetry(process.env.OTEL_EXPORTER_ENDPOINT);
+    await oTelemetry();
     const app = await NestFactory.create(AppModule, {
         cors: true,
         logger: WinstonModule.createLogger({
-            level: 'debug',
             transports: [consoleTransport, new OpenTelemetryTransportV3()],
         }),
     });
