@@ -29,4 +29,5 @@ const myFormat = printf(({ level, message, timestamp, ...args }) => {
 
 export const consoleTransport = new transports.Console({
     format: combine(timestamp(), myFormat),
+    level: 'http',
 });

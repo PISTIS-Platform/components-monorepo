@@ -11,7 +11,7 @@ import { NotificationService } from './notification.service';
 @ApiTags('notifications')
 @ApiBearerAuth()
 export class NotificationController {
-    constructor(private readonly notificationsService: NotificationService) { }
+    constructor(private readonly notificationsService: NotificationService) {}
 
     @Post()
     @Roles({ roles: [ADMIN_ROLE, NOTIFICATION_CLIENT] })
@@ -33,9 +33,7 @@ export class NotificationController {
         },
     })
     @ApiUnauthorizedResponse()
-    async create(
-        @Body() data: CreateNotificationDto,
-    ): Promise<Notification> {
+    async create(@Body() data: CreateNotificationDto): Promise<Notification> {
         return this.notificationsService.create(data);
     }
 

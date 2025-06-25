@@ -1,6 +1,7 @@
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { HttpModule } from '@nestjs/axios';
 import { DynamicModule, Module } from '@nestjs/common';
+import { TerminusModule } from '@nestjs/terminus';
 import { DataStorageModule } from '@pistis/data-storage';
 import { KafkaModule } from '@pistis/kafka';
 import { MetadataRepositoryModule } from '@pistis/metadata-repository';
@@ -15,7 +16,7 @@ import {
 import { ConsumerService } from './consumer.service';
 
 @Module({
-    imports: [MikroOrmModule.forFeature([AssetRetrievalInfo]), HttpModule, KafkaModule],
+    imports: [MikroOrmModule.forFeature([AssetRetrievalInfo]), HttpModule, KafkaModule, TerminusModule],
     controllers: [ConsumerController],
     providers: [ConsumerService],
     exports: [],
