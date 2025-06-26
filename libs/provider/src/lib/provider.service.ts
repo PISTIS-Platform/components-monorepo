@@ -164,6 +164,7 @@ export class ProviderService {
                 email: 'mailto:admin@pistis.eu',
                 name: factory.factoryPrefix.toUpperCase(),
             },
+            keywords: null,
             monetization: [
                 {
                     license: {
@@ -185,7 +186,12 @@ export class ProviderService {
         };
 
         try {
-            await this.metadataRepositoryService.createMetadata(metadata, 'myData', factory.factoryPrefix, true);
+            await this.metadataRepositoryService.createMetadata(
+                metadata,
+                this.options.catalogOwnedId,
+                factory.factoryPrefix,
+                true,
+            );
         } catch (e) {
             this.logger.error('Error creating streaming metadata:', e);
             throw new BadGatewayException('Error creating streaming metadata');

@@ -9,6 +9,7 @@ export type IConnectorConfig = IAppConfig & {
     metadataRepositoryUrl: string;
     downloadBatchSize: number;
     catalogId: string;
+    catalogOwnedId: string;
     catalogKey: string;
     catalogUrl: string;
 };
@@ -42,5 +43,6 @@ export const AppConfig = registerAs(
         catalogId: process.env.CATALOG_ACQUIRED_ID,
         catalogKey: process.env.CATALOG_API_KEY,
         catalogUrl: process.env.CATALOG_URL,
+        catalogOwnedId: process.env.CATALOG_OWNED_ID,
     }),
 );

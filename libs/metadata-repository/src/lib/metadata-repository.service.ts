@@ -94,8 +94,8 @@ export class MetadataRepositoryService {
                 dcat:keyword        ${
                     metadata.keywords != null
                         ? metadata.keywords.map((keyword: any) => `"${keyword.label}"@${keyword.language}`).join(', ')
-                        : ''
-                } ;
+                        : '[]'
+                };
                 dct:publisher       [ a     foaf:${metadata.publisher.type} ;
                                             foaf:mbox <${metadata.publisher.email}> ;
                                             foaf:name "${metadata.publisher.name}" ; ] ;
@@ -118,16 +118,21 @@ export class MetadataRepositoryService {
                 ${byteSizeEntry}
                 dcat:accessURL <${getValue('access_url', '0')}> .
         `;
+
         try {
             if (isStreamingData) {
                 newMetadata = await firstValueFrom(
                     this.httpService
-                        .put(`https://${factoryPrefix}.pistis-market.eu/srv/repo/datasets/${metadata.id}`, rdfData, {
-                            headers: {
-                                'Content-Type': 'text/turtle',
-                                'X-API-Key': this.options.apiKey,
+                        .put(
+                            `https://${factoryPrefix}.pistis-market.eu/srv/repo/catalogues/${catalogId}/datasets/origin?originalId=${metadata.id}`,
+                            rdfData,
+                            {
+                                headers: {
+                                    'Content-Type': 'text/turtle',
+                                    'X-API-Key': this.options.apiKey,
+                                },
                             },
-                        })
+                        )
                         .pipe(
                             map((res) => {
                                 return res;
