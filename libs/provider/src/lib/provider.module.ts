@@ -2,6 +2,7 @@ import { HttpModule } from '@nestjs/axios';
 import { DynamicModule, Module } from '@nestjs/common';
 import { BlockchainModule } from '@pistis/blockchain';
 import { DataStorageModule } from '@pistis/data-storage';
+import { KafkaModule } from '@pistis/kafka';
 import { MetadataRepositoryModule } from '@pistis/metadata-repository';
 
 import { ProviderController } from './provider.controller';
@@ -13,7 +14,7 @@ import {
 import { ProviderService } from './provider.service';
 
 @Module({
-    imports: [HttpModule],
+    imports: [HttpModule, KafkaModule],
     controllers: [ProviderController],
     providers: [ProviderService],
     exports: [],

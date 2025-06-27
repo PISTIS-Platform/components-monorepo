@@ -9,5 +9,6 @@ export enum NotificationType {
     FactorySuspended = 'factory_suspended',
     WalletRefund = 'wallet_refund',
     DeleteFactory = 'delete_factory',
-    WalletIncome = 'wallet_income'
+    WalletIncome = 'wallet_income',
+    StreamingData = 'streaming_data',
 }

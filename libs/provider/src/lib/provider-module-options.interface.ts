@@ -7,4 +7,6 @@ export interface ProviderModuleOptions {
     secret: string;
     authServerUrl: string;
     catalogKey: string;
+    factoryRegistryUrl: string;
+    catalogOwnedId: string;
 }
