@@ -431,7 +431,7 @@ export class FactoriesRegistrantService {
                             `https://${factory?.factoryPrefix}.pistis-market.eu${service.serviceUrl.replace(
                                 /\/+$/,
                                 '',
-                            )}}/*`,
+                            )}/*`,
                         ],
                         webOrigins: ['*'],
                     },
