@@ -1,7 +1,5 @@
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { ApiNotFoundResponse, ApiOkResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
-import { ParseUserInfoPipe, UserInfo } from '@pistis/shared';
-import { AuthenticatedUser } from 'nest-keycloak-connect';
 
 import { CreateInvestmentPlanDTO } from './create-investment-plan.dto';
 import { InvestmentPlannerService } from './investment-planner.service';
@@ -45,9 +43,9 @@ export class InvestmentPlannerController {
         schema: { example: { asset_uuid: 'ae755a90-b7bc-4c28-bfc8-7a4fb247328b', message: 'Table created' } },
     })
     async createInvestmentPlan(
-        @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
+        // @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
         @Body() data: CreateInvestmentPlanDTO,
     ) {
-        return await this.investmentPlannerService.createInvestmentPlan(data, user);
+        return await this.investmentPlannerService.createInvestmentPlan(data, 'user' as any);
     }
 }
