@@ -33,6 +33,18 @@ export class InvestmentPlannerService {
 
     async createInvestmentPlan(data: CreateInvestmentPlanDTO, _user: UserInfo) {
         const investmentPlan = this.repo.create(data);
+        try {
+            await this.repo.getEntityManager().persistAndFlush(investmentPlan);
+        } catch (error) {
+            this.logger.error(`Error creating investment plan: ${error}`);
+            throw new Error(`Error creating investment plan: ${error}`);
+        }
+        return investmentPlan;
+    }
+
+    async updateInvestmentPlan(id: string, data: any, _user: UserInfo) {
+        const investmentPlan = await this.repo.findOneOrFail({ id: id });
+        investmentPlan.remainingShares = investmentPlan.totalShares - data.numberOfShares;
         let investment;
         try {
             investment = await this.repo.getEntityManager().persistAndFlush(investmentPlan);
