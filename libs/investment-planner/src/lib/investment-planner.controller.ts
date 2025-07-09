@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
-import { ApiBearerAuth, ApiNotFoundResponse, ApiOkResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import { ApiNotFoundResponse, ApiOkResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { ParseUserInfoPipe, UserInfo } from '@pistis/shared';
 import { AuthenticatedUser } from 'nest-keycloak-connect';
 
@@ -8,7 +8,7 @@ import { InvestmentPlannerService } from './investment-planner.service';
 
 @Controller('investment-planner')
 @ApiTags('investment-planner')
-@ApiBearerAuth()
+// @ApiBearerAuth()
 @ApiUnauthorizedResponse({
     description: 'Unauthorized.',
     schema: {
