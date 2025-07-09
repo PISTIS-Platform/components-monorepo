@@ -10,6 +10,11 @@ export class CreateInvestmentPlanDTO {
     @IsString()
     @IsNotEmpty()
     @ApiProperty()
+    assetId!: string;
+
+    @IsString()
+    @IsNotEmpty()
+    @ApiProperty()
     dueDate!: string;
 
     @IsNumber()

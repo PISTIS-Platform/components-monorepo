@@ -1,15 +1,19 @@
 import { Entity, OptionalProps, PrimaryKey, Property, Unique } from '@mikro-orm/core';
+import { v4 as uuidV4 } from 'uuid';
 
 @Entity({ tableName: 'investmentPlanner' })
 export class InvestmentPlanner {
     [OptionalProps]?: 'id' | 'createdAt' | 'updatedAt';
 
-    @PrimaryKey()
-    id: string | undefined;
+    @PrimaryKey({ type: 'uuid' })
+    id: string = uuidV4();
 
     @Property()
     @Unique()
     cloudAssetId!: string;
+
+    @Property()
+    assetId!: string;
 
     @Property()
     dueDate!: string;

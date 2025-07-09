@@ -8,6 +8,15 @@
       "columns": {
         "id": {
           "name": "id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "uuid"
+        },
+        "cloud_asset_id": {
+          "name": "cloud_asset_id",
           "type": "varchar(255)",
           "unsigned": false,
           "autoincrement": false,
@@ -15,8 +24,8 @@
           "nullable": false,
           "mappedType": "string"
         },
-        "cloud_asset_id": {
-          "name": "cloud_asset_id",
+        "asset_id": {
+          "name": "asset_id",
           "type": "varchar(255)",
           "unsigned": false,
           "autoincrement": false,
