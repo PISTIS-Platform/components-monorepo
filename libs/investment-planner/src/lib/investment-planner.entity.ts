@@ -20,7 +20,7 @@ export class InvestmentPlanner {
     @Property()
     totalShares!: number;
 
-    @Property()
+    @Property({ nullable: true })
     remainingShares!: number;
 
     @Property()

@@ -25,11 +25,6 @@ export class CreateInvestmentPlanDTO {
     @IsNumber()
     @IsNotEmpty()
     @ApiProperty()
-    remainingShares!: number;
-
-    @IsNumber()
-    @IsNotEmpty()
-    @ApiProperty()
     maxShares!: number;
 
     @IsNumber()
