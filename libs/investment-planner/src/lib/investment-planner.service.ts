@@ -44,15 +44,18 @@ export class InvestmentPlannerService {
 
     async updateInvestmentPlan(id: string, data: any, _user: UserInfo) {
         const investmentPlan = await this.repo.findOneOrFail({ id: id });
-        investmentPlan.remainingShares = investmentPlan.totalShares - data.numberOfShares;
-        let investment;
+        if (investmentPlan.remainingShares === null) {
+            investmentPlan.remainingShares = investmentPlan.totalShares - data.numberOfShares;
+        } else {
+            investmentPlan.remainingShares -= data.numberOfShares;
+        }
         try {
-            investment = await this.repo.getEntityManager().persistAndFlush(investmentPlan);
+            await this.repo.getEntityManager().persistAndFlush(investmentPlan);
         } catch (error) {
             this.logger.error(`Error creating investment plan: ${error}`);
             throw new Error(`Error creating investment plan: ${error}`);
         }
-        return investment;
+        return investmentPlan;
     }
 
     //TODO: check if we want notifications for this component
