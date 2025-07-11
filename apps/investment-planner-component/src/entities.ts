@@ -1,3 +1,3 @@
-import { InvestmentPlanner } from '@pistis/investment-planner';
+import { InvestmentPlanner, UserInvestment } from '@pistis/investment-planner';
 
-export default [InvestmentPlanner];
+export default [InvestmentPlanner, UserInvestment];

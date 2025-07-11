@@ -1,5 +1,7 @@
-import { Entity, OptionalProps, PrimaryKey, Property, Unique } from '@mikro-orm/core';
+import { Collection, Entity, OneToMany, OptionalProps, PrimaryKey, Property, Unique } from '@mikro-orm/core';
 import { v4 as uuidV4 } from 'uuid';
+
+import { UserInvestment } from './user-investment.entity';
 
 @Entity({ tableName: 'investmentPlanner' })
 export class InvestmentPlanner {
@@ -16,7 +18,19 @@ export class InvestmentPlanner {
     assetId!: string;
 
     @Property()
-    dueDate!: string;
+    title!: string;
+
+    @Property()
+    description!: string;
+
+    @Property({ type: 'json' })
+    terms!: Record<string, any>[];
+
+    @Property()
+    sellerId!: string;
+
+    @Property({ type: 'timestamptz' })
+    dueDate!: Date;
 
     @Property()
     percentageOffer!: number;
@@ -35,6 +49,9 @@ export class InvestmentPlanner {
 
     @Property()
     status!: boolean;
+
+    @OneToMany(() => UserInvestment, (item) => item.investmentPlan)
+    userInvestment = new Collection<UserInvestment>(this);
 
     @Property({ type: 'timestamptz' })
     createdAt: Date = new Date();

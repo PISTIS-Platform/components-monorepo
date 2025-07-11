@@ -6,7 +6,8 @@ import { getHeaders, UserInfo } from '@pistis/shared';
 import { catchError, firstValueFrom, map, of, tap, throwError } from 'rxjs';
 
 import { CreateInvestmentPlanDTO } from './create-investment-plan.dto';
-import { InvestmentPlanner } from './investment-planner.entity';
+import { InvestmentPlanner } from './entities/investment-planner.entity';
+import { UserInvestment } from './entities/user-investment.entity';
 import { INVESTMENT_PLANNER_MODULE_OPTIONS } from './investment-planner.module-definition';
 import { InvestmentPlannerModuleOptions } from './investment-planner-module-options.interface';
 
@@ -17,6 +18,7 @@ export class InvestmentPlannerService {
     constructor(
         private readonly httpService: HttpService,
         @InjectRepository(InvestmentPlanner) private readonly repo: EntityRepository<InvestmentPlanner>,
+        @InjectRepository(UserInvestment) private readonly userInvestmentRepo: EntityRepository<UserInvestment>,
         @Inject(INVESTMENT_PLANNER_MODULE_OPTIONS) private options: InvestmentPlannerModuleOptions,
     ) {}
 
@@ -56,6 +58,40 @@ export class InvestmentPlannerService {
             throw new Error(`Error creating investment plan: ${error}`);
         }
         return investmentPlan;
+    }
+
+    async createUserInvestmentPlan(data: any, user: UserInfo) {
+        const investmentPlan = await this.repo.findOneOrFail({ id: data.investmentPlanId });
+        const userInvestment = this.userInvestmentRepo.create({
+            cloudAssetId: data.cloudAssetId,
+            userId: user.id,
+            shares: data.shares,
+            investmentPlan: investmentPlan,
+        });
+        try {
+            await this.userInvestmentRepo.getEntityManager().persistAndFlush(userInvestment);
+        } catch (error) {
+            this.logger.error(`Error creating user investment plan: ${error}`);
+            throw new Error(`Error creating user investment plan: ${error}`);
+        }
+
+        return userInvestment;
+    }
+
+    async getUserInvestmentPlan(assetId: string, user: UserInfo) {
+        const investmentPlan = await this.repo.findOneOrFail({ id: assetId, status: true });
+        let userInvestment;
+        try {
+            userInvestment = await this.userInvestmentRepo.findOneOrFail({
+                cloudAssetId: assetId,
+                userId: user.id,
+                investmentPlan: { id: investmentPlan.id, status: investmentPlan.status },
+            });
+        } catch (error) {
+            this.logger.error(`Error retrieving user investment plan: ${error}`);
+            throw new BadRequestException(`Error retrieving user investment plan: ${error}`);
+        }
+        return userInvestment;
     }
 
     //TODO: check if we want notifications for this component
