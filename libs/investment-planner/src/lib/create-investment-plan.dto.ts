@@ -15,6 +15,20 @@ export class CreateInvestmentPlanDTO {
     @IsString()
     @IsNotEmpty()
     @ApiProperty()
+    title!: string;
+
+    @IsString()
+    @IsNotEmpty()
+    @ApiProperty()
+    description!: string;
+
+    @IsNotEmpty()
+    @ApiProperty()
+    terms!: any;
+
+    @IsString()
+    @IsNotEmpty()
+    @ApiProperty()
     dueDate!: string;
 
     @IsNumber()

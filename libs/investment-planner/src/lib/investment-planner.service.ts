@@ -34,7 +34,22 @@ export class InvestmentPlannerService {
     }
 
     async createInvestmentPlan(data: CreateInvestmentPlanDTO, _user: UserInfo) {
-        const investmentPlan = this.repo.create(data);
+        const sellerId = 'asjdjashdkjahsd';
+        const investmentPlan = this.repo.create({
+            cloudAssetId: data.cloudAssetId,
+            assetId: data.assetId,
+            title: data.title,
+            description: data.description,
+            terms: data.terms,
+            sellerId: sellerId,
+            dueDate: new Date(data.dueDate),
+            percentageOffer: data.percentageOffer,
+            totalShares: data.totalShares,
+            remainingShares: data.totalShares, // Initialize remaining shares to total shares
+            maxShares: data.maxShares,
+            price: data.price,
+            status: data.status,
+        });
         try {
             await this.repo.getEntityManager().persistAndFlush(investmentPlan);
         } catch (error) {
