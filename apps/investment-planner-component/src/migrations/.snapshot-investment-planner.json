@@ -60,6 +60,15 @@
           "nullable": false,
           "mappedType": "json"
         },
+        "access_policy": {
+          "name": "access_policy",
+          "type": "jsonb",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "json"
+        },
         "seller_id": {
           "name": "seller_id",
           "type": "varchar(255)",
@@ -68,6 +77,15 @@
           "primary": false,
           "nullable": false,
           "mappedType": "string"
+        },
+        "keywords": {
+          "name": "keywords",
+          "type": "text[]",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "array"
         },
         "due_date": {
           "name": "due_date",
