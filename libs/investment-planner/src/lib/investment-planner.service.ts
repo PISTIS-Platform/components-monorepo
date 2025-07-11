@@ -60,6 +60,7 @@ export class InvestmentPlannerService {
     }
 
     async updateInvestmentPlan(id: string, data: any, _user: UserInfo) {
+        let userInvestmentPlan;
         const investmentPlan = await this.repo.findOneOrFail({ id: id });
         if (investmentPlan.remainingShares === null) {
             investmentPlan.remainingShares = investmentPlan.totalShares - data.numberOfShares;
@@ -68,20 +69,20 @@ export class InvestmentPlannerService {
         }
         try {
             await this.repo.getEntityManager().persistAndFlush(investmentPlan);
+            userInvestmentPlan = await this.createUserInvestmentPlan(data, _user);
         } catch (error) {
             this.logger.error(`Error creating investment plan: ${error}`);
             throw new Error(`Error creating investment plan: ${error}`);
         }
-        return investmentPlan;
+        return userInvestmentPlan;
     }
 
-    async createUserInvestmentPlan(data: any, user: UserInfo) {
-        const investmentPlan = await this.repo.findOneOrFail({ id: data.investmentPlanId });
+    private async createUserInvestmentPlan(data: any, user: UserInfo) {
         const userInvestment = this.userInvestmentRepo.create({
             cloudAssetId: data.cloudAssetId,
             userId: user.id,
             shares: data.shares,
-            investmentPlan: investmentPlan,
+            investmentPlan: data,
         });
         try {
             await this.userInvestmentRepo.getEntityManager().persistAndFlush(userInvestment);

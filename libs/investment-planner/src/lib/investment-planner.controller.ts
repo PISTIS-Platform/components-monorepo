@@ -61,16 +61,4 @@ export class InvestmentPlannerController {
     ) {
         return await this.investmentPlannerService.updateInvestmentPlan(planId, data, 'user' as any);
     }
-
-    @Post('/invest')
-    @ApiOkResponse({
-        description: '',
-        schema: { example: { asset_uuid: 'ae755a90-b7bc-4c28-bfc8-7a4fb247328b', message: 'Table created' } },
-    })
-    async createUserInvestmentPlan(
-        // @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
-        @Body() data: CreateInvestmentPlanDTO,
-    ) {
-        return await this.investmentPlannerService.createUserInvestmentPlan(data, 'user' as any);
-    }
 }
