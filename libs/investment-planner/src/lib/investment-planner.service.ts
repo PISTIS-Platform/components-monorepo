@@ -33,15 +33,14 @@ export class InvestmentPlannerService {
         return investment;
     }
 
-    async createInvestmentPlan(data: CreateInvestmentPlanDTO, _user: UserInfo) {
-        const sellerId = 'asjdjashdkjahsd';
+    async createInvestmentPlan(data: CreateInvestmentPlanDTO, user: UserInfo) {
         const investmentPlan = this.repo.create({
             cloudAssetId: data.cloudAssetId,
             assetId: data.assetId,
             title: data.title,
             description: data.description,
             terms: data.terms,
-            sellerId: sellerId,
+            sellerId: user.id,
             dueDate: new Date(data.dueDate),
             percentageOffer: data.percentageOffer,
             totalShares: data.totalShares,
@@ -59,7 +58,7 @@ export class InvestmentPlannerService {
         return investmentPlan;
     }
 
-    async updateInvestmentPlan(id: string, data: any, _user: UserInfo) {
+    async updateInvestmentPlan(id: string, data: any, user: UserInfo) {
         let userInvestmentPlan;
         const investmentPlan = await this.repo.findOneOrFail({ id: id });
         if (investmentPlan.remainingShares === null) {
@@ -69,7 +68,7 @@ export class InvestmentPlannerService {
         }
         try {
             await this.repo.getEntityManager().persistAndFlush(investmentPlan);
-            userInvestmentPlan = await this.createUserInvestmentPlan(investmentPlan, data.numberOfShares, _user);
+            userInvestmentPlan = await this.createUserInvestmentPlan(investmentPlan, data.numberOfShares, user.id);
         } catch (error) {
             this.logger.error(`Error creating investment plan: ${error}`);
             throw new Error(`Error creating investment plan: ${error}`);
@@ -77,10 +76,10 @@ export class InvestmentPlannerService {
         return userInvestmentPlan;
     }
 
-    private async createUserInvestmentPlan(data: any, numberOfShares: number, _user: UserInfo) {
+    private async createUserInvestmentPlan(data: any, numberOfShares: number, userId: string) {
         const userInvestment = this.userInvestmentRepo.create({
             cloudAssetId: data.cloudAssetId,
-            userId: 'user.id',
+            userId: userId,
             shares: numberOfShares,
             investmentPlan: data,
         });
