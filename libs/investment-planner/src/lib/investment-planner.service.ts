@@ -69,7 +69,7 @@ export class InvestmentPlannerService {
         }
         try {
             await this.repo.getEntityManager().persistAndFlush(investmentPlan);
-            userInvestmentPlan = await this.createUserInvestmentPlan(investmentPlan, _user);
+            userInvestmentPlan = await this.createUserInvestmentPlan(investmentPlan, data.numberOfShares, _user);
         } catch (error) {
             this.logger.error(`Error creating investment plan: ${error}`);
             throw new Error(`Error creating investment plan: ${error}`);
@@ -77,11 +77,11 @@ export class InvestmentPlannerService {
         return userInvestmentPlan;
     }
 
-    private async createUserInvestmentPlan(data: any, _user: UserInfo) {
+    private async createUserInvestmentPlan(data: any, numberOfShares: number, _user: UserInfo) {
         const userInvestment = this.userInvestmentRepo.create({
             cloudAssetId: data.cloudAssetId,
             userId: 'user.id',
-            shares: data.shares,
+            shares: numberOfShares,
             investmentPlan: data,
         });
         try {
