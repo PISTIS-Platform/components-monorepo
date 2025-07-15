@@ -72,11 +72,9 @@ export class AnswersService {
                 assetId,
             },
             {
-                fields: ['responses'],
+                fields: ['responses', 'createdAt'],
             },
         );
-
-        
 
         return answers;
     }

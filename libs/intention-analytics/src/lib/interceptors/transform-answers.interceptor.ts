@@ -18,8 +18,15 @@ export class TransformAnswersInterceptor<T> implements NestInterceptor<T, any[]>
 
                 //put all the question responses into one array
                 const allResponses: Record<string, any>[] = [].concat(
-                    ...data.map((answerRow: IAnswer) => answerRow.responses),
+                    ...data.map((answerRow: IAnswer) =>
+                        answerRow.responses.map((response: any) => ({
+                            ...response,
+                            date: answerRow.createdAt,
+                        })),
+                    ),
                 );
+
+                console.log({ allResponses });
 
                 // based on the above, group questions into the final results array
                 for (let i = 0; i < allResponses.length; i++) {
@@ -28,13 +35,16 @@ export class TransformAnswersInterceptor<T> implements NestInterceptor<T, any[]>
                     //check if result already exists in final results
                     const resultItem = finalResults.find(
                         (result: QuestionResponse) => result.questionId === questionResponse['questionId'],
-                    );
+                    ) as QuestionResponse;
 
                     //create array with submitted answers by user (text or option)
-                    const submittedAnswers: string[] =
+                    const submittedAnswers: { response: string[]; date: string }[] =
                         'text' in questionResponse && questionResponse['text']
-                            ? [questionResponse['text']]
-                            : questionResponse['options'] ?? [];
+                            ? [{ response: questionResponse['text'], date: questionResponse['date'] }]
+                            : questionResponse['options'].map((option: string) => ({
+                                  response: option,
+                                  date: questionResponse['date'],
+                              })) ?? [];
 
                     //skip the iteration if neither text or options are found
                     if (!submittedAnswers.length) {
@@ -51,7 +61,7 @@ export class TransformAnswersInterceptor<T> implements NestInterceptor<T, any[]>
                             questionId: questionResponse['questionId'],
                             questionTitle: questionResponse['questionTitle'],
                             responses: submittedAnswers,
-                            questionType: questionFromDb ? questionFromDb.type as QuestionType : null,
+                            questionType: questionFromDb ? (questionFromDb.type as QuestionType) : null,
                         });
                     }
                 }

@@ -6,8 +6,8 @@ import { QuestionType } from '../constants';
 export interface QuestionResponse {
     questionId: string;
     questionTitle: string;
-    responses: string[];
+    responses: { response: string[]; date: string }[];
     questionType: QuestionType | null;
 }
 
-export type IAnswer = Loaded<Answer, never, 'responses', never>;
+export type IAnswer = Loaded<Answer, never, 'responses' | 'createdAt', never>;
