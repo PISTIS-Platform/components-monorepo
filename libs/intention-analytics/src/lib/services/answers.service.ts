@@ -1,9 +1,10 @@
 import { InjectRepository } from '@mikro-orm/nestjs';
-import { EntityRepository } from '@mikro-orm/postgresql';
+import { EntityRepository, EntityManager } from '@mikro-orm/postgresql';
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { wrap } from '@mikro-orm/core';
 
 import { CreateAnswerDto } from '../dto/create-answer.dto';
-import { Answer, Questionnaire } from '../entities';
+import { Answer, Questionnaire, Question } from '../entities';
 
 @Injectable()
 export class AnswersService {
@@ -11,6 +12,7 @@ export class AnswersService {
     constructor(
         @InjectRepository(Answer) private readonly answersRepo: EntityRepository<Answer>,
         @InjectRepository(Questionnaire) private readonly questionnaireRepo: EntityRepository<Questionnaire>,
+        @InjectRepository(Question) private readonly questionRepo: EntityRepository<Question>,
     ) {}
 
     async findActiveVersion(isForVerifiedBuyers: boolean) {
@@ -65,7 +67,7 @@ export class AnswersService {
     }
 
     async getAnswers(assetId: string) {
-        return this.answersRepo.find(
+        const answers = await this.answersRepo.find(
             {
                 assetId,
             },
@@ -73,5 +75,9 @@ export class AnswersService {
                 fields: ['responses'],
             },
         );
+
+        
+
+        return answers;
     }
 }

@@ -1,14 +1,19 @@
 import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
 import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { mergeMap } from 'rxjs/operators';
+import { InjectRepository } from '@mikro-orm/nestjs';
+import { EntityRepository, EntityManager } from '@mikro-orm/postgresql';
+import { Question } from '../entities';
 
 import { IAnswer, QuestionResponse } from '../interfaces';
+import { QuestionType } from '../constants';
 
 @Injectable()
 export class TransformAnswersInterceptor<T> implements NestInterceptor<T, any[]> {
+    constructor(@InjectRepository(Question) private readonly questionRepo: EntityRepository<Question>) {}
     intercept(context: ExecutionContext, next: CallHandler): Observable<any[]> {
         return next.handle().pipe(
-            map((data) => {
+            mergeMap(async (data) => {
                 const finalResults: QuestionResponse[] = [];
 
                 //put all the question responses into one array
@@ -41,10 +46,12 @@ export class TransformAnswersInterceptor<T> implements NestInterceptor<T, any[]>
                     if (resultItem) {
                         resultItem.responses = [...resultItem.responses, ...submittedAnswers];
                     } else {
+                        const questionFromDb = await this.questionRepo.findOne({ id: questionResponse['questionId'] });
                         finalResults.push({
                             questionId: questionResponse['questionId'],
                             questionTitle: questionResponse['questionTitle'],
                             responses: submittedAnswers,
+                            questionType: questionFromDb ? questionFromDb.type as QuestionType : null,
                         });
                     }
                 }
