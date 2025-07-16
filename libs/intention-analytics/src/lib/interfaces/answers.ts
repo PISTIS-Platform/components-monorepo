@@ -7,7 +7,8 @@ export interface QuestionResponse {
     questionId: string;
     questionTitle: string;
     responses: { response: string[]; date: string }[];
-    questionType: QuestionType | null;
+    questionType?: QuestionType | null;
+    options?: Record<string,any>;
 }
 
 export type IAnswer = Loaded<Answer, never, 'responses' | 'createdAt', never>;
