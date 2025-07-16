@@ -62,7 +62,9 @@ export class TransformAnswersInterceptor<T> implements NestInterceptor<T, any[]>
                             questionTitle: questionResponse['questionTitle'],
                             responses: submittedAnswers,
                             questionType: questionFromDb ? (questionFromDb.type as QuestionType) : null,
-                            options: questionFromDb ? questionFromDb.options : [],
+                            options: questionFromDb
+                                ? questionFromDb.options?.map((option: Record<string, any>) => option['text'])
+                                : [],
                         });
                     }
                 }
