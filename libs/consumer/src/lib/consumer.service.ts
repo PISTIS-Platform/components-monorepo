@@ -188,7 +188,6 @@ export class ConsumerService {
                 });
                 await this.repo.getEntityManager().persistAndFlush(assetInfo);
             } catch (err) {
-                console.log(err);
                 this.logger.error('Transfer file data error:', err);
                 throw new BadGatewayException('Transfer file data error');
             }
