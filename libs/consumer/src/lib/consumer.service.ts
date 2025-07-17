@@ -1,7 +1,14 @@
 import { EntityRepository } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { HttpService } from '@nestjs/axios';
-import { BadGatewayException, BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+    BadGatewayException,
+    BadRequestException,
+    Inject,
+    Injectable,
+    Logger,
+    NotFoundException,
+} from '@nestjs/common';
 import { Column, DataStorageService } from '@pistis/data-storage';
 import { MetadataRepositoryService } from '@pistis/metadata-repository';
 import { getHeaders } from '@pistis/shared';
@@ -22,7 +29,7 @@ export class ConsumerService {
         private readonly dataStorageService: DataStorageService,
         @Inject(CONSUMER_MODULE_OPTIONS) private options: ConsumerModuleOptions,
         private readonly metadataRepositoryService: MetadataRepositoryService,
-    ) { }
+    ) {}
 
     async retrieveData(assetId: string, user: any, token: string, data: RetrieveDataDTO) {
         let factory: any;
@@ -52,10 +59,12 @@ export class ConsumerService {
 
         const storageUrl = `https://${factory.factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api`;
         let assetInfo: AssetRetrievalInfo | null;
-        const format = metadata.distributions.map(({ format }: any) => format?.id ?? null).filter((id: any) => id !== null)
+        const format = metadata.distributions
+            .map(({ format }: any) => format?.id ?? null)
+            .filter((id: any) => id !== null);
         if (format.length === 0) {
             this.logger.error('Format not found');
-            throw new BadRequestException('Distribution format not found')
+            throw new BadRequestException('Distribution format not found');
         }
 
         if (format[0] === 'SQL') {
@@ -78,7 +87,11 @@ export class ConsumerService {
 
                 if (offset === 0 && 'data' in results) {
                     // store data in data store
-                    storeResult = await this.dataStorageService.createTableInStorage(results, token, factory.factoryPrefix);
+                    storeResult = await this.dataStorageService.createTableInStorage(
+                        results,
+                        token,
+                        factory.factoryPrefix,
+                    );
 
                     offset += results.data.data.rows.length;
 
@@ -125,9 +138,9 @@ export class ConsumerService {
 
                 metadata.distributions.map((item: any) => {
                     if (item.access_url) {
-                        return item.access_url = [
+                        return (item.access_url = [
                             `https://${factory.factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api/tables/get_table?asset_uuid=${storeResult['asset_uuid']}`,
-                        ];
+                        ]);
                     }
                     return;
                 });
@@ -141,14 +154,28 @@ export class ConsumerService {
                     providerPrefix: providerFactory.factoryPrefix,
                 });
 
-                const title = metadata.distributions.map(({ title }: any) => title?.en ?? null).filter((en: any) => en !== null)
-                const createFile = await this.dataStorageService.createFile(fileResult.data, title[0], token, factory.factoryPrefix)
+                const title = metadata.distributions
+                    .map((distribution: any) => {
+                        const titleObject = distribution.title;
+
+                        if (titleObject && Object.keys(titleObject).length > 0) {
+                            return Object.values(titleObject)[0] as string;
+                        }
+                        return null;
+                    })
+                    .filter((title: string | null) => title !== null); // Filter out nulls
+                const createFile = await this.dataStorageService.createFile(
+                    fileResult,
+                    title[0],
+                    token,
+                    factory.factoryPrefix,
+                );
 
                 metadata.distributions.map((item: any) => {
                     if (item.access_url) {
-                        return item.access_url = [
+                        return (item.access_url = [
                             `https://${factory.factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api/files/get_file?asset_uuid=${createFile.asset_uuid}`,
-                        ];
+                        ]);
                     }
                     return;
                 });
@@ -161,17 +188,17 @@ export class ConsumerService {
                 });
                 await this.repo.getEntityManager().persistAndFlush(assetInfo);
             } catch (err) {
+                console.log(err);
                 this.logger.error('Transfer file data error:', err);
                 throw new BadGatewayException('Transfer file data error');
             }
         }
 
-
         try {
             await this.metadataRepositoryService.createMetadata(
                 metadata,
                 this.options.catalogId,
-                factory.factoryPrefix
+                factory.factoryPrefix,
             );
         } catch (err) {
             this.logger.error('Metadata creation error:', err);
@@ -187,23 +214,28 @@ export class ConsumerService {
         const tokenData = {
             grant_type: 'client_credentials',
             client_id: this.options.clientId,
-            client_secret: this.options.secret
-        }
+            client_secret: this.options.secret,
+        };
         return await firstValueFrom(
             this.httpService
                 .post(`${this.options.authServerUrl}/realms/PISTIS/protocol/openid-connect/token`, tokenData, {
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                     },
-                    data: JSON.stringify(tokenData)
+                    data: JSON.stringify(tokenData),
                 })
                 .pipe(
                     map(({ data }) => data.access_token),
                     map((access_token) =>
                         this.httpService
-                            .post(`${this.options.notificationsUrl}/srv/notifications/api/notifications`, notification, {
-                                headers: getHeaders(access_token),
-                            }).subscribe((value) => value)
+                            .post(
+                                `${this.options.notificationsUrl}/srv/notifications/api/notifications`,
+                                notification,
+                                {
+                                    headers: getHeaders(access_token),
+                                },
+                            )
+                            .subscribe((value) => value),
                     ),
                     tap((response) => this.logger.debug(response)),
                     map(() => of({ message: 'Notification created' })),
