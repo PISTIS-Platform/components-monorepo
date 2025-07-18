@@ -12,7 +12,7 @@ export class MetadataRepositoryService {
     constructor(
         private readonly httpService: HttpService,
         @Inject(MODULE_OPTIONS_TOKEN) private options: MetadataRepositoryModuleOptions,
-    ) { }
+    ) {}
 
     async retrieveMetadata(assetId: string) {
         let metadata;
@@ -61,18 +61,28 @@ export class MetadataRepositoryService {
     async createMetadata(metadata: any, catalogId: string, factoryPrefix: string) {
         let newMetadata;
 
-        const getValue = (key: string, value: string) => {
+        const getDistributionsValue = (key: string) => {
             const entry = metadata.distributions.find((item: any) => item[key]);
-            return entry ? (value !== '' ? entry[key][value] : entry[key]) : '';
+            if (key === 'byte_size') {
+                return entry[key] ? entry[key] : '';
+            }
+            return Object.values(entry[key])[0];
         };
+
+        const getValue = (obj: any): string | null => {
+            if (Object.keys(obj).length > 0) {
+                return `"${Object.values(obj)[0]}"@${Object.keys(obj)[0]}`;
+            }
+            return null;
+        };
+
         const getValueLicense = (key: string, value: string) => {
             const entry = metadata.monetization.find((item: any) => item[key]);
             return entry ? (value !== '' ? entry[key][value] : entry[key]) : '';
         };
 
-        const byteSizeValue = getValue('byte_size', '');
+        const byteSizeValue = getDistributionsValue('byte_size');
         const byteSizeEntry = byteSizeValue ? `dcat:byteSize  "${byteSizeValue}"^^xsd:decimal ;` : '';
-
 
         const rdfData = `
             @prefix dcat:                <http://www.w3.org/ns/dcat#> .
@@ -85,12 +95,13 @@ export class MetadataRepositoryService {
 
             <https://piveau.io/set/data/test-dataset>
                 a                   dcat:Dataset ;
-                dct:description     "${metadata.description.en}"@en ;
-                dct:title           "${metadata.title.en}"@en ;
-                dcat:keyword        ${metadata.keywords != null
-                ? metadata.keywords.map((keyword: any) => `"${keyword.label}"@${keyword.language}`).join(', ')
-                : ''
-            } ;
+                dct:description     ${getValue(metadata.description)} ;
+                dct:title           ${getValue(metadata.title)} ;
+                dcat:keyword        ${
+                    metadata.keywords != null
+                        ? metadata.keywords.map((keyword: any) => `"${keyword.label}"@${keyword.language}`).join(', ')
+                        : ''
+                } ;
                 dct:publisher       [ a     foaf:${metadata.publisher.type} ;
                                             foaf:mbox <${metadata.publisher.email}> ;
                                             foaf:name "${metadata.publisher.name}" ; ] ;
@@ -102,16 +113,16 @@ export class MetadataRepositoryService {
 
             <https://piveau.io/set/distribution/1>
                 a              dcat:Distribution ;
-                dct:title      "${getValue('title', 'en')}" ;
+                dct:title      "${getDistributionsValue('title')}" ;
                 dct:license    [
                                     dct:identifier "${getValueLicense('license', 'id')}" ;
                                     dct:title "${getValueLicense('license', 'label')}" ;
                                     skos:prefLabel "${getValueLicense('license', 'description')}" ;
                                     skos:exactMatch <${getValueLicense('license', 'resource')}>
                             ] ;
-                dct:format     <${getValue('format', 'resource')}> ;
+                dct:format     <${getDistributionsValue('format')}> ;
                 ${byteSizeEntry}
-                dcat:accessURL <${getValue('access_url', '0')}> .
+                dcat:accessURL <${getDistributionsValue('access_url')}> .
         `;
 
         try {
