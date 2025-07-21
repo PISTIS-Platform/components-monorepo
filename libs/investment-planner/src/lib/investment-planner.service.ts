@@ -48,7 +48,7 @@ export class InvestmentPlannerService {
             maxShares: data.maxShares,
             price: data.price,
             status: data.status,
-            accessPolicy: undefined,
+            accessPolicy: data.accessPolicy,
             keywords: data.keywords,
         });
         try {

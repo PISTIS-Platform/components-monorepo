@@ -30,6 +30,10 @@ export class CreateInvestmentPlanDTO {
     @ApiProperty()
     keywords!: string[];
 
+    @IsNotEmpty()
+    @ApiProperty()
+    accessPolicy!: string[];
+
     @IsString()
     @IsNotEmpty()
     @ApiProperty()
