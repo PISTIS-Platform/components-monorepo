@@ -48,6 +48,8 @@ export class InvestmentPlannerService {
             maxShares: data.maxShares,
             price: data.price,
             status: data.status,
+            accessPolicy: undefined,
+            keywords: data.keywords,
         });
         try {
             await this.repo.getEntityManager().persistAndFlush(investmentPlan);
