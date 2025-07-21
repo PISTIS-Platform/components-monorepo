@@ -33,14 +33,14 @@ export class InvestmentPlannerService {
         return investment;
     }
 
-    async createInvestmentPlan(data: CreateInvestmentPlanDTO, _user: any) {
+    async createInvestmentPlan(data: CreateInvestmentPlanDTO, user: UserInfo) {
         const investmentPlan = this.repo.create({
             cloudAssetId: data.cloudAssetId,
             assetId: data.assetId,
             title: data.title,
             description: data.description,
             terms: data.terms,
-            sellerId: 'user.id',
+            sellerId: user.id,
             dueDate: new Date(data.dueDate),
             percentageOffer: data.percentageOffer,
             totalShares: data.totalShares,
@@ -60,7 +60,7 @@ export class InvestmentPlannerService {
         return investmentPlan;
     }
 
-    async updateInvestmentPlan(id: string, data: any, _user: any) {
+    async updateInvestmentPlan(id: string, data: any, user: UserInfo) {
         let userInvestmentPlan;
         const investmentPlan = await this.repo.findOneOrFail({ id: id });
         if (investmentPlan.remainingShares === null) {
@@ -70,7 +70,7 @@ export class InvestmentPlannerService {
         }
         try {
             await this.repo.getEntityManager().persistAndFlush(investmentPlan);
-            userInvestmentPlan = await this.createUserInvestmentPlan(investmentPlan, data.numberOfShares, 'user.id');
+            userInvestmentPlan = await this.createUserInvestmentPlan(investmentPlan, data.numberOfShares, user.id);
         } catch (error) {
             this.logger.error(`Error creating investment plan: ${error}`);
             throw new Error(`Error creating investment plan: ${error}`);
@@ -78,10 +78,10 @@ export class InvestmentPlannerService {
         return userInvestmentPlan;
     }
 
-    private async createUserInvestmentPlan(data: any, numberOfShares: number, _userId: string) {
+    private async createUserInvestmentPlan(data: any, numberOfShares: number, userId: string) {
         const userInvestment = this.userInvestmentRepo.create({
             cloudAssetId: data.cloudAssetId,
-            userId: 'userId',
+            userId: userId,
             shares: numberOfShares,
             investmentPlan: data,
         });
@@ -95,13 +95,13 @@ export class InvestmentPlannerService {
         return userInvestment;
     }
 
-    async getUserInvestmentPlan(assetId: string, _user: any) {
+    async getUserInvestmentPlan(assetId: string, user: UserInfo) {
         const investmentPlan = await this.repo.findOneOrFail({ id: assetId, status: true });
         let userInvestment;
         try {
             userInvestment = await this.userInvestmentRepo.findOneOrFail({
                 cloudAssetId: assetId,
-                userId: 'user.id',
+                userId: user.id,
                 investmentPlan: { id: investmentPlan.id, status: investmentPlan.status },
             });
         } catch (error) {
@@ -114,8 +114,8 @@ export class InvestmentPlannerService {
     //TODO: check if we want notifications for this component
     private readonly createNotification = async (message: string, assetId: string, user: UserInfo) => {
         const notification = {
-            userId: 'user.id',
-            organizationId: 'user.organizationId',
+            userId: user.id,
+            organizationId: user.organizationId,
             type: 'asset_retrieved',
             message: 'Asset retrieval finished',
         };
