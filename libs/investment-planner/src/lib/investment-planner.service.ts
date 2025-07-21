@@ -33,14 +33,14 @@ export class InvestmentPlannerService {
         return investment;
     }
 
-    async createInvestmentPlan(data: CreateInvestmentPlanDTO, user: any) {
+    async createInvestmentPlan(data: CreateInvestmentPlanDTO, _user: any) {
         const investmentPlan = this.repo.create({
             cloudAssetId: data.cloudAssetId,
             assetId: data.assetId,
             title: data.title,
             description: data.description,
             terms: data.terms,
-            sellerId: user.id,
+            sellerId: 'user.id',
             dueDate: new Date(data.dueDate),
             percentageOffer: data.percentageOffer,
             totalShares: data.totalShares,
@@ -78,10 +78,10 @@ export class InvestmentPlannerService {
         return userInvestmentPlan;
     }
 
-    private async createUserInvestmentPlan(data: any, numberOfShares: number, userId: string) {
+    private async createUserInvestmentPlan(data: any, numberOfShares: number, _userId: string) {
         const userInvestment = this.userInvestmentRepo.create({
             cloudAssetId: data.cloudAssetId,
-            userId: userId,
+            userId: 'userId',
             shares: numberOfShares,
             investmentPlan: data,
         });
