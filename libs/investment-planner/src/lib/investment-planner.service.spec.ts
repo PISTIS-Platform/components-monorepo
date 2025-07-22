@@ -1,73 +1,118 @@
 import { InvestmentPlannerService } from './investment-planner.service';
 
-describe('ConsumerService', () => {
+describe('InvestmentPlannerService', () => {
     let service: InvestmentPlannerService;
-    // let httpService: any;
-    // let repo: any;
-    // let dataStorageService: any;
-    // let options: any;
+    let httpService: any;
+    let investmentRepo: any;
+    let userInvestmentRepo: any;
+    let options: any;
+    let investmentPlan: any;
+    let authUser: any;
+    let userInvestmentPlan: any;
 
     beforeEach(async () => {
-        // httpService = {
-        //     get: jest.fn(),
-        //     post: jest.fn(),
-        // };
-        // repo = {
-        //     findOne: jest.fn(),
-        //     create: jest.fn(),
-        //     getEntityManager: jest.fn().mockReturnValue({
-        //         flush: jest.fn(),
-        //     }),
-        // };
-        // dataStorageService = {
-        //     createTableInStorage: jest.fn(),
-        //     updateTableInStorage: jest.fn(),
-        // };
-        // options = {
-        //     dataStorageUrl: '',
-        //     factoryRegistryUrl: '',
-        //     downloadBatchSize: 100,
-        //     notificationsUrl: '',
-        // };
-        // service = new ConsumerService(httpService, repo, dataStorageService, options);
+        investmentPlan = {
+            id: 'a4ce90e4-8c88-4510-9f39-04246c6cc555',
+            cloudAssetId: 'c74d8d5f-9351-428d-9c86-b7356526bf32',
+            assetId: '1818ed08-9087-43f1-b41c-13284d9a6db3',
+            dueDate: '2025-07-23 21:00:00+00',
+            percentageOffer: 49,
+            totalShares: 1000,
+            remainingShares: 990,
+            maxShares: 10,
+            price: 50,
+            status: true,
+            title: 'Develop Test 08/07/2025',
+            description: 'Description for Develop Test 08/07/2025',
+            terms: '"alsdkfalsdkjflsadkjflaksdjflakdsjflkasdjflkasdjflkasjdf"',
+            sellerId: 'user.id',
+            keywords: '{keyword1,keywors3}',
+            accessPolicy: [
+                {
+                    id: '1',
+                    sizes: [],
+                    title: 'Default policy for asset publication',
+                    types: [],
+                    groups: [],
+                    scopes: [],
+                    default: true,
+                    domains: [],
+                    countries: [],
+                    description: 'Everyone can Read/Trade this asset',
+                },
+            ],
+        };
+
+        userInvestmentPlan = {
+            cloud_asset_id: 'c74d8d5f-9351-428d-9c86-b7356526bf32',
+            user_id: 'user.id',
+            shares: 10,
+            investment_plan_id: 'a4ce90e4-8c88-4510-9f39-04246c6cc555',
+        };
+
+        authUser = {
+            id: '1',
+            organizationId: '1234',
+        };
+
+        httpService = {
+            post: jest.fn(),
+        };
+        investmentRepo = {
+            findOneOrFail: jest.fn(),
+            create: jest.fn(),
+            getEntityManager: jest.fn().mockReturnValue({
+                persistAndFlush: jest.fn(),
+            }),
+        };
+        userInvestmentRepo = {
+            findOneOrFail: jest.fn(),
+            create: jest.fn(),
+            getEntityManager: jest.fn().mockReturnValue({
+                persistAndFlush: jest.fn(),
+            }),
+        };
+
+        options = {
+            clientId: '',
+            secret: '',
+        };
+        service = new InvestmentPlannerService(httpService, investmentRepo, userInvestmentRepo, options);
     });
 
     it('should be defined', () => {
         expect(service).toBeDefined();
     });
 
-    it('should retrieve data and store it correctly', async () => {
-        // const contractId = 'contract123';
-        // const assetId = 'asset123';
-        // const userId = 'user123';
-        // const token = 'token';
-        // const providerFactory = { ip: '192.168.1.1' };
-        // const results = { data: { rows: [] }, columns: [] };
-        // const storeResult = { assetUUID: 'uuid123', version_id: 'v1' };
-        // const notificationResponse = { message: 'Notification created' };
-        // jest.spyOn(httpService, 'get').mockReturnValue(of({ data: providerFactory }));
-        // jest.spyOn(httpService, 'post').mockReturnValueOnce(of({ data: results }));
-        // jest.spyOn(httpService, 'post').mockReturnValueOnce(of(notificationResponse));
-        // jest.spyOn(repo, 'findOne').mockResolvedValue(null);
-        // jest.spyOn(repo, 'create').mockReturnValue({});
-        // jest.spyOn(dataStorageService, 'createTableInStorage').mockResolvedValue(storeResult);
-        // const result = await service.retrieveData(contractId, assetId, userId, token);
-        // expect(result).toEqual(notificationResponse);
-        // expect(repo.create).toHaveBeenCalledWith({
-        //     id: storeResult.assetUUID,
-        //     cloudAssetId: assetId,
-        //     version: storeResult.version_id,
-        //     offset: 0,
-        // });
+    it('should retrieve investment plan', async () => {
+        jest.spyOn(investmentRepo, 'findOneOrFail').mockResolvedValue(investmentPlan);
+        expect(await service.retrieveInvestmentPlan('1818ed08-9087-43f1-b41c-13284d9a6db3')).toBe(investmentPlan);
     });
 
-    it('should retrieve data from provider', async () => {
-        // const bodyObject = { offset: 0, batchSize: 100 };
-        // const providerUrl = '';
-        // const assetId = 'asset123';
-        // const results = { data: { rows: [] }, columns: [] };
-        // jest.spyOn(httpService, 'post').mockReturnValue(of({ data: results }));
-        // const result = await service.getDataFromProvider(bodyObject, providerUrl, assetId);
-        // expect(result).toEqual(results);
+    it('should create investment plan', async () => {
+        const investmentPlanData = {
+            cloudAssetId: 'c74d8d5f-9351-428d-9c86-b7356526bf32',
+            assetId: '1818ed08-9087-43f1-b41c-13284d9a6db3',
+            dueDate: '2025-07-23 21:00:00+00',
+            percentageOffer: 49,
+            totalShares: 1000,
+            remainingShares: 990,
+            maxShares: 10,
+            price: 50,
+            status: true,
+            title: 'Develop Test 08/07/2025',
+            description: 'Description for Develop Test 08/07/2025',
+            terms: '"alsdkfalsdkjflsadkjflaksdjflakdsjflkasdjflkasdjflkasjdf"',
+            sellerId: 'user.id',
+            keywords: ['keyword1', 'keywors3'],
+            accessPolicy: [
+                '{"id": "1", "sizes": [], "title": "Default policy for asset publication", "types": [], "groups": [], "scopes": [], "default": true, "domains": [], "countries": [], "description": "Everyone can Read/Trade this asset"}',
+            ],
+        };
+
+        jest.spyOn(investmentRepo, 'create').mockReturnValue({ investmentPlanData });
+        jest.spyOn(investmentRepo.getEntityManager(), 'persistAndFlush').mockImplementation();
+        expect(await service.createInvestmentPlan(investmentPlanData, authUser)).toEqual(investmentPlanData);
+        expect(investmentRepo.create).toHaveBeenCalledTimes(1);
     });
 });

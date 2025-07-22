@@ -2,7 +2,7 @@ import { CreateInvestmentPlanDTO } from './create-investment-plan.dto';
 import { InvestmentPlannerController } from './investment-planner.controller';
 import { UpdateInvestmentPlanDTO } from './update-investment-plan.dto';
 
-describe('ConsumerController', () => {
+describe('InvestmentPlannerController', () => {
     let controller: InvestmentPlannerController;
     let service: any;
     let investmentPlan: any;
