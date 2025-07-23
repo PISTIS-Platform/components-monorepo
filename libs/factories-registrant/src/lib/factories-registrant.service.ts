@@ -468,6 +468,15 @@ export class FactoriesRegistrantService {
 
                 //Call the function to create the new client in keycloak
                 createdClients = await this.keycloakClients(updatedClients, token, 'patch');
+
+                const replacedClients = client.clientsIds.map((clientId: any) => {
+                    const [id] = JSON.parse(clientId);
+                    if (id === createdClients[0]) {
+                        return JSON.stringify([createdClients[0], createdClients[1]]);
+                    }
+                    return clientId;
+                });
+                client.clientsIds = replacedClients;
                 // Update client
                 await this.clientRepo.getEntityManager().persistAndFlush(client);
             }
