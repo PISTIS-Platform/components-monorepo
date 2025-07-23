@@ -16,6 +16,7 @@
         "baseUrl": ".",
         "paths": {
             "@pistis/blockchain": ["libs/blockchain/src/index.ts"],
+            "@pistis/bullMq": ["libs/bullMq/src/index.ts"],
             "@pistis/component-health": ["libs/component-health/src/index.ts"],
             "@pistis/consumer": ["libs/consumer/src/index.ts"],
             "@pistis/contracts": ["libs/contracts/src/index.ts"],
