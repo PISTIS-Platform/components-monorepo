@@ -1,7 +1,8 @@
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityRepository, EntityManager } from '@mikro-orm/postgresql';
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { wrap } from '@mikro-orm/core';
+import { UserInfo } from '@pistis/shared';
 
 import { CreateAnswerDto } from '../dto/create-answer.dto';
 import { Answer, Questionnaire, Question } from '../entities';
@@ -45,7 +46,6 @@ export class AnswersService {
         if (answers) {
             throw new BadRequestException('You have already submitted answers for this asset');
         }
-        console.log({ questionnaire });
         return questionnaire;
     }
 
@@ -67,7 +67,11 @@ export class AnswersService {
         return answer;
     }
 
-    async getAnswers(assetId: string) {
+    async getAnswers(assetId: string, user: UserInfo) {
+        const questionnaire = await this.questionnaireRepo.findOne({
+            creatorId: user.id,
+        });
+
         const answers = await this.answersRepo.find(
             {
                 assetId,
@@ -77,6 +81,11 @@ export class AnswersService {
             },
         );
 
-        return answers;
+        //If user is the creator or if the user is an admin (no organizationId), allow
+        if (user.id === questionnaire?.creatorId || !user.organizationId) {
+            return answers;
+        } else {
+            throw new UnauthorizedException();
+        }
     }
 }
