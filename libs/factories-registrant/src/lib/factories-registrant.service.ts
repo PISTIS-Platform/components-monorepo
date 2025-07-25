@@ -468,9 +468,7 @@ export class FactoriesRegistrantService {
 
                 //Call the function to create the new client in keycloak
                 createdClients = await this.keycloakClients(updatedClients, token, 'patch');
-                if (!JSON.parse(createdClients[0]).lenght) {
-                    return;
-                }
+                if (!createdClients.length) return;
                 const [keycloakId, keycloakSecret] = JSON.parse(createdClients[0]);
                 // Returns the created clientId and secret
                 // We need to update the client in the DB with the new secret
