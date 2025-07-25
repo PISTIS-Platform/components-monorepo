@@ -29,7 +29,7 @@ export class AnswersService {
                     'questions.options',
                     'questions.isRequired',
                 ],
-                fields: ['title', 'description'],
+                fields: ['title', 'description', 'creatorId'],
             },
         );
     }
@@ -45,6 +45,7 @@ export class AnswersService {
         if (answers) {
             throw new BadRequestException('You have already submitted answers for this asset');
         }
+        console.log({ questionnaire });
         return questionnaire;
     }
 
