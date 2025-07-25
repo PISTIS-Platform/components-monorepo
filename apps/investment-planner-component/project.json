@@ -1,0 +1,85 @@
+{
+    "name": "investment-planner-component",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "apps/investment-planner-component/src",
+    "projectType": "application",
+    "targets": {
+        "serve": {
+            "executor": "@nx/js:node",
+            "defaultConfiguration": "development",
+            "options": {
+                "buildTarget": "investment-planner-component:build"
+            },
+            "configurations": {
+                "development": {
+                    "buildTarget": "investment-planner-component:build:development"
+                },
+                "production": {
+                    "buildTarget": "investment-planner-component:build:production"
+                }
+            }
+        },
+        "build-migrations": {
+            "executor": "nx:run-commands",
+            "options": {
+                "cwd": "apps/investment-planner-component",
+                "command": "tsc --project ./tsconfig.orm.json"
+            }
+        },
+        "migration": {
+            "executor": "nx:run-commands",
+            "options": {
+                "cwd": "apps/investment-planner-component",
+                "command": "npx mikro-orm {args.action}"
+            },
+            "defaultConfiguration": "pending",
+            "configurations": {
+                "check": {
+                    "args": "--action=migration:check"
+                },
+                "pending": {
+                    "args": "--action=migration:pending"
+                },
+                "list": {
+                    "args": "--action=migration:list"
+                },
+                "up": {
+                    "args": "--action=migration:up"
+                },
+                "down": {
+                    "args": "--action=migration:down"
+                },
+                "create": {
+                    "args": "--action=migration:create"
+                }
+            }
+        },
+        "container": {
+            "executor": "@nx-tools/nx-container:build",
+            "dependsOn": [
+                "build",
+                "build-migrations"
+            ],
+            "options": {
+                "engine": "docker",
+                "platforms": [
+                    "linux/amd64"
+                ],
+                "metadata": {
+                    "images": [
+                        "registry.pistis-market.eu/pistis/data-investment-planner-component"
+                    ],
+                    "load": true,
+                    "labels": [
+                        "org.opencontainers.image.authors=Suite5 Information Technology Solutions",
+                        "org.opencontainers.image.version=1.0.0"
+                    ],
+                    "tags": [
+                        "1.3.0"
+                    ]
+                }
+            }
+        }
+    },
+    "tags": []
+}

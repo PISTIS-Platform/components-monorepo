@@ -1,0 +1,8 @@
+{
+    "name": "investment-planner",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/investment-planner/src",
+    "projectType": "library",
+    "targets": {},
+    "tags": []
+}
