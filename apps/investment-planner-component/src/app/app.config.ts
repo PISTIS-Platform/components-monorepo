@@ -2,15 +2,7 @@ import { registerAs } from '@nestjs/config';
 import { IAppConfig } from '@pistis/shared';
 
 export type IInvestmentPlannerConfig = IAppConfig & {
-    dataStorageUrl: string;
     notificationsUrl: string;
-    factoryRegistryUrl: string;
-    blockchainUrl: string;
-    metadataRepositoryUrl: string;
-    downloadBatchSize: number;
-    catalogId: string;
-    catalogKey: string;
-    catalogUrl: string;
 };
 
 export const AppConfig = registerAs(
@@ -31,16 +23,8 @@ export const AppConfig = registerAs(
             clientId: process.env.KC_CLIENT_ID,
             clientSecret: process.env.KC_CLIENT_SECRET,
         },
-        dataStorageUrl: process.env.DATA_STORE_URL,
         notificationsUrl: process.env.CLOUD_URL,
-        factoryRegistryUrl: process.env.FACTORY_REGISTRY_URL,
-        blockchainUrl: process.env.BLOCKCHAIN_URL,
-        metadataRepositoryUrl: process.env.METADATA_REPOSITORY_URL,
-        downloadBatchSize: +process.env.DOWNLOAD_BATCH_SIZE,
         isDevelopment: process.env.NODE_ENV !== 'production',
         swaggerBaseUrl: process.env.SWAGGER_BASE_URL ?? '/',
-        catalogId: process.env.CATALOG_ACQUIRED_ID,
-        catalogKey: process.env.CATALOG_API_KEY,
-        catalogUrl: process.env.CATALOG_URL,
     }),
 );

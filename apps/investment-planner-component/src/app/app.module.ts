@@ -45,10 +45,6 @@ import { AppConfig, IInvestmentPlannerConfig } from './app.config';
             imports: [ConfigModule.forFeature(AppConfig)],
             useFactory: async (options: IInvestmentPlannerConfig) => ({
                 notificationsUrl: options.notificationsUrl,
-                factoryRegistryUrl: options.factoryRegistryUrl,
-                catalogId: options.catalogId,
-                catalogKey: options.catalogKey,
-                catalogUrl: options.catalogUrl,
                 clientId: options.keycloak.clientId,
                 secret: options.keycloak.clientSecret,
                 authServerUrl: options.keycloak.url,
