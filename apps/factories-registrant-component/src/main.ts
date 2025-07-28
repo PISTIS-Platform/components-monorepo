@@ -8,6 +8,8 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { consoleTransport } from '@pistis/shared';
 import { WinstonModule } from 'nest-winston';
 import { OpenTelemetryTransportV3 } from '@opentelemetry/winston-transport';
+// Correct adapter for BullMQ
+// Express adapter for NestJS
 
 import { AppModule } from './app/app.module';
 
@@ -19,8 +21,22 @@ async function bootstrap() {
             transports: [consoleTransport, new OpenTelemetryTransportV3()],
         }),
     });
+
     app.setGlobalPrefix('api');
     app.useGlobalPipes(new ValidationPipe());
+    // --- Bull Dashboard Integration ---
+    // IMPORTANT: Call app.init() *before* registering the dashboard module
+    // This ensures all providers (like your BullMQ Queues) are initialized
+    // and available for injection into BullmqDashboardModule.
+    await app.init();
+
+    // Register the BullmqDashboardModule.
+    // Its onModuleInit hook will automatically mount the dashboard.
+    // The previous line 'await app.select(BullmqDashboardModule).compile();' is
+    // not needed as app.init() handles module compilation and initialization.
+
+    Logger.log(`🚀 Bull Dashboard UI available at: http://localhost:${process.env.PORT || 3004}/admin/queues`);
+    // --- End Bull Dashboard Integration ---
 
     const config = app.get(ConfigService);
     const port = config.get<number>('app.port', 3005);

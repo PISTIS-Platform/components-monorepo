@@ -1,3 +1,4 @@
+import { InjectQueue } from '@nestjs/bull';
 import {
     Body,
     Controller,
@@ -11,15 +12,9 @@ import {
     Res,
     StreamableFile,
 } from '@nestjs/common';
-import {
-    ApiBearerAuth,
-    ApiBody,
-    ApiNotFoundResponse,
-    ApiOkResponse,
-    ApiTags,
-    ApiUnauthorizedResponse,
-} from '@nestjs/swagger';
+import { ApiBody, ApiNotFoundResponse, ApiOkResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { ADMIN_ROLE, AuthToken, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
+import { Queue } from 'bullmq';
 import type { Response } from 'express';
 import { createReadStream } from 'fs';
 import { AuthenticatedUser, Roles } from 'nest-keycloak-connect';
@@ -36,7 +31,7 @@ import { ServicesMappingService } from './services-mapping.service';
 
 @Controller('factories')
 @ApiTags('factories-registrant')
-@ApiBearerAuth()
+// @ApiBearerAuth()
 @ApiUnauthorizedResponse({
     description: 'Unauthorized.',
     schema: {
@@ -59,6 +54,7 @@ export class FactoriesRegistrantController {
     constructor(
         private readonly factoriesService: FactoriesRegistrantService,
         private readonly servicesMappingService: ServicesMappingService,
+        @InjectQueue('default') private factoryQueue: Queue,
     ) {}
 
     @Get()
@@ -309,7 +305,10 @@ export class FactoriesRegistrantController {
     async findFactoryInfo(
         @Param('factoryId', new ParseUUIDPipe({ version: '4' })) factoryId: string,
     ): Promise<FactoriesRegistrant> {
-        return this.factoriesService.retrieveFactory(factoryId);
+        const factory = await this.factoryQueue.add('retrieveFactory', { factoryId });
+
+        return factory.asJSON as any;
+        // return this.factoriesService.retrieveFactory(factoryId);
     }
 
     @Get('/organization/:orgId')

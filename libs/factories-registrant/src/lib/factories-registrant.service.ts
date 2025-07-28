@@ -1,8 +1,11 @@
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityRepository, Loaded } from '@mikro-orm/postgresql';
 import { HttpService } from '@nestjs/axios';
+import { InjectQueue } from '@nestjs/bull';
 import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
+import { BullMqService } from '@pistis/bullMq';
 import { getHeaders } from '@pistis/shared';
+import { Queue } from 'bullmq';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
@@ -30,6 +33,8 @@ export class FactoriesRegistrantService {
         private readonly httpService: HttpService,
         private readonly servicesMappingService: ServicesMappingService,
         @Inject(MODULE_OPTIONS_TOKEN) private options: FactoryModuleOptions, // private readonly mailerService: MailerService,
+        @InjectQueue('default') private factoryQueue: Queue,
+        private readonly queueService: BullMqService,
     ) {}
 
     async checkClient(organizationId: string, token: string) {
@@ -251,7 +256,10 @@ export class FactoriesRegistrantService {
         );
     }
 
-    async retrieveFactory(factoryId: string): Promise<FactoriesRegistrant> {
+    async retrieveFactory(job: any): Promise<FactoriesRegistrant> {
+        const factoryId = job.data.factoryId;
+        const factory = await this.repo.findOneOrFail({ id: factoryId });
+        return factory;
         return this.repo.findOneOrFail({ id: factoryId });
     }
 
