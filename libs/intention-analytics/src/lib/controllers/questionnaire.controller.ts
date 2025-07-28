@@ -239,8 +239,8 @@ export class QuestionnaireController {
         },
         status: 200,
     })
-    async getAnswers(@Param('assetId') assetId: string) {
-        return this.answersService.getAnswers(assetId);
+    async getAnswers(@Param('assetId') assetId: string, @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo) {
+        return this.answersService.getAnswers(assetId, user);
     }
 
     @Post()

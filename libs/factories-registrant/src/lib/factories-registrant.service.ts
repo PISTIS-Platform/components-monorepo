@@ -431,7 +431,7 @@ export class FactoriesRegistrantService {
                             `https://${factory?.factoryPrefix}.pistis-market.eu${service.serviceUrl.replace(
                                 /\/+$/,
                                 '',
-                            )}}/*`,
+                            )}/*`,
                         ],
                         webOrigins: ['*'],
                     },
@@ -468,6 +468,21 @@ export class FactoriesRegistrantService {
 
                 //Call the function to create the new client in keycloak
                 createdClients = await this.keycloakClients(updatedClients, token, 'patch');
+                if (!createdClients.length) return;
+                const [keycloakId, keycloakSecret] = JSON.parse(createdClients[0]);
+                // Returns the created clientId and secret
+                // We need to update the client in the DB with the new secret
+                // Find the client in the existing clients and update the secret
+                const replacedClients = client.clientsIds.map((clientId: any) => {
+                    const [id] = JSON.parse(clientId);
+                    if (id === keycloakId) {
+                        return JSON.stringify([keycloakId, keycloakSecret]);
+                    }
+                    return clientId;
+                });
+
+                // // Replace the clientsIds with the updated ones from above
+                client.clientsIds = replacedClients;
                 // Update client
                 await this.clientRepo.getEntityManager().persistAndFlush(client);
             }

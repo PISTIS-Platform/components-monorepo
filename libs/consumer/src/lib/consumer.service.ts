@@ -158,10 +158,17 @@ export class ConsumerService {
                 });
 
                 const title = metadata.distributions
-                    .map(({ title }: any) => title?.en ?? null)
-                    .filter((en: any) => en !== null);
+                    .map((distribution: any) => {
+                        const titleObject = distribution.title;
+
+                        if (titleObject && Object.keys(titleObject).length > 0) {
+                            return Object.values(titleObject)[0] as string;
+                        }
+                        return null;
+                    })
+                    .filter((title: string | null) => title !== null); // Filter out nulls
                 const createFile = await this.dataStorageService.createFile(
-                    fileResult.data,
+                    fileResult,
                     title[0],
                     token,
                     factory.factoryPrefix,
