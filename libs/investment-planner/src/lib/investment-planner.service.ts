@@ -23,14 +23,7 @@ export class InvestmentPlannerService {
     ) {}
 
     async retrieveInvestmentPlan(assetId: string) {
-        let investment;
-        try {
-            investment = await this.repo.findOneOrFail({ cloudAssetId: assetId });
-        } catch (error) {
-            console.error(`Error retrieving plan: ${error}`);
-            throw new Error(`Error retrieving plan: ${error}`);
-        }
-        return investment;
+        return await this.repo.findOneOrFail({ cloudAssetId: assetId });
     }
 
     async createInvestmentPlan(data: CreateInvestmentPlanDTO, user: UserInfo) {
@@ -61,21 +54,15 @@ export class InvestmentPlannerService {
     }
 
     async updateInvestmentPlan(id: string, data: any, user: UserInfo) {
-        let userInvestmentPlan;
         const investmentPlan = await this.repo.findOneOrFail({ id: id });
         if (investmentPlan.remainingShares === null) {
             investmentPlan.remainingShares = investmentPlan.totalShares - data.numberOfShares;
         } else {
             investmentPlan.remainingShares -= data.numberOfShares;
         }
-        try {
-            await this.repo.getEntityManager().persistAndFlush(investmentPlan);
-            userInvestmentPlan = await this.createUserInvestmentPlan(investmentPlan, data.numberOfShares, user.id);
-        } catch (error) {
-            this.logger.error(`Error creating investment plan: ${error}`);
-            throw new Error(`Error creating investment plan: ${error}`);
-        }
-        return userInvestmentPlan;
+
+        await this.repo.getEntityManager().persistAndFlush(investmentPlan);
+        return await this.createUserInvestmentPlan(investmentPlan, data.numberOfShares, user.id);
     }
 
     private async createUserInvestmentPlan(data: any, numberOfShares: number, userId: string) {
@@ -97,18 +84,11 @@ export class InvestmentPlannerService {
 
     async getUserInvestmentPlan(assetId: string, user: UserInfo) {
         const investmentPlan = await this.repo.findOneOrFail({ id: assetId, status: true });
-        let userInvestment;
-        try {
-            userInvestment = await this.userInvestmentRepo.findOneOrFail({
-                cloudAssetId: assetId,
-                userId: user.id,
-                investmentPlan: { id: investmentPlan.id, status: investmentPlan.status },
-            });
-        } catch (error) {
-            this.logger.error(`Error retrieving user investment plan: ${error}`);
-            throw new BadRequestException(`Error retrieving user investment plan: ${error}`);
-        }
-        return userInvestment;
+        return await this.userInvestmentRepo.findOneOrFail({
+            cloudAssetId: assetId,
+            userId: user.id,
+            investmentPlan: { id: investmentPlan.id, status: investmentPlan.status },
+        });
     }
 
     //TODO: check if we want notifications for this component

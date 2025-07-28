@@ -90,7 +90,18 @@ export class InvestmentPlannerController {
     @Put('/update/:planId')
     @ApiOkResponse({
         description: '',
-        schema: { example: { asset_uuid: 'ae755a90-b7bc-4c28-bfc8-7a4fb247328b', message: 'Table created' } },
+        schema: {
+            example: {
+                id: '1818ed08-9087-43f1-b41c-13284d9a6db3',
+                cloudAssetId: 'c74d8d5f-9351-428d-9c86-b7356526bf32',
+                userId: '1818ed08-9087-43f1-b41c-13284d9a6db3',
+                dueDate: '2025-07-23 21:00:00+00',
+                shares: 10,
+                investmentPlan: 'c74d8d5f-9351-428d-9c86-b7356526bf32',
+                createdAt: '2024-10-01T12:00:00Z',
+                updatedAt: '2024-10-01T12:00:00Z',
+            },
+        },
     })
     async updateInvestmentPlan(
         @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
