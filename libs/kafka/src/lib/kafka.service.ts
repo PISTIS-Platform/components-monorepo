@@ -370,11 +370,11 @@ export class KafkaService {
             password = (await this.getDecodedSecret(factoryName)) ?? '';
         }
 
-        const externalPorts = this.config.get('kafka.externalPorts')?.split(',') ?? [];
+        const factoryPorts = this.config.get('kafka.factoryPorts')?.split(',') ?? [];
         return {
             username: factoryName,
             password,
-            bootstrapServers: externalPorts
+            bootstrapServers: factoryPorts
                 .map((port: string) => `kafka.${factoryName}.pistis-market.eu:${port}`)
                 .join(','),
             securityProtocol: 'SASL_PLAINTEXT',
