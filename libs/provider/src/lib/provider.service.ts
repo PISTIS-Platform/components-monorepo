@@ -162,7 +162,7 @@ export class ProviderService {
             publisher: {
                 type: 'Organization',
                 email: 'mailto:admin@pistis.eu',
-                name: factory.factoryPrefix.toUpperCase(),
+                name: factory?.factoryPrefix?.toUpperCase(),
             },
             keywords: null,
             monetization: [
