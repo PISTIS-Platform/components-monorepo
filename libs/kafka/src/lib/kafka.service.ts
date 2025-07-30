@@ -51,6 +51,22 @@ export class KafkaService {
     }
 
     /**
+     * Kafka base config
+     * @returns
+     */
+    getKafkaConfig = (): {
+        bootstrapServers: string;
+        securityProtocol: string;
+        saslMechanism: string;
+    } => {
+        return {
+            bootstrapServers: this.config.get<string>('kafka.bootstrapServers') ?? '',
+            securityProtocol: 'SASL_PLAINTEXT',
+            saslMechanism: 'SCRAM-SHA-512',
+        };
+    };
+
+    /**
      * Create a Kafka topic in the Kubernetes cluster
      * @param id The unique identifier for the Kafka topic
      * @param retentionMs The duration in ms for how long the messages will remain stored within topic
@@ -225,7 +241,8 @@ export class KafkaService {
         const name = `kc-${config.source.id}--${config.target.id}`;
         this.logger.debug(`Creating MirrorSource Kafka connector "${name}"`);
 
-        const sourceBootstrapServers = this.config.get<string>('kafka.bootstrapServers');
+        const { bootstrapServers, saslMechanism, securityProtocol } = this.getKafkaConfig();
+
         const sourceClusterAlias = `kc-source-${generatePassword(10)}`;
         const targetClusterAlias = 'kc-target';
 
@@ -252,20 +269,20 @@ export class KafkaService {
                     topics: providerTopic,
                     'target.cluster.alias': targetClusterAlias,
                     'source.cluster.alias': sourceClusterAlias,
-                    'source.cluster.bootstrap.servers': sourceBootstrapServers,
+                    'source.cluster.bootstrap.servers': bootstrapServers,
                     'source.consumer.auto.offset.reset': 'latest',
-                    'source.cluster.security.protocol': 'SASL_PLAINTEXT',
-                    'source.cluster.sasl.mechanism': 'SCRAM-SHA-512',
+                    'source.cluster.security.protocol': securityProtocol,
+                    'source.cluster.sasl.mechanism': saslMechanism,
                     'source.cluster.sasl.jaas.config': `org.apache.kafka.common.security.scram.ScramLoginModule required username="${providerUsername}" password="${providerPassword}";`,
                     'target.cluster.bootstrap.servers': config.target.bootstrapServers,
-                    'target.cluster.security.protocol': 'SASL_PLAINTEXT',
-                    'target.cluster.sasl.mechanism': 'SCRAM-SHA-512',
+                    'target.cluster.security.protocol': securityProtocol,
+                    'target.cluster.sasl.mechanism': saslMechanism,
                     'target.cluster.sasl.jaas.config': `org.apache.kafka.common.security.scram.ScramLoginModule required username="${config.target.username}" password="${config.target.password}";`,
-                    'consumer.override.sasl.mechanism': 'SCRAM-SHA-512',
-                    'consumer.override.security.protocol': 'SASL_PLAINTEXT',
+                    'consumer.override.sasl.mechanism': saslMechanism,
+                    'consumer.override.security.protocol': securityProtocol,
                     'consumer.override.sasl.jaas.config': `org.apache.kafka.common.security.scram.ScramLoginModule required username="${providerUsername}" password="${providerPassword}";`,
-                    'producer.override.sasl.mechanism': 'SCRAM-SHA-512',
-                    'producer.override.security.protocol': 'SASL_PLAINTEXT',
+                    'producer.override.sasl.mechanism': saslMechanism,
+                    'producer.override.security.protocol': securityProtocol,
                     'producer.override.sasl.jaas.config': `org.apache.kafka.common.security.scram.ScramLoginModule required username="${config.target.username}" password="${config.target.password}";`,
                     'key.converter': 'org.apache.kafka.connect.converters.ByteArrayConverter',
                     'value.converter': 'org.apache.kafka.connect.converters.ByteArrayConverter',
@@ -370,13 +387,7 @@ export class KafkaService {
             password = (await this.getDecodedSecret(factoryName)) ?? '';
         }
 
-        return {
-            username: factoryName,
-            password,
-            bootstrapServers: this.config.get<string>('kafka.bootstrapServers') ?? '',
-            securityProtocol: 'SASL_PLAINTEXT',
-            saslMechanism: 'SCRAM-SHA-512',
-        };
+        return { username: factoryName, password, ...this.getKafkaConfig() };
     }
 
     /**
