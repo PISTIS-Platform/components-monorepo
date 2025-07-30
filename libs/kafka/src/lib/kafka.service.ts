@@ -374,9 +374,7 @@ export class KafkaService {
         return {
             username: factoryName,
             password,
-            bootstrapServers: brokerPorts
-                .map((port: string) => `kafka.${factoryName}.pistis-market.eu:${port}`)
-                .join(','),
+            bootstrapServers: brokerPorts.map((port: string) => `${factoryName}.pistis-market.eu:${port}`).join(','),
             securityProtocol: 'SASL_PLAINTEXT',
             saslMechanism: 'SCRAM-SHA-512',
         };
