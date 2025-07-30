@@ -199,7 +199,7 @@ export class ProviderService {
 
         try {
             const data = await this.createKafkaUserAndTopic(assetId);
-            return { ...data, ...this.kafkaService.getKafkaConfig() };
+            return { ...data, id: assetId, ...this.kafkaService.getKafkaConfig() };
         } catch (e) {
             this.logger.error('Error creating kafka user and topic:', e);
             throw new BadGatewayException('Error creating kafka user and topic');
