@@ -370,11 +370,11 @@ export class KafkaService {
             password = (await this.getDecodedSecret(factoryName)) ?? '';
         }
 
-        const brokerPorts = this.config.get('kafka.brokerPorts')?.split(',') ?? [];
+        const brokersPorts = this.config.get('kafka.brokersPorts')?.split(',') ?? [];
         return {
             username: factoryName,
             password,
-            bootstrapServers: brokerPorts.map((port: string) => `${factoryName}.pistis-market.eu:${port}`).join(','),
+            bootstrapServers: brokersPorts.map((port: string) => `${factoryName}.pistis-market.eu:${port}`).join(','),
             securityProtocol: 'SASL_PLAINTEXT',
             saslMechanism: 'SCRAM-SHA-512',
         };
