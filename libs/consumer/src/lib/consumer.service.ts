@@ -197,7 +197,7 @@ export class ConsumerService {
         } else {
             metadata.distributions.map((item: any) => {
                 if (item.access_url) {
-                    return (item.access_url = [`https://${factory.factoryPrefix}.pistis-market.eu:9092`]);
+                    return (item.access_url = [`https://${factory.factoryPrefix}.pistis-market.eu:9094`]);
                 }
                 return;
             });
