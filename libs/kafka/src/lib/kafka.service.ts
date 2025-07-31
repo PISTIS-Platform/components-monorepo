@@ -61,7 +61,7 @@ export class KafkaService {
     } => {
         return {
             bootstrapServers: this.config.get<string>('kafka.bootstrapServers') ?? '',
-            securityProtocol: 'SASL_PLAINTEXT',
+            securityProtocol: 'SASL_SSL',
             saslMechanism: 'SCRAM-SHA-512',
         };
     };
