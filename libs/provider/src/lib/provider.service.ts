@@ -147,7 +147,7 @@ export class ProviderService {
     async createStreamingMetadata(token: string, data: StreamingDataDto) {
         let factory;
         const assetId = uuidV4();
-        let kafkaResponse;
+
         try {
             factory = await this.retrieveFactory(token);
         } catch (err) {
@@ -198,13 +198,12 @@ export class ProviderService {
         }
 
         try {
-            kafkaResponse = await this.createKafkaUserAndTopic(assetId);
+            const data = await this.createKafkaUserAndTopic(assetId);
+            return { id: assetId, ...data, ...this.kafkaService.getKafkaConfig() };
         } catch (e) {
             this.logger.error('Error creating kafka user and topic:', e);
             throw new BadGatewayException('Error creating kafka user and topic');
         }
-
-        return kafkaResponse;
     }
 
     private async retrieveFactory(token: string) {
