@@ -162,7 +162,7 @@ export class ProviderService {
             publisher: {
                 type: 'Organization',
                 email: 'mailto:admin@pistis.eu',
-                name: factory?.factoryPrefix?.toUpperCase(),
+                name: factory.factoryPrefix.toUpperCase(),
             },
             keywords: null,
             monetization: [
@@ -199,7 +199,7 @@ export class ProviderService {
 
         try {
             const data = await this.createKafkaUserAndTopic(assetId);
-            return { ...data, id: assetId, ...this.kafkaService.getKafkaConfig() };
+            return { id: assetId, ...data, ...this.kafkaService.getKafkaConfig() };
         } catch (e) {
             this.logger.error('Error creating kafka user and topic:', e);
             throw new BadGatewayException('Error creating kafka user and topic');
