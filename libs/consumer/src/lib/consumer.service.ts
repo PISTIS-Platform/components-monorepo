@@ -10,6 +10,7 @@ import {
     NotFoundException,
 } from '@nestjs/common';
 import { Column, DataStorageService } from '@pistis/data-storage';
+import { KafkaService } from '@pistis/kafka';
 import { MetadataRepositoryService } from '@pistis/metadata-repository';
 import { getHeaders } from '@pistis/shared';
 import { catchError, firstValueFrom, map, of, tap, throwError } from 'rxjs';
@@ -29,11 +30,13 @@ export class ConsumerService {
         private readonly dataStorageService: DataStorageService,
         @Inject(CONSUMER_MODULE_OPTIONS) private options: ConsumerModuleOptions,
         private readonly metadataRepositoryService: MetadataRepositoryService,
+        private readonly kafkaService: KafkaService,
     ) {}
 
     async retrieveData(assetId: string, user: any, token: string, data: RetrieveDataDTO) {
         let factory: any;
         let metadata;
+        let isStreamingData: boolean;
 
         let providerFactory: any;
         try {
@@ -148,7 +151,7 @@ export class ConsumerService {
                 this.logger.error('Transfer SQL data error:', err);
                 throw new BadGatewayException('Transfer SQL data error');
             }
-        } else {
+        } else if (format[0] === 'CSV') {
             try {
                 const fileResult = await this.getDataFromProvider(assetId, token, {
                     providerPrefix: providerFactory.factoryPrefix,
@@ -191,25 +194,44 @@ export class ConsumerService {
                 this.logger.error('Transfer file data error:', err);
                 throw new BadGatewayException('Transfer file data error');
             }
+        } else {
+            metadata.distributions.map((item: any) => {
+                if (item.access_url) {
+                    return (item.access_url = [`https://${factory.factoryPrefix}.pistis-market.eu:9094`]);
+                }
+                return;
+            });
         }
 
         try {
+            isStreamingData = !(format[0] === 'SQL' || format[0] === 'CSV');
             await this.metadataRepositoryService.createMetadata(
                 metadata,
                 this.options.catalogId,
                 factory.factoryPrefix,
+                isStreamingData,
             );
         } catch (err) {
             this.logger.error('Metadata creation error:', err);
             throw new BadGatewayException('Metadata creation error');
         }
 
-        const notification = {
-            userId: user.id,
-            organizationId: user.organizationId,
-            type: 'asset_retrieved',
-            message: 'Asset retrieval finished',
-        };
+        let notification: any;
+        if (format[0] === 'SQL' || format[0] === 'CSV') {
+            notification = {
+                userId: user.id,
+                organizationId: user.organizationId,
+                type: 'asset_retrieved',
+                message: 'Asset retrieval finished',
+            };
+        } else {
+            notification = {
+                userId: user.id,
+                organizationId: user.organizationId,
+                type: 'streaming_data',
+                message: 'Streaming data retrieval',
+            };
+        }
         const tokenData = {
             grant_type: 'client_credentials',
             client_id: this.options.clientId,
@@ -311,5 +333,22 @@ export class ConsumerService {
                     }),
                 ),
         );
+    }
+
+    async createKafkaUserAndTopic(assetId: string) {
+        this.logger.log('Creating Kafka user and topic...');
+
+        try {
+            const topic = await this.kafkaService.createTopic(assetId);
+            const kafkaUser = await this.kafkaService.createConsumerUser(assetId);
+            return { topic, kafkaUser };
+        } catch (e) {
+            this.logger.error('Error creating Kafka user and topic:', e);
+            throw new BadGatewayException('Error creating Kafka user and topic');
+        }
+    }
+
+    async getFactoryConnectionDetails(token: string) {
+        return await this.kafkaService.getFactoryConnectionDetails(token);
     }
 }

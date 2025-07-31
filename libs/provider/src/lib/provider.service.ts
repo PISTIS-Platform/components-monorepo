@@ -1,15 +1,33 @@
-import { BadGatewayException, BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { HttpService } from '@nestjs/axios';
+import {
+    BadGatewayException,
+    BadRequestException,
+    Inject,
+    Injectable,
+    Logger,
+    NotFoundException,
+} from '@nestjs/common';
 import { DataStorageService } from '@pistis/data-storage';
+import { KafkaService } from '@pistis/kafka';
 import { MetadataRepositoryService } from '@pistis/metadata-repository';
+import { getHeaders } from '@pistis/shared';
+import { catchError, firstValueFrom, map, of } from 'rxjs';
+import { v4 as uuidV4 } from 'uuid';
 
 import { PaginationDto } from './dto/pagination.dto';
+import { StreamingDataDto } from './dto/streaming-data.dto';
+import { PROVIDER_MODULE_OPTIONS } from './provider.module-definition';
+import { ProviderModuleOptions } from './provider-module-options.interface';
 
 @Injectable()
 export class ProviderService {
     private readonly logger = new Logger(ProviderService.name);
     constructor(
         private readonly dataStorageService: DataStorageService,
+        @Inject(PROVIDER_MODULE_OPTIONS) private options: ProviderModuleOptions,
         private readonly metadataRepositoryService: MetadataRepositoryService,
+        private readonly kafkaService: KafkaService,
+        private readonly httpService: HttpService,
     ) {}
 
     async downloadDataset(assetId: string, paginationData: PaginationDto, token: string) {
@@ -111,5 +129,98 @@ export class ProviderService {
             }
         }
         return returnedValue;
+    }
+
+    async createKafkaUserAndTopic(assetId: string) {
+        this.logger.log('Creating Kafka user and topic...');
+
+        try {
+            const topic = await this.kafkaService.createTopic(assetId);
+            const kafkaUser = await this.kafkaService.createProviderUser(assetId);
+            return { topic, kafkaUser };
+        } catch (e) {
+            this.logger.error('Error creating Kafka user and topic:', e);
+            throw new BadGatewayException('Error creating Kafka user and topic');
+        }
+    }
+
+    async createStreamingMetadata(token: string, data: StreamingDataDto) {
+        let factory;
+        const assetId = uuidV4();
+
+        try {
+            factory = await this.retrieveFactory(token);
+        } catch (err) {
+            this.logger.error('Factory retrieval error:', err);
+            throw new NotFoundException(`Factory not found: ${err}`);
+        }
+
+        const metadata = {
+            id: assetId,
+            title: { en: data.title },
+            description: { en: data.description },
+            publisher: {
+                type: 'Organization',
+                email: 'mailto:admin@pistis.eu',
+                name: factory.factoryPrefix.toUpperCase(),
+            },
+            keywords: null,
+            monetization: [
+                {
+                    license: {
+                        id: '_:g1',
+                        label: 'Subscription License',
+                        description: 'Subscription License',
+                        resource: 'https://pistis-market.eu/license/497c3001-8ab2-4a3f-8e3d-5dba6ac0760b',
+                    },
+                },
+            ],
+            distributions: [
+                {
+                    title: { en: 'Streaming Data Distribution' },
+                    access_url: [`http://kafka.${factory.factoryPrefix}.pistis-market.eu:9094`],
+                    format: { resource: 'Kafka-stream' },
+                    byte_size: '0',
+                },
+            ],
+        };
+
+        try {
+            await this.metadataRepositoryService.createMetadata(
+                metadata,
+                this.options.catalogOwnedId,
+                factory.factoryPrefix,
+                true,
+            );
+        } catch (e) {
+            this.logger.error('Error creating streaming metadata:', e);
+            throw new BadGatewayException('Error creating streaming metadata');
+        }
+
+        try {
+            const data = await this.createKafkaUserAndTopic(assetId);
+            return { id: assetId, ...data, ...this.kafkaService.getKafkaConfig() };
+        } catch (e) {
+            this.logger.error('Error creating kafka user and topic:', e);
+            throw new BadGatewayException('Error creating kafka user and topic');
+        }
+    }
+
+    private async retrieveFactory(token: string) {
+        return await firstValueFrom(
+            this.httpService
+                .get(`${this.options.factoryRegistryUrl}/api/factories/user-factory`, {
+                    headers: getHeaders(token),
+                })
+                .pipe(
+                    map(async (res) => {
+                        return res.data;
+                    }),
+                    catchError((error) => {
+                        this.logger.error('Factory retrieval error:', error);
+                        return of({ error: 'Error occurred during retrieving factory' });
+                    }),
+                ),
+        );
     }
 }
