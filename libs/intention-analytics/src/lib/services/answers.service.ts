@@ -1,9 +1,11 @@
 import { InjectRepository } from '@mikro-orm/nestjs';
-import { EntityRepository } from '@mikro-orm/postgresql';
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { EntityRepository, EntityManager } from '@mikro-orm/postgresql';
+import { BadRequestException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { wrap } from '@mikro-orm/core';
+import { UserInfo } from '@pistis/shared';
 
 import { CreateAnswerDto } from '../dto/create-answer.dto';
-import { Answer, Questionnaire } from '../entities';
+import { Answer, Questionnaire, Question } from '../entities';
 
 @Injectable()
 export class AnswersService {
@@ -11,6 +13,7 @@ export class AnswersService {
     constructor(
         @InjectRepository(Answer) private readonly answersRepo: EntityRepository<Answer>,
         @InjectRepository(Questionnaire) private readonly questionnaireRepo: EntityRepository<Questionnaire>,
+        @InjectRepository(Question) private readonly questionRepo: EntityRepository<Question>,
     ) {}
 
     async findActiveVersion(isForVerifiedBuyers: boolean) {
@@ -27,7 +30,7 @@ export class AnswersService {
                     'questions.options',
                     'questions.isRequired',
                 ],
-                fields: ['title', 'description'],
+                fields: ['title', 'description', 'creatorId'],
             },
         );
     }
@@ -64,14 +67,25 @@ export class AnswersService {
         return answer;
     }
 
-    async getAnswers(assetId: string) {
-        return this.answersRepo.find(
+    async getAnswers(assetId: string, user: UserInfo) {
+        const questionnaire = await this.questionnaireRepo.findOne({
+            creatorId: user.id,
+        });
+
+        const answers = await this.answersRepo.find(
             {
                 assetId,
             },
             {
-                fields: ['responses'],
+                fields: ['responses', 'createdAt'],
             },
         );
+
+        //If user is the creator or if the user is an admin (no organizationId), allow
+        if (user.id === questionnaire?.creatorId || !user.organizationId) {
+            return answers;
+        } else {
+            throw new UnauthorizedException();
+        }
     }
 }

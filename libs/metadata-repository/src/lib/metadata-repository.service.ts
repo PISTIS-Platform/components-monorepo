@@ -12,7 +12,7 @@ export class MetadataRepositoryService {
     constructor(
         private readonly httpService: HttpService,
         @Inject(MODULE_OPTIONS_TOKEN) private options: MetadataRepositoryModuleOptions,
-    ) { }
+    ) {}
 
     async retrieveMetadata(assetId: string) {
         let metadata;
@@ -58,8 +58,9 @@ export class MetadataRepositoryService {
         return catalog;
     }
 
-    async createMetadata(metadata: any, catalogId: string, factoryPrefix: string) {
+    async createMetadata(metadata: any, catalogId: string, factoryPrefix: string, isStreamingData: boolean) {
         let newMetadata;
+        let byteSizeValue;
 
         const getValue = (key: string, value: string) => {
             const entry = metadata.distributions.find((item: any) => item[key]);
@@ -70,9 +71,12 @@ export class MetadataRepositoryService {
             return entry ? (value !== '' ? entry[key][value] : entry[key]) : '';
         };
 
-        const byteSizeValue = getValue('byte_size', '');
+        if (isStreamingData) {
+            byteSizeValue = '';
+        } else {
+            byteSizeValue = getValue('byte_size', '');
+        }
         const byteSizeEntry = byteSizeValue ? `dcat:byteSize  "${byteSizeValue}"^^xsd:decimal ;` : '';
-
 
         const rdfData = `
             @prefix dcat:                <http://www.w3.org/ns/dcat#> .
@@ -87,10 +91,11 @@ export class MetadataRepositoryService {
                 a                   dcat:Dataset ;
                 dct:description     "${metadata.description.en}"@en ;
                 dct:title           "${metadata.title.en}"@en ;
-                dcat:keyword        ${metadata.keywords != null
-                ? metadata.keywords.map((keyword: any) => `"${keyword.label}"@${keyword.language}`).join(', ')
-                : ''
-            } ;
+                dcat:keyword        ${
+                    metadata.keywords != null
+                        ? metadata.keywords.map((keyword: any) => `"${keyword.label}"@${keyword.language}`).join(', ')
+                        : '[]'
+                };
                 dct:publisher       [ a     foaf:${metadata.publisher.type} ;
                                             foaf:mbox <${metadata.publisher.email}> ;
                                             foaf:name "${metadata.publisher.name}" ; ] ;
@@ -102,7 +107,7 @@ export class MetadataRepositoryService {
 
             <https://piveau.io/set/distribution/1>
                 a              dcat:Distribution ;
-                dct:title      "${getValue('title', 'en')}" ;
+                dct:title      "${getValue('title', 'en')}" ; 
                 dct:license    [
                                     dct:identifier "${getValueLicense('license', 'id')}" ;
                                     dct:title "${getValueLicense('license', 'label')}" ;
@@ -115,28 +120,53 @@ export class MetadataRepositoryService {
         `;
 
         try {
-            newMetadata = await firstValueFrom(
-                this.httpService
-                    .post(
-                        `https://${factoryPrefix}.pistis-market.eu/srv/repo/catalogues/${catalogId}/datasets`,
-                        rdfData,
-                        {
-                            headers: {
-                                'Content-Type': 'text/turtle',
-                                'X-API-Key': this.options.apiKey,
+            if (isStreamingData) {
+                newMetadata = await firstValueFrom(
+                    this.httpService
+                        .put(
+                            `https://${factoryPrefix}.pistis-market.eu/srv/repo/catalogues/${catalogId}/datasets/origin?originalId=${metadata.id}`,
+                            rdfData,
+                            {
+                                headers: {
+                                    'Content-Type': 'text/turtle',
+                                    'X-API-Key': this.options.apiKey,
+                                },
                             },
-                        },
-                    )
-                    .pipe(
-                        map((res) => {
-                            return res;
-                        }),
-                        catchError((error) => {
-                            this.logger.error('Metadata creation error:', error);
-                            return of({ error: 'Error occurred during creation retrieval' });
-                        }),
-                    ),
-            );
+                        )
+                        .pipe(
+                            map((res) => {
+                                return res;
+                            }),
+                            catchError((error) => {
+                                this.logger.error('Metadata creation error:', error);
+                                return of({ error: 'Error occurred during creation retrieval' });
+                            }),
+                        ),
+                );
+            } else {
+                newMetadata = await firstValueFrom(
+                    this.httpService
+                        .post(
+                            `https://${factoryPrefix}.pistis-market.eu/srv/repo/catalogues/${catalogId}/datasets`,
+                            rdfData,
+                            {
+                                headers: {
+                                    'Content-Type': 'text/turtle',
+                                    'X-API-Key': this.options.apiKey,
+                                },
+                            },
+                        )
+                        .pipe(
+                            map((res) => {
+                                return res;
+                            }),
+                            catchError((error) => {
+                                this.logger.error('Metadata creation error:', error);
+                                return of({ error: 'Error occurred during creation retrieval' });
+                            }),
+                        ),
+                );
+            }
         } catch (err) {
             this.logger.error('Metadata creation error:', err);
             throw new Error(`Metadata creation error: ${err}`);

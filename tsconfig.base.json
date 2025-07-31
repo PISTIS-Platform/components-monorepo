@@ -23,6 +23,7 @@
             "@pistis/factories-registrant": ["libs/factories-registrant/src/index.ts"],
             "@pistis/intention-analytics": ["libs/intention-analytics/src/index.ts"],
             "@pistis/investment-planner": ["libs/investment-planner/src/index.ts"],
+            "@pistis/kafka": ["libs/kafka/src/index.ts"],
             "@pistis/metadata-repository": ["libs/metadata-repository/src/index.ts"],
             "@pistis/models-repository": ["libs/models-repository/src/index.ts"],
             "@pistis/notifications": ["libs/notifications/src/index.ts"],

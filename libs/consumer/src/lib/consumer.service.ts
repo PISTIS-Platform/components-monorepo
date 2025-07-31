@@ -1,8 +1,16 @@
 import { EntityRepository } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { HttpService } from '@nestjs/axios';
-import { BadGatewayException, BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+    BadGatewayException,
+    BadRequestException,
+    Inject,
+    Injectable,
+    Logger,
+    NotFoundException,
+} from '@nestjs/common';
 import { Column, DataStorageService } from '@pistis/data-storage';
+import { KafkaService } from '@pistis/kafka';
 import { MetadataRepositoryService } from '@pistis/metadata-repository';
 import { getHeaders } from '@pistis/shared';
 import { catchError, firstValueFrom, map, of, tap, throwError } from 'rxjs';
@@ -22,11 +30,13 @@ export class ConsumerService {
         private readonly dataStorageService: DataStorageService,
         @Inject(CONSUMER_MODULE_OPTIONS) private options: ConsumerModuleOptions,
         private readonly metadataRepositoryService: MetadataRepositoryService,
-    ) { }
+        private readonly kafkaService: KafkaService,
+    ) {}
 
     async retrieveData(assetId: string, user: any, token: string, data: RetrieveDataDTO) {
         let factory: any;
         let metadata;
+        let isStreamingData: boolean;
 
         let providerFactory: any;
         try {
@@ -52,10 +62,12 @@ export class ConsumerService {
 
         const storageUrl = `https://${factory.factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api`;
         let assetInfo: AssetRetrievalInfo | null;
-        const format = metadata.distributions.map(({ format }: any) => format?.id ?? null).filter((id: any) => id !== null)
+        const format = metadata.distributions
+            .map(({ format }: any) => format?.id ?? null)
+            .filter((id: any) => id !== null);
         if (format.length === 0) {
             this.logger.error('Format not found');
-            throw new BadRequestException('Distribution format not found')
+            throw new BadRequestException('Distribution format not found');
         }
 
         if (format[0] === 'SQL') {
@@ -78,7 +90,11 @@ export class ConsumerService {
 
                 if (offset === 0 && 'data' in results) {
                     // store data in data store
-                    storeResult = await this.dataStorageService.createTableInStorage(results, token, factory.factoryPrefix);
+                    storeResult = await this.dataStorageService.createTableInStorage(
+                        results,
+                        token,
+                        factory.factoryPrefix,
+                    );
 
                     offset += results.data.data.rows.length;
 
@@ -125,9 +141,9 @@ export class ConsumerService {
 
                 metadata.distributions.map((item: any) => {
                     if (item.access_url) {
-                        return item.access_url = [
+                        return (item.access_url = [
                             `https://${factory.factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api/tables/get_table?asset_uuid=${storeResult['asset_uuid']}`,
-                        ];
+                        ]);
                     }
                     return;
                 });
@@ -135,20 +151,34 @@ export class ConsumerService {
                 this.logger.error('Transfer SQL data error:', err);
                 throw new BadGatewayException('Transfer SQL data error');
             }
-        } else {
+        } else if (format[0] === 'CSV') {
             try {
                 const fileResult = await this.getDataFromProvider(assetId, token, {
                     providerPrefix: providerFactory.factoryPrefix,
                 });
 
-                const title = metadata.distributions.map(({ title }: any) => title?.en ?? null).filter((en: any) => en !== null)
-                const createFile = await this.dataStorageService.createFile(fileResult.data, title[0], token, factory.factoryPrefix)
+                const title = metadata.distributions
+                    .map((distribution: any) => {
+                        const titleObject = distribution.title;
+
+                        if (titleObject && Object.keys(titleObject).length > 0) {
+                            return Object.values(titleObject)[0] as string;
+                        }
+                        return null;
+                    })
+                    .filter((title: string | null) => title !== null); // Filter out nulls
+                const createFile = await this.dataStorageService.createFile(
+                    fileResult,
+                    title[0],
+                    token,
+                    factory.factoryPrefix,
+                );
 
                 metadata.distributions.map((item: any) => {
                     if (item.access_url) {
-                        return item.access_url = [
+                        return (item.access_url = [
                             `https://${factory.factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api/files/get_file?asset_uuid=${createFile.asset_uuid}`,
-                        ];
+                        ]);
                     }
                     return;
                 });
@@ -164,46 +194,69 @@ export class ConsumerService {
                 this.logger.error('Transfer file data error:', err);
                 throw new BadGatewayException('Transfer file data error');
             }
+        } else {
+            metadata.distributions.map((item: any) => {
+                if (item.access_url) {
+                    return (item.access_url = [`https://${factory.factoryPrefix}.pistis-market.eu:9094`]);
+                }
+                return;
+            });
         }
 
-
         try {
+            isStreamingData = !(format[0] === 'SQL' || format[0] === 'CSV');
             await this.metadataRepositoryService.createMetadata(
                 metadata,
                 this.options.catalogId,
-                factory.factoryPrefix
+                factory.factoryPrefix,
+                isStreamingData,
             );
         } catch (err) {
             this.logger.error('Metadata creation error:', err);
             throw new BadGatewayException('Metadata creation error');
         }
 
-        const notification = {
-            userId: user.id,
-            organizationId: user.organizationId,
-            type: 'asset_retrieved',
-            message: 'Asset retrieval finished',
-        };
+        let notification: any;
+        if (format[0] === 'SQL' || format[0] === 'CSV') {
+            notification = {
+                userId: user.id,
+                organizationId: user.organizationId,
+                type: 'asset_retrieved',
+                message: 'Asset retrieval finished',
+            };
+        } else {
+            notification = {
+                userId: user.id,
+                organizationId: user.organizationId,
+                type: 'streaming_data',
+                message: 'Streaming data retrieval',
+            };
+        }
         const tokenData = {
             grant_type: 'client_credentials',
             client_id: this.options.clientId,
-            client_secret: this.options.secret
-        }
+            client_secret: this.options.secret,
+        };
         return await firstValueFrom(
             this.httpService
                 .post(`${this.options.authServerUrl}/realms/PISTIS/protocol/openid-connect/token`, tokenData, {
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                     },
-                    data: JSON.stringify(tokenData)
+                    data: JSON.stringify(tokenData),
                 })
                 .pipe(
                     map(({ data }) => data.access_token),
                     map((access_token) =>
                         this.httpService
-                            .post(`${this.options.notificationsUrl}/srv/notifications/api/notifications`, notification, {
-                                headers: getHeaders(access_token),
-                            }).subscribe((value) => value)
+                            .post(
+                                `${this.options.notificationsUrl}/srv/notifications/api/notifications`,
+                                notification,
+                                {
+                                    headers: getHeaders(access_token),
+                                },
+                            )
+                            .subscribe((value) => value),
                     ),
                     tap((response) => this.logger.debug(response)),
                     map(() => of({ message: 'Notification created' })),
@@ -280,5 +333,22 @@ export class ConsumerService {
                     }),
                 ),
         );
+    }
+
+    async createKafkaUserAndTopic(assetId: string) {
+        this.logger.log('Creating Kafka user and topic...');
+
+        try {
+            const topic = await this.kafkaService.createTopic(assetId);
+            const kafkaUser = await this.kafkaService.createConsumerUser(assetId);
+            return { topic, kafkaUser };
+        } catch (e) {
+            this.logger.error('Error creating Kafka user and topic:', e);
+            throw new BadGatewayException('Error creating Kafka user and topic');
+        }
+    }
+
+    async getFactoryConnectionDetails(token: string) {
+        return await this.kafkaService.getFactoryConnectionDetails(token);
     }
 }

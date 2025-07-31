@@ -3,10 +3,10 @@ import { HttpModule } from '@nestjs/axios';
 import { DynamicModule, Module } from '@nestjs/common';
 import { TerminusModule } from '@nestjs/terminus';
 import { DataStorageModule } from '@pistis/data-storage';
+import { KafkaModule } from '@pistis/kafka';
 import { MetadataRepositoryModule } from '@pistis/metadata-repository';
 
 import { AssetRetrievalInfo } from './asset-retrieval-info.entity';
-import { ComponentHealthController } from './component-health.controller';
 import { ConsumerController } from './consumer.controller';
 import {
     ConfigurableModuleClass,
@@ -16,8 +16,8 @@ import {
 import { ConsumerService } from './consumer.service';
 
 @Module({
-    imports: [MikroOrmModule.forFeature([AssetRetrievalInfo]), HttpModule, TerminusModule],
-    controllers: [ConsumerController, ComponentHealthController],
+    imports: [MikroOrmModule.forFeature([AssetRetrievalInfo]), HttpModule, KafkaModule, TerminusModule],
+    controllers: [ConsumerController],
     providers: [ConsumerService],
     exports: [],
 })
