@@ -378,11 +378,12 @@ export class KafkaService {
         );
 
         const factoryName = factory.factoryPrefix;
+        const ro_user = 'kafka-user-ro';
 
         // retrieve user to validate if exists with the given name
-        await this.getUser('kafka-user-ro');
+        await this.getUser(ro_user);
         // retrieve decoded password from secret
-        const password = (await this.getDecodedSecret(factoryName)) ?? '';
+        const password = (await this.getDecodedSecret(ro_user)) ?? '';
 
         return { username: factoryName, password, ...this.getKafkaConfig() };
     }
