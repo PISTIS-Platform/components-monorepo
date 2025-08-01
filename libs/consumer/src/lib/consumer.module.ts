@@ -7,6 +7,7 @@ import { KafkaModule } from '@pistis/kafka';
 import { MetadataRepositoryModule } from '@pistis/metadata-repository';
 
 import { AssetRetrievalInfo } from './asset-retrieval-info.entity';
+import { ComponentHealthController } from './component-health.controller';
 import { ConsumerController } from './consumer.controller';
 import {
     ConfigurableModuleClass,
@@ -17,7 +18,7 @@ import { ConsumerService } from './consumer.service';
 
 @Module({
     imports: [MikroOrmModule.forFeature([AssetRetrievalInfo]), HttpModule, KafkaModule, TerminusModule],
-    controllers: [ConsumerController],
+    controllers: [ConsumerController, ComponentHealthController],
     providers: [ConsumerService],
     exports: [],
 })
