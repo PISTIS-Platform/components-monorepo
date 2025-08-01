@@ -345,11 +345,11 @@ export class KafkaService {
 
     /**
      * Retrieve decoded secret for a Kafka user
-     * @param id The unique identifier for the Kafka secret
+     * @param name The name of the Kafka secret
      * @returns
      */
-    async getDecodedSecret(id: string): Promise<string | null> {
-        const secret = await this.getSecret(`${KAFKA_USER_PREFIX}-${id}`);
+    async getDecodedSecret(name: string): Promise<string | null> {
+        const secret = await this.getSecret(name);
         return this.decodeSecret(secret);
     }
 

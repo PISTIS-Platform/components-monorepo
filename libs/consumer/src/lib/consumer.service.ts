@@ -349,6 +349,7 @@ export class ConsumerService {
     }
 
     async getFactoryConnectionDetails(token: string) {
+        this.logger.log('Retrieving factory kafka connection details...');
         return await this.kafkaService.getFactoryConnectionDetails(token);
     }
 }
