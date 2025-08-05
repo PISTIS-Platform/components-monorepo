@@ -48,6 +48,21 @@ export class BullmqDashboardModule implements OnModuleInit {
             serverAdapter,
         });
 
+        // const keycloakConfig: any = {
+        //     clientId: '',
+        //     bearerOnly: true,
+        //     serverUrl: '',
+        //     realm: '',
+        //     credentials: {
+        //         secret: '',
+        //     },
+        // };
+
+        // const keycloak = new Keycloak({}, keycloakConfig);
+        // expressApp.use(keycloak.middleware());
+
+        // expressApp.use('/admin/queues', keycloak.protect(), serverAdapter.getRouter());
+
         expressApp.use('/admin/queues', serverAdapter.getRouter());
         this.logger.log('Bull Dashboard mounted at /admin/queues');
     }

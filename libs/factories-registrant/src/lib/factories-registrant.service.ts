@@ -256,13 +256,6 @@ export class FactoriesRegistrantService {
         );
     }
 
-    async retrieveFactory(job: any): Promise<FactoriesRegistrant> {
-        const factoryId = job.data.factoryId;
-        const factory = await this.repo.findOneOrFail({ id: factoryId });
-        return factory;
-        return this.repo.findOneOrFail({ id: factoryId });
-    }
-
     async findFactoryInfoByOrganizationId(orgId: string): Promise<FactoriesRegistrant> {
         return this.repo.findOneOrFail({ organizationId: orgId });
     }

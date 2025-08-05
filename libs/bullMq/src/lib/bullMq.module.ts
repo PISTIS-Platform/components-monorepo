@@ -1,6 +1,7 @@
-import { DynamicModule, Module } from '@nestjs/common';
-import { BullModule, BullModuleOptions } from '@nestjs/bull'; // Corrected type: BullModuleOptions
+import { BullModule } from '@nestjs/bull'; // Corrected type: BullModuleOptions
+import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+
 import { BullMqService } from './bull-mq.service';
 
 @Module({
@@ -11,8 +12,8 @@ import { BullMqService } from './bull-mq.service';
             inject: [ConfigService],
             useFactory: (configService: ConfigService) => ({
                 redis: {
-                    host: configService.get('app.redisHost'), // Replace with your Redis host
-                    port: configService.get('app.redisPort'), // Replace with your Redis port
+                    host: configService.get('app.redis.host'),
+                    port: configService.get('app.redis.port'),
                 },
             }),
         }),

@@ -1,22 +1,23 @@
+import { EntityManager } from '@mikro-orm/core';
 import { OnQueueActive, OnQueueCompleted, OnQueueFailed, Process } from '@nestjs/bull';
 import { Processor } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import dayjs from 'dayjs';
 
-import { FactoriesRegistrantService } from './factories-registrant.service';
+import { FactoriesRegistrant } from './entities';
 
 // Assuming 'default' is the queue name your jobs are being added to
 @Processor('default') // Decorator to specify which queue this worker processes
 export class MyProcessor {
     private readonly logger = new Logger(MyProcessor.name);
 
-    constructor(private readonly factoryRegistrantService: FactoriesRegistrantService) {}
+    constructor(private readonly em: EntityManager) {}
 
     @Process('retrieveFactory')
-    async handleJobPcap(job: Job<any>) {
-        console.log(job);
-        await this.factoryRegistrantService.retrieveFactory(job);
+    async handleJobPcap(job: Job<any>): Promise<FactoriesRegistrant> {
+        const emFork = this.em.fork();
+        return await emFork.findOneOrFail(FactoriesRegistrant, { id: job.data.factoryId });
     }
 
     private getNow() {

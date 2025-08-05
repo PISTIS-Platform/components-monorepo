@@ -6,12 +6,11 @@ import { BullmqDashboardModule, BullMqModule } from '@pistis/bull-mq';
 
 import { ComponentHealthController } from './component-health.controller';
 import { ClientInfo, FactoriesRegistrant, RegisteredService } from './entities';
+import { MyProcessor } from './factories.processor';
 import { FactoriesRegistrantController } from './factories-registrant.controller';
 import { ConfigurableModuleClass } from './factories-registrant.module-definition';
 import { FactoriesRegistrantService } from './factories-registrant.service';
 import { ServicesMappingService } from './services-mapping.service';
-import { BullModule } from '@nestjs/bull';
-import { CLIENT_SYNC } from 'libs/bullMq/src/lib/bullMq.constants';
 
 @Module({
     imports: [
@@ -22,7 +21,7 @@ import { CLIENT_SYNC } from 'libs/bullMq/src/lib/bullMq.constants';
         BullmqDashboardModule.register(),
     ],
     controllers: [FactoriesRegistrantController, ComponentHealthController],
-    providers: [FactoriesRegistrantService, ServicesMappingService],
+    providers: [FactoriesRegistrantService, ServicesMappingService, MyProcessor],
     exports: [],
 })
 export class FactoriesRegistrantModule extends ConfigurableModuleClass {}

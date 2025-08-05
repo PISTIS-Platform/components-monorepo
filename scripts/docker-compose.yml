@@ -37,3 +37,10 @@ services:
             - ./keycloak/realm.json:/opt/keycloak/data/import/realm.json
         depends_on:
             - db
+
+    redis:
+        image: redis:8.2-alpine
+        ports:
+            - 6379:6379
+        volumes:
+            - ../data/redis:/data
