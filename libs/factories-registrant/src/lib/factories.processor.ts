@@ -2,9 +2,9 @@ import { OnQueueActive, OnQueueCompleted, OnQueueFailed, Process } from '@nestjs
 import { Processor } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
+import dayjs from 'dayjs';
 
 import { FactoriesRegistrantService } from './factories-registrant.service';
-import dayjs from 'dayjs';
 
 // Assuming 'default' is the queue name your jobs are being added to
 @Processor('default') // Decorator to specify which queue this worker processes
@@ -16,7 +16,6 @@ export class MyProcessor {
     @Process('retrieveFactory')
     async handleJobPcap(job: Job<any>) {
         console.log(job);
-        // fetch data and anonymize pcap-data
         await this.factoryRegistrantService.retrieveFactory(job);
     }
 
