@@ -1,0 +1,24 @@
+{
+    "name": "transactions-auditor-component",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "apps/transactions-auditor-component/src",
+    "projectType": "application",
+    "targets": {
+        "serve": {
+            "executor": "@nx/js:node",
+            "defaultConfiguration": "development",
+            "options": {
+                "buildTarget": "transactions-auditor-component:build"
+            },
+            "configurations": {
+                "development": {
+                    "buildTarget": "transactions-auditor-component:build:development"
+                },
+                "production": {
+                    "buildTarget": "transactions-auditor-component:build:production"
+                }
+            }
+        }
+    },
+    "tags": []
+}

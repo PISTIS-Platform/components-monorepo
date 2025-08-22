@@ -1,0 +1,8 @@
+{
+    "name": "transactions-auditor",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/transactions-auditor/src",
+    "projectType": "library",
+    "targets": {},
+    "tags": []
+}
