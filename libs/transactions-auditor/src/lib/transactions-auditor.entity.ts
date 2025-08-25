@@ -1,7 +1,7 @@
 import { Entity, OptionalProps, PrimaryKey, Property } from '@mikro-orm/core';
 import { v4 as uuidV4 } from 'uuid';
 
-@Entity({ tableName: 'transactions_auditor' })
+@Entity({ tableName: 'transactionsAuditor' })
 export class TransactionsAuditor {
     [OptionalProps]?: 'transactionFee' | 'createdAt' | 'updatedAt';
 

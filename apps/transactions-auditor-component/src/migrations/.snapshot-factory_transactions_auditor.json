@@ -126,11 +126,11 @@
           "mappedType": "datetime"
         }
       },
-      "name": "transactions_auditor",
+      "name": "transactionsAuditor",
       "schema": "public",
       "indexes": [
         {
-          "keyName": "transactions_auditor_pkey",
+          "keyName": "transactionsAuditor_pkey",
           "columnNames": [
             "id"
           ],

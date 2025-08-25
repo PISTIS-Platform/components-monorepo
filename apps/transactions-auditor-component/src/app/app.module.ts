@@ -3,6 +3,7 @@ import { PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { IAppConfig, MorganMiddleware } from '@pistis/shared';
+import { TransactionsAuditorModule } from '@pistis/transactions-auditor';
 
 import { AppConfig } from './app.config';
 
@@ -18,6 +19,7 @@ import { AppConfig } from './app.config';
             }),
             inject: [AppConfig.KEY],
         }),
+        TransactionsAuditorModule,
     ],
     providers: [],
 })
