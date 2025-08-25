@@ -18,6 +18,41 @@
                     "buildTarget": "transactions-auditor-component:build:production"
                 }
             }
+        },
+        "build-migrations": {
+            "executor": "nx:run-commands",
+            "options": {
+                "cwd": "apps/transactions-auditor-component",
+                "command": "tsc --project ./tsconfig.orm.json"
+            }
+        },
+        "migration": {
+            "executor": "nx:run-commands",
+            "options": {
+                "cwd": "apps/transactions-auditor-component",
+                "command": "npx mikro-orm {args.action}"
+            },
+            "defaultConfiguration": "pending",
+            "configurations": {
+                "check": {
+                    "args": "--action=migration:check"
+                },
+                "pending": {
+                    "args": "--action=migration:pending"
+                },
+                "list": {
+                    "args": "--action=migration:list"
+                },
+                "up": {
+                    "args": "--action=migration:up"
+                },
+                "down": {
+                    "args": "--action=migration:down"
+                },
+                "create": {
+                    "args": "--action=migration:create"
+                }
+            }
         }
     },
     "tags": []

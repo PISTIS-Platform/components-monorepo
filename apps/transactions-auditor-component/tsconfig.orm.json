@@ -1,0 +1,21 @@
+{
+    "compilerOptions": {
+        "declaration": false,
+        "moduleResolution": "node",
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "importHelpers": true,
+        "lib": ["es2020", "dom"],
+        "skipLibCheck": true,
+        "skipDefaultLibCheck": true,
+        "baseUrl": "./src",
+        "rootDir": "./src",
+        "outDir": "../../dist/apps/transactions-auditor-component",
+        "module": "commonjs",
+        "types": ["node"],
+        "target": "es2022",
+        "sourceMap": false,
+        "resolveJsonModule": false
+    },
+    "include": ["./src/migrate.ts", "./src/migrations/*.ts"]
+}
