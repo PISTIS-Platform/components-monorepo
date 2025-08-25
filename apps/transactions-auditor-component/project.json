@@ -53,6 +53,23 @@
                     "args": "--action=migration:create"
                 }
             }
+        },
+        "container": {
+            "executor": "@nx-tools/nx-container:build",
+            "dependsOn": ["build", "build-migrations"],
+            "options": {
+                "engine": "docker",
+                "platforms": ["linux/amd64"],
+                "metadata": {
+                    "images": ["registry.pistis-market.eu/pistis/transactions-auditor-component"],
+                    "load": true,
+                    "labels": [
+                        "org.opencontainers.image.authors=Suite5 Information Technology Solutions",
+                        "org.opencontainers.image.version=1.0.0"
+                    ],
+                    "tags": ["1.0.0", "1.0", "1", "latest"]
+                }
+            }
         }
     },
     "tags": []
