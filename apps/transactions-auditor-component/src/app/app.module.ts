@@ -5,7 +5,13 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { IAppConfig, MorganMiddleware } from '@pistis/shared';
 import { TransactionsAuditorModule } from '@pistis/transactions-auditor';
-import { AuthGuard, KeycloakConnectModule, PolicyEnforcementMode, TokenValidation } from 'nest-keycloak-connect';
+import {
+    AuthGuard,
+    KeycloakConnectModule,
+    PolicyEnforcementMode,
+    RoleGuard,
+    TokenValidation,
+} from 'nest-keycloak-connect';
 
 import { AppConfig } from './app.config';
 @Module({
@@ -39,6 +45,10 @@ import { AppConfig } from './app.config';
         {
             provide: APP_GUARD,
             useClass: AuthGuard,
+        },
+        {
+            provide: APP_GUARD,
+            useClass: RoleGuard,
         },
     ],
 })
