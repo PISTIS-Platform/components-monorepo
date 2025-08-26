@@ -52,6 +52,7 @@
     },
     "dependencies": {
         "@colors/colors": "^1.6.0",
+        "@emulienfou/nestjs-mikro-orm-paginate": "^0.4.0",
         "@kubernetes/client-node": "0.22.3",
         "@mikro-orm/core": "^6.1.5",
         "@mikro-orm/migrations": "^6.1.5",
