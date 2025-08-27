@@ -96,8 +96,11 @@ export class ConnectorProcessor {
         const notification = {
             userId: job.data.user.id,
             organizationId: job.data.user.organizationId,
-            type: 'asset_retrieved',
-            message: 'Asset retrieval finished',
+            type: job.data.format !== 'SQL' && job.data.format !== 'CSV' ? 'streaming_data' : 'asset_retrieved',
+            message:
+                job.data.format !== 'SQL' && job.data.format !== 'CSV'
+                    ? 'Streaming data retrieval'
+                    : 'Asset retrieval finished',
         };
         await this.notifications(notification);
     }

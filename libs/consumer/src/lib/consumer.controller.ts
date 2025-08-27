@@ -47,9 +47,12 @@ export class ConsumerController {
         @AuthToken() token: string,
     ) {
         const metadata = await this.consumerService.retrieveMetadata(assetId);
+        const format = metadata.distributions
+            .map(({ format }: any) => format?.id ?? null)
+            .filter((id: any) => id !== null)[0];
         await this.connectorQueue.add(
             'retrieveData',
-            { assetId, user, token, data },
+            { assetId, user, token, data, format },
             { attempts: 3, removeOnComplete: true },
         );
 
