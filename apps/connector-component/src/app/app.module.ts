@@ -4,6 +4,7 @@ import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ConsumerModule } from '@pistis/consumer';
+import { KafkaModule } from '@pistis/kafka';
 import { ProviderModule } from '@pistis/provider';
 import { IAppConfig, MorganMiddleware } from '@pistis/shared';
 import {
@@ -15,11 +16,11 @@ import {
 } from 'nest-keycloak-connect';
 
 import { AppConfig, IConnectorConfig } from './app.config';
+import { KafkaConfig } from './kafka.config';
 
 @Module({
     imports: [
-        ConfigModule.forRoot({ isGlobal: true }),
-        ConfigModule.forFeature(AppConfig),
+        ConfigModule.forRoot({ isGlobal: true, load: [AppConfig, KafkaConfig] }),
         MikroOrmModule.forRootAsync({
             imports: [ConfigModule.forFeature(AppConfig)],
             useFactory: async (options: IAppConfig) => ({
@@ -38,6 +39,7 @@ import { AppConfig, IConnectorConfig } from './app.config';
                 downloadBatchSize: options.downloadBatchSize,
                 metadataRepositoryUrl: options.metadataRepositoryUrl,
                 catalogId: options.catalogId,
+                catalogOwnedId: options.catalogOwnedId,
                 catalogKey: options.catalogKey,
                 catalogUrl: options.catalogUrl,
                 clientId: options.keycloak.clientId,
@@ -56,6 +58,8 @@ import { AppConfig, IConnectorConfig } from './app.config';
                 secret: options.keycloak.clientSecret,
                 authServerUrl: options.keycloak.url,
                 catalogKey: options.catalogKey,
+                factoryRegistryUrl: options.factoryRegistryUrl,
+                catalogOwnedId: options.catalogOwnedId,
             }),
             inject: [AppConfig.KEY],
         }),
@@ -72,6 +76,7 @@ import { AppConfig, IConnectorConfig } from './app.config';
                 tokenValidation: TokenValidation.OFFLINE,
             }),
         }),
+        KafkaModule,
     ],
     providers: [
         {

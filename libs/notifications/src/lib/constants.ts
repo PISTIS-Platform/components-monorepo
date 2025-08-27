@@ -11,4 +11,5 @@ export enum NotificationType {
     WalletRefund = 'wallet_refund',
     DeleteFactory = 'delete_factory',
     WalletIncome = 'wallet_income',
+    StreamingData = 'streaming_data',
 }

@@ -10,6 +10,7 @@ import {
     NotFoundException,
 } from '@nestjs/common';
 import { Column, DataStorageService } from '@pistis/data-storage';
+import { KafkaService } from '@pistis/kafka';
 import { MetadataRepositoryService } from '@pistis/metadata-repository';
 import { getHeaders } from '@pistis/shared';
 import { catchError, firstValueFrom, map, of } from 'rxjs';
@@ -29,12 +30,14 @@ export class ConsumerService {
         private readonly dataStorageService: DataStorageService,
         @Inject(CONSUMER_MODULE_OPTIONS) private options: ConsumerModuleOptions,
         private readonly metadataRepositoryService: MetadataRepositoryService,
+        private readonly kafkaService: KafkaService,
     ) {}
 
     async retrieveData(em: EntityManager, assetId: string, user: any, token: string, data: RetrieveDataDTO) {
         let factory: any;
         let metadata;
         let lineageData: any;
+        let isStreamingData: boolean;
 
         let providerFactory: any;
         try {
@@ -152,7 +155,7 @@ export class ConsumerService {
                 this.logger.error('Transfer SQL data error:', err);
                 throw new BadGatewayException('Transfer SQL data error');
             }
-        } else {
+        } else if (format[0] === 'CSV') {
             try {
                 const fileResult = await this.getDataFromProvider(assetId, token, {
                     providerPrefix: providerFactory.factoryPrefix,
@@ -187,14 +190,23 @@ export class ConsumerService {
                 this.logger.error('Transfer file data error:', err);
                 throw new BadGatewayException('Transfer file data error');
             }
+        } else {
+            metadata.distributions.map((item: any) => {
+                if (item.access_url) {
+                    return (item.access_url = [`https://${factory.factoryPrefix}.pistis-market.eu:9094`]);
+                }
+                return;
+            });
         }
 
         try {
+            isStreamingData = !(format[0] === 'SQL' || format[0] === 'CSV');
             await this.metadataRepositoryService.createMetadata(
                 assetInfo?.id,
                 this.options.catalogId,
                 factory.factoryPrefix,
                 assetId,
+                isStreamingData,
             );
         } catch (err) {
             this.logger.error('Metadata creation error:', err);
@@ -277,5 +289,22 @@ export class ConsumerService {
 
     async retrieveMetadata(assetId: string) {
         return await this.metadataRepositoryService.retrieveMetadata(assetId);
+    }
+    async createKafkaUserAndTopic(assetId: string) {
+        this.logger.log('Creating Kafka user and topic...');
+
+        try {
+            const topic = await this.kafkaService.createTopic(assetId);
+            const kafkaUser = await this.kafkaService.createConsumerUser(assetId);
+            return { topic, kafkaUser };
+        } catch (e) {
+            this.logger.error('Error creating Kafka user and topic:', e);
+            throw new BadGatewayException('Error creating Kafka user and topic');
+        }
+    }
+
+    async getFactoryConnectionDetails(token: string) {
+        this.logger.log('Retrieving factory kafka connection details...');
+        return await this.kafkaService.getFactoryConnectionDetails(token);
     }
 }

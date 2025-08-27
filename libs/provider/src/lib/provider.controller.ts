@@ -10,6 +10,7 @@ import {
 import { AuthToken } from '@pistis/shared';
 
 import { PaginationDto } from './dto/pagination.dto';
+import { StreamingDataDto } from './dto/streaming-data.dto';
 import { ProviderService } from './provider.service';
 
 @Controller('provider')
@@ -35,6 +36,22 @@ import { ProviderService } from './provider.service';
 })
 export class ProviderController {
     constructor(private readonly providerService: ProviderService) {}
+
+    @Post('streaming')
+    @ApiOkResponse({
+        description: 'Streaming data',
+        schema: {
+            example: {
+                id: 'streaming-id',
+                title: 'Streaming Title',
+                description: 'Streaming Description',
+            },
+        },
+    })
+    @ApiBody({ type: StreamingDataDto })
+    async createStreamingData(@Body() streamingData: StreamingDataDto, @AuthToken() token: string) {
+        return await this.providerService.createStreamingMetadata(token, streamingData);
+    }
 
     @Post(':assetId')
     @ApiOkResponse({

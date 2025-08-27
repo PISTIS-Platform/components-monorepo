@@ -4,6 +4,7 @@ import { DynamicModule, Module } from '@nestjs/common';
 import { TerminusModule } from '@nestjs/terminus';
 import { BullmqDashboardModule, BullMqModule } from '@pistis/bull-mq';
 import { DataStorageModule } from '@pistis/data-storage';
+import { KafkaModule } from '@pistis/kafka';
 import { MetadataRepositoryModule } from '@pistis/metadata-repository';
 
 import { AssetRetrievalInfo } from './asset-retrieval-info.entity';
@@ -24,6 +25,7 @@ import { ConsumerService } from './consumer.service';
         BullmqDashboardModule.register(),
         HttpModule,
         TerminusModule,
+        KafkaModule,
     ],
     controllers: [ConsumerController, ComponentHealthController],
     providers: [ConsumerService, ConnectorProcessor],
