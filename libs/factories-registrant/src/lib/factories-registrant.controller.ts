@@ -302,15 +302,10 @@ export class FactoriesRegistrantController {
             },
         },
     })
-    async findFactoryInfo(@Param('factoryId', new ParseUUIDPipe({ version: '4' })) factoryId: string) {
-        const job = await this.factoryQueue.add('retrieveFactory', { factoryId });
-        return { id: job.id };
-    }
-
-    @Get('/jobs/:id')
-    async getFactoryJobResult(@Param('id') id: string) {
-        const job = await this.factoryQueue.getJob(id);
-        return job.returnvalue;
+    async findFactoryInfo(
+        @Param('factoryId', new ParseUUIDPipe({ version: '4' })) factoryId: string,
+    ): Promise<FactoriesRegistrant> {
+        return this.factoriesService.retrieveFactory(factoryId);
     }
 
     @Get('/organization/:orgId')

@@ -248,6 +248,10 @@ export class FactoriesRegistrantService {
         return mapping;
     }
 
+    async retrieveFactory(factoryId: string): Promise<FactoriesRegistrant> {
+        return this.repo.findOneOrFail({ id: factoryId });
+    }
+
     async retrieveAcceptedFactories() {
         const factories = await this.repo.findAll();
         return factories.map(

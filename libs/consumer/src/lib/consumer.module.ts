@@ -2,11 +2,13 @@ import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { HttpModule } from '@nestjs/axios';
 import { DynamicModule, Module } from '@nestjs/common';
 import { TerminusModule } from '@nestjs/terminus';
+import { BullmqDashboardModule, BullMqModule } from '@pistis/bull-mq';
 import { DataStorageModule } from '@pistis/data-storage';
 import { MetadataRepositoryModule } from '@pistis/metadata-repository';
 
 import { AssetRetrievalInfo } from './asset-retrieval-info.entity';
 import { ComponentHealthController } from './component-health.controller';
+import { ConnectorProcessor } from './connector.processor';
 import { ConsumerController } from './consumer.controller';
 import {
     ConfigurableModuleClass,
@@ -16,9 +18,15 @@ import {
 import { ConsumerService } from './consumer.service';
 
 @Module({
-    imports: [MikroOrmModule.forFeature([AssetRetrievalInfo]), HttpModule, TerminusModule],
+    imports: [
+        MikroOrmModule.forFeature([AssetRetrievalInfo]),
+        BullMqModule,
+        BullmqDashboardModule.register(),
+        HttpModule,
+        TerminusModule,
+    ],
     controllers: [ConsumerController, ComponentHealthController],
-    providers: [ConsumerService],
+    providers: [ConsumerService, ConnectorProcessor],
     exports: [],
 })
 export class ConsumerModule extends ConfigurableModuleClass {

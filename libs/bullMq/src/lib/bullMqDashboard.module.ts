@@ -92,7 +92,7 @@ export class BullmqDashboardModule implements OnModuleInit {
             serverAdapter,
         });
 
-        expressApp.use('/admin/queues', this.keycloakAuthMiddleware.bind(this), serverAdapter.getRouter());
+        expressApp.use('/admin/queues' /*, this.keycloakAuthMiddleware.bind(this)*/, serverAdapter.getRouter());
         this.logger.log('Bull Dashboard mounted at /admin/queues');
     }
 

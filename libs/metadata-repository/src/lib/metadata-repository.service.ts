@@ -1,5 +1,6 @@
 import { HttpService } from '@nestjs/axios';
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { getHeaders } from '@pistis/shared';
 import { catchError, firstValueFrom, map, of } from 'rxjs';
 
 import { MODULE_OPTIONS_TOKEN } from './metadata-repository-definition';
@@ -12,7 +13,7 @@ export class MetadataRepositoryService {
     constructor(
         private readonly httpService: HttpService,
         @Inject(MODULE_OPTIONS_TOKEN) private options: MetadataRepositoryModuleOptions,
-    ) { }
+    ) {}
 
     async retrieveMetadata(assetId: string) {
         let metadata;
@@ -58,21 +59,33 @@ export class MetadataRepositoryService {
         return catalog;
     }
 
-    async createMetadata(metadata: any, catalogId: string, factoryPrefix: string) {
-        let newMetadata;
+    async createMetadata(assetId: string, catalogId: string, factoryPrefix: string, originalAssetId: string) {
+        const metadata = await this.retrieveMetadata(originalAssetId);
 
-        const getValue = (key: string, value: string) => {
+        const getDistributionsValue = (key: string) => {
             const entry = metadata.distributions.find((item: any) => item[key]);
-            return entry ? (value !== '' ? entry[key][value] : entry[key]) : '';
+            if (key === 'byte_size') {
+                return entry[key] ? entry[key] : '';
+            }
+            return Object.values(entry[key])[0];
         };
+
+        const getValue = (obj: any): string | null => {
+            if (Object.keys(obj).length > 0) {
+                return `"${Object.values(obj)[0]}"@${Object.keys(obj)[0]}`;
+            }
+            return null;
+        };
+
         const getValueLicense = (key: string, value: string) => {
-            const entry = metadata.monetization.find((item: any) => item[key]);
+            const entry = metadata.monetization[0].purchase_offer.find((item: any) => {
+                return item[key];
+            });
             return entry ? (value !== '' ? entry[key][value] : entry[key]) : '';
         };
 
-        const byteSizeValue = getValue('byte_size', '');
+        const byteSizeValue = getDistributionsValue('byte_size');
         const byteSizeEntry = byteSizeValue ? `dcat:byteSize  "${byteSizeValue}"^^xsd:decimal ;` : '';
-
 
         const rdfData = `
             @prefix dcat:                <http://www.w3.org/ns/dcat#> .
@@ -85,12 +98,13 @@ export class MetadataRepositoryService {
 
             <https://piveau.io/set/data/test-dataset>
                 a                   dcat:Dataset ;
-                dct:description     "${metadata.description.en}"@en ;
-                dct:title           "${metadata.title.en}"@en ;
-                dcat:keyword        ${metadata.keywords != null
-                ? metadata.keywords.map((keyword: any) => `"${keyword.label}"@${keyword.language}`).join(', ')
-                : ''
-            } ;
+                dct:description     ${getValue(metadata.description)} ;
+                dct:title           ${getValue(metadata.title)} ;
+                dcat:keyword        ${
+                    metadata.keywords != null
+                        ? metadata.keywords.map((keyword: any) => `"${keyword.label}"@${keyword.language}`).join(', ')
+                        : ''
+                } ;
                 dct:publisher       [ a     foaf:${metadata.publisher.type} ;
                                             foaf:mbox <${metadata.publisher.email}> ;
                                             foaf:name "${metadata.publisher.name}" ; ] ;
@@ -102,20 +116,20 @@ export class MetadataRepositoryService {
 
             <https://piveau.io/set/distribution/1>
                 a              dcat:Distribution ;
-                dct:title      "${getValue('title', 'en')}" ;
+                dct:title      "${getDistributionsValue('title')}" ;
                 dct:license    [
                                     dct:identifier "${getValueLicense('license', 'id')}" ;
                                     dct:title "${getValueLicense('license', 'label')}" ;
                                     skos:prefLabel "${getValueLicense('license', 'description')}" ;
                                     skos:exactMatch <${getValueLicense('license', 'resource')}>
                             ] ;
-                dct:format     <${getValue('format', 'resource')}> ;
+                dct:format     <${getDistributionsValue('format')}> ;
                 ${byteSizeEntry}
-                dcat:accessURL <${getValue('access_url', '0')}> .
+                dcat:accessURL <https://${factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api/files/get_file?asset_uuid=${assetId}> .
         `;
 
         try {
-            newMetadata = await firstValueFrom(
+            await firstValueFrom(
                 this.httpService
                     .post(
                         `https://${factoryPrefix}.pistis-market.eu/srv/repo/catalogues/${catalogId}/datasets`,
@@ -141,7 +155,6 @@ export class MetadataRepositoryService {
             this.logger.error('Metadata creation error:', err);
             throw new Error(`Metadata creation error: ${err}`);
         }
-        return newMetadata;
     }
 
     async createCatalog(catalogId: string, factory: any) {
@@ -181,6 +194,42 @@ export class MetadataRepositoryService {
                     catchError((error) => {
                         this.logger.error('Catalog creation error:', error);
                         return of({ error: 'Error occurred during catalog creation' });
+                    }),
+                ),
+        );
+    }
+
+    async createLineage(data: any, token: string, factoryPrefix: string) {
+        await firstValueFrom(
+            this.httpService
+                .post(`https://${factoryPrefix}.pistis-market.eu/srv/lineage-tracker/write_lineage`, data, {
+                    headers: getHeaders(token),
+                })
+                .pipe(
+                    map((res) => {
+                        return res;
+                    }),
+                    catchError((error) => {
+                        this.logger.error('Metadata creation error:', error);
+                        return of({ error: 'Error occurred during creation retrieval' });
+                    }),
+                ),
+        );
+    }
+
+    async retrieveLineage(assetId: string, token: string) {
+        return await firstValueFrom(
+            this.httpService
+                .get(`https://pistis-market.eu/srv/lineage-tracker/read_lineage?dataset_id=${assetId}`, {
+                    headers: getHeaders(token),
+                })
+                .pipe(
+                    map((res) => {
+                        return res;
+                    }),
+                    catchError((error) => {
+                        this.logger.error('Lineage retrieval error:', error);
+                        return of({ error: 'Error occurred during lineage retrieval' });
                     }),
                 ),
         );

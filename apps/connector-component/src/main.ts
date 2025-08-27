@@ -20,9 +20,22 @@ async function bootstrap() {
     });
     app.setGlobalPrefix('api');
     app.useGlobalPipes(new ValidationPipe());
-
     const config = app.get(ConfigService);
     const port = config.get<number>('app.port', 3009);
+    // --- Bull Dashboard Integration ---
+    // IMPORTANT: Call app.init() *before* registering the dashboard module
+    // This ensures all providers (like your BullMQ Queues) are initialized
+    // and available for injection into BullmqDashboardModule.
+    await app.init();
+
+    // Register the BullmqDashboardModule.
+    // Its onModuleInit hook will automatically mount the dashboard.
+    // The previous line 'await app.select(BullmqDashboardModule).compile();' is
+    // not needed as app.init() handles module compilation and initialization.
+
+    Logger.log(`🚀 Bull Dashboard UI available at: http://localhost:${port}/admin/queues`);
+    // --- End Bull Dashboard Integration ---
+
     const isDevelopment = config.get<boolean>('app.isDevelopment');
 
     if (isDevelopment) {
