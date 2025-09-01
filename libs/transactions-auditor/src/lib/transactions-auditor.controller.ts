@@ -7,7 +7,7 @@ import { Roles } from 'nest-keycloak-connect';
 import { TransactionAuditorDTO } from './dto';
 import { TransactionsAuditorService } from './transactions-auditor.service';
 
-@Controller('transations-auditor')
+@Controller('transactions-auditor')
 @ApiTags('transactions-auditor')
 @ApiBearerAuth()
 export class TransactionsAuditorController {
