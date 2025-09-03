@@ -15,7 +15,7 @@ import { verify } from 'jsonwebtoken';
 import * as jwks from 'jwks-rsa';
 
 // import { Issuer } from 'openid-client';
-import { CLIENT_SYNC } from './bullMq.constants';
+import { CONNECTOR_QUEUE } from './bullMq.constants';
 import { BullMqModule } from './bullMq.module';
 
 @Module({})
@@ -26,7 +26,7 @@ export class BullmqDashboardModule implements OnModuleInit {
     constructor(
         private readonly httpAdapterHost: HttpAdapterHost,
         private readonly configService: ConfigService,
-        @InjectQueue(CLIENT_SYNC) private readonly clientSyncQueue: Queue, // Add other queues here if you want them displayed in the dashboard: // @InjectQueue(QUEUE_NAMES.EMAIL) private readonly emailQueue: Queue, // @InjectQueue(QUEUE_NAMES.IMAGE_PROCESSING) private readonly imageProcessingQueue: Queue, // @InjectQueue(QUEUE_NAMES.REPORT_GENERATION) private readonly reportGenerationQueue: Queue,
+        @InjectQueue(CONNECTOR_QUEUE) private readonly clientSyncQueue: Queue, // Add other queues here if you want them displayed in the dashboard: // @InjectQueue(QUEUE_NAMES.EMAIL) private readonly emailQueue: Queue, // @InjectQueue(QUEUE_NAMES.IMAGE_PROCESSING) private readonly imageProcessingQueue: Queue, // @InjectQueue(QUEUE_NAMES.REPORT_GENERATION) private readonly reportGenerationQueue: Queue,
     ) {}
 
     private async keycloakAuthMiddleware(req: Request, _res: Response, next: NextFunction) {
