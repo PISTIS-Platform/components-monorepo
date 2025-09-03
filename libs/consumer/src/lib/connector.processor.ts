@@ -2,6 +2,7 @@ import { EntityManager } from '@mikro-orm/core';
 import { HttpService } from '@nestjs/axios';
 import { OnQueueActive, OnQueueCompleted, OnQueueFailed, Process, Processor } from '@nestjs/bull'; // FIX: Correct imports for @nestjs/bull
 import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
+import { CONNECTOR_QUEUE } from '@pistis/bullMq';
 import { getHeaders } from '@pistis/shared';
 import { Job } from 'bull'; // FIX: Use Job from 'bull'
 import dayjs from 'dayjs';
@@ -11,7 +12,7 @@ import { CONSUMER_MODULE_OPTIONS } from './consumer.module-definition';
 import { ConsumerService } from './consumer.service';
 import { ConsumerModuleOptions } from './consumer-module-options.interface';
 
-@Processor('default')
+@Processor(CONNECTOR_QUEUE)
 @Injectable()
 export class ConnectorProcessor {
     private readonly logger = new Logger(ConnectorProcessor.name);

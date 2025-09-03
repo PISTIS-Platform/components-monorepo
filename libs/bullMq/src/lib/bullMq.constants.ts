@@ -1,1 +1,1 @@
-export const CLIENT_SYNC = 'default';
+export const CONNECTOR_QUEUE = 'default';

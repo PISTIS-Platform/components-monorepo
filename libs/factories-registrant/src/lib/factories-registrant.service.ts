@@ -1,11 +1,9 @@
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityRepository, Loaded } from '@mikro-orm/postgresql';
 import { HttpService } from '@nestjs/axios';
-import { InjectQueue } from '@nestjs/bull';
 import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
 import { BullMqService } from '@pistis/bullMq';
 import { getHeaders } from '@pistis/shared';
-import { Queue } from 'bullmq';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
@@ -33,7 +31,6 @@ export class FactoriesRegistrantService {
         private readonly httpService: HttpService,
         private readonly servicesMappingService: ServicesMappingService,
         @Inject(MODULE_OPTIONS_TOKEN) private options: FactoryModuleOptions, // private readonly mailerService: MailerService,
-        @InjectQueue('default') private factoryQueue: Queue,
         private readonly queueService: BullMqService,
     ) {}
 

@@ -1,6 +1,7 @@
 import { InjectQueue } from '@nestjs/bull';
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiNotFoundResponse, ApiOkResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import { CONNECTOR_QUEUE } from '@pistis/bullMq';
 import { AuthToken, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
 import { Queue } from 'bullmq';
 import { AuthenticatedUser } from 'nest-keycloak-connect';
@@ -32,7 +33,7 @@ import { RetrieveDataDTO } from './retrieveData.dto';
 export class ConsumerController {
     constructor(
         private readonly consumerService: ConsumerService,
-        @InjectQueue('default') private connectorQueue: Queue,
+        @InjectQueue(CONNECTOR_QUEUE) private connectorQueue: Queue,
     ) {}
 
     @Post('/retrieve/:assetId')

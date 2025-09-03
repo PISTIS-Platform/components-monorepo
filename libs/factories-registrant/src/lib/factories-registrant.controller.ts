@@ -1,4 +1,3 @@
-import { InjectQueue } from '@nestjs/bull';
 import {
     Body,
     Controller,
@@ -12,9 +11,15 @@ import {
     Res,
     StreamableFile,
 } from '@nestjs/common';
-import { ApiBody, ApiNotFoundResponse, ApiOkResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import {
+    ApiBearerAuth,
+    ApiBody,
+    ApiNotFoundResponse,
+    ApiOkResponse,
+    ApiTags,
+    ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { ADMIN_ROLE, AuthToken, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
-import { Queue } from 'bullmq';
 import type { Response } from 'express';
 import { createReadStream } from 'fs';
 import { AuthenticatedUser, Roles } from 'nest-keycloak-connect';
@@ -31,7 +36,7 @@ import { ServicesMappingService } from './services-mapping.service';
 
 @Controller('factories')
 @ApiTags('factories-registrant')
-// @ApiBearerAuth()
+@ApiBearerAuth()
 @ApiUnauthorizedResponse({
     description: 'Unauthorized.',
     schema: {
@@ -54,7 +59,6 @@ export class FactoriesRegistrantController {
     constructor(
         private readonly factoriesService: FactoriesRegistrantService,
         private readonly servicesMappingService: ServicesMappingService,
-        @InjectQueue('default') private factoryQueue: Queue,
     ) {}
 
     @Get()

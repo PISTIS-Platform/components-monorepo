@@ -2,9 +2,11 @@ import { InjectQueue } from '@nestjs/bull';
 import { Injectable } from '@nestjs/common';
 import { Queue } from 'bullmq';
 
+import { CONNECTOR_QUEUE } from './bullMq.constants';
+
 @Injectable()
 export class BullMqService {
-    constructor(@InjectQueue('default') private defaultQueue: Queue) {}
+    constructor(@InjectQueue(CONNECTOR_QUEUE) private defaultQueue: Queue) {}
 
     async addJob<T>(queueName: string, name: string, data: T, opts?: any) {
         // A more generic way to get a queue if not injecting specific ones

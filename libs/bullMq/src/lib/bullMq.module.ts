@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 import { BullMqService } from './bull-mq.service';
+import { CONNECTOR_QUEUE } from './bullMq.constants';
 
 @Module({
     imports: [
@@ -19,7 +20,7 @@ import { BullMqService } from './bull-mq.service';
         }),
         // Register the queue with default job options
         BullModule.registerQueue({
-            name: 'default',
+            name: CONNECTOR_QUEUE,
             defaultJobOptions: {
                 attempts: 3, // Retry up to 3 times
                 backoff: {
