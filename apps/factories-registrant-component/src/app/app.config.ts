@@ -1,9 +1,10 @@
 import { registerAs } from '@nestjs/config';
-import { IAppConfig } from '@pistis/shared';
+import { IAppConfig, IRedisConfig } from '@pistis/shared';
 
 export type IFactoryConfig = IAppConfig & {
     identityAccessManagementUrl: string;
     notificationsUrl: string;
+    redis: IRedisConfig;
 };
 
 export const AppConfig = registerAs(
@@ -28,5 +29,9 @@ export const AppConfig = registerAs(
         notificationsUrl: process.env.NOTIFICATIONS_URL,
         identityAccessManagementUrl: process.env.IDENTITY_ACCESS_MANAGEMENT_URL,
         swaggerBaseUrl: process.env.SWAGGER_BASE_URL ?? '/',
+        redis: {
+            host: process.env.REDIS_HOST,
+            port: +process.env.REDIS_PORT,
+        },
     }),
 );

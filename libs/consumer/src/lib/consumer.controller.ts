@@ -1,6 +1,9 @@
+import { InjectQueue } from '@nestjs/bull';
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiNotFoundResponse, ApiOkResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import { CONNECTOR_QUEUE } from '@pistis/bullMq';
 import { AuthToken, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
+import { Queue } from 'bullmq';
 import { AuthenticatedUser } from 'nest-keycloak-connect';
 
 import { ConsumerService } from './consumer.service';
@@ -28,7 +31,10 @@ import { RetrieveDataDTO } from './retrieveData.dto';
     },
 })
 export class ConsumerController {
-    constructor(private readonly consumerService: ConsumerService) {}
+    constructor(
+        private readonly consumerService: ConsumerService,
+        @InjectQueue(CONNECTOR_QUEUE) private connectorQueue: Queue,
+    ) {}
 
     @Post('/retrieve/:assetId')
     @ApiOkResponse({
@@ -41,7 +47,33 @@ export class ConsumerController {
         @Body() data: RetrieveDataDTO,
         @AuthToken() token: string,
     ) {
-        return await this.consumerService.retrieveData(assetId, user, token, data);
+        const metadata = await this.consumerService.retrieveMetadata(assetId);
+        const format = metadata.distributions
+            .map(({ format }: any) => format?.id ?? null)
+            .filter((id: any) => id !== null)[0];
+        await this.connectorQueue.add(
+            'retrieveData',
+            { assetId, user, token, data, format },
+            { attempts: 3, removeOnComplete: true },
+        );
+
+        //TODO discuss how we want to check more conditions for investment etc
+        if (metadata.monetization[0].purchase_offer[0].type === 'subscription') {
+            await this.connectorQueue.upsertJobScheduler(
+                'retrieveScheduledData',
+                {
+                    pattern: '0 0 * * 1', // Runs every Monday at midnight (cron schedule)
+                    endDate: undefined, // Add the termionation date for data retrieval
+                },
+                {
+                    name: `scheduled-retrieval-sync-for-${assetId}`,
+                    data: { assetId, user, token, data },
+                },
+            );
+        }
+        return {
+            message: 'Data retrieval ok',
+        };
     }
 
     @Post('kafka-user/:assetId')

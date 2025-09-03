@@ -2,6 +2,7 @@ import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityRepository, Loaded } from '@mikro-orm/postgresql';
 import { HttpService } from '@nestjs/axios';
 import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
+import { BullMqService } from '@pistis/bullMq';
 import { getHeaders } from '@pistis/shared';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
@@ -30,6 +31,7 @@ export class FactoriesRegistrantService {
         private readonly httpService: HttpService,
         private readonly servicesMappingService: ServicesMappingService,
         @Inject(MODULE_OPTIONS_TOKEN) private options: FactoryModuleOptions, // private readonly mailerService: MailerService,
+        private readonly queueService: BullMqService,
     ) {}
 
     async checkClient(organizationId: string, token: string) {
@@ -243,16 +245,16 @@ export class FactoriesRegistrantService {
         return mapping;
     }
 
+    async retrieveFactory(factoryId: string): Promise<FactoriesRegistrant> {
+        return this.repo.findOneOrFail({ id: factoryId });
+    }
+
     async retrieveAcceptedFactories() {
         const factories = await this.repo.findAll();
         return factories.map(
             (factory: Loaded<FactoriesRegistrant, never, 'factoryPrefix', never>) =>
                 `https://${factory.factoryPrefix}.pistis-market.eu`,
         );
-    }
-
-    async retrieveFactory(factoryId: string): Promise<FactoriesRegistrant> {
-        return this.repo.findOneOrFail({ id: factoryId });
     }
 
     async findFactoryInfoByOrganizationId(orgId: string): Promise<FactoriesRegistrant> {

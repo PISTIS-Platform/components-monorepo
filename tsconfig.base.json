@@ -16,6 +16,7 @@
         "baseUrl": ".",
         "paths": {
             "@pistis/blockchain": ["libs/blockchain/src/index.ts"],
+            "@pistis/bullMq": ["libs/bullMq/src/index.ts"],
             "@pistis/component-health": ["libs/component-health/src/index.ts"],
             "@pistis/consumer": ["libs/consumer/src/index.ts"],
             "@pistis/contracts": ["libs/contracts/src/index.ts"],
@@ -29,6 +30,7 @@
             "@pistis/provider": ["libs/provider/src/index.ts"],
             "@pistis/sctc": ["libs/sctc/src/index.ts"],
             "@pistis/shared": ["libs/shared/src/index.ts"],
+            "@pistis/bull-mq": ["libs/bullMq/src/index.ts"],
             "@pistis/transactions-auditor": ["libs/transactions-auditor/src/index.ts"]
         }
     },

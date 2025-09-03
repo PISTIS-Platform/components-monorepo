@@ -43,6 +43,7 @@ const isDevelopment = process.env.NODE_ENV !== 'production';
             }),
             inject: [AppConfig.KEY],
         }),
+
         KeycloakConnectModule.registerAsync({
             imports: [ConfigModule.forFeature(AppConfig)],
             inject: [AppConfig.KEY],

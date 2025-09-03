@@ -19,6 +19,7 @@ async function bootstrap() {
             transports: [consoleTransport, new OpenTelemetryTransportV3()],
         }),
     });
+
     app.setGlobalPrefix('api');
     app.useGlobalPipes(new ValidationPipe());
 
