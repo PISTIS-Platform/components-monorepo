@@ -63,10 +63,12 @@ export class MetadataRepositoryService {
         assetId: string,
         catalogId: string,
         factoryPrefix: string,
-        originalAssetId: string,
+        originalAssetId?: string,
+        metadata?: any,
         isStreamingData: boolean,
     ) {
-        const metadata = await this.retrieveMetadata(originalAssetId);
+        let marketplaceMetadata;
+        marketplaceMetadata = await this.retrieveMetadata(originalAssetId);
         let byteSizeValue;
 
         const getDistributionsValue = (key: string) => {
@@ -93,6 +95,7 @@ export class MetadataRepositoryService {
 
         if (isStreamingData) {
             byteSizeValue = '';
+            accessURL = '';
         } else {
             byteSizeValue = getValue('byte_size');
         }

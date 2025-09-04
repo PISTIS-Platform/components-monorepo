@@ -167,18 +167,20 @@ export class ProviderService {
             keywords: null,
             monetization: [
                 {
-                    license: {
-                        id: '_:g1',
-                        label: 'Subscription License',
-                        description: 'Subscription License',
-                        resource: 'https://pistis-market.eu/license/497c3001-8ab2-4a3f-8e3d-5dba6ac0760b',
+                    purchase_offer: {
+                        license: {
+                            id: '_:g1',
+                            label: 'Subscription License',
+                            description: 'Subscription License',
+                            resource: 'https://pistis-market.eu/license/497c3001-8ab2-4a3f-8e3d-5dba6ac0760b',
+                        },
                     },
                 },
             ],
             distributions: [
                 {
                     title: { en: 'Streaming Data Distribution' },
-                    access_url: [`http://kafka.${factory.factoryPrefix}.pistis-market.eu:9094`],
+                    access_url: [`http://${factory.factoryPrefix}.pistis-market.eu:9094`],
                     format: { resource: 'Kafka-stream' },
                     byte_size: '0',
                 },
