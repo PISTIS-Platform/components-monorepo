@@ -2,7 +2,6 @@ import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityRepository, Loaded } from '@mikro-orm/postgresql';
 import { HttpService } from '@nestjs/axios';
 import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
-import { BullMqService } from '@pistis/bullMq';
 import { getHeaders } from '@pistis/shared';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
@@ -31,7 +30,6 @@ export class FactoriesRegistrantService {
         private readonly httpService: HttpService,
         private readonly servicesMappingService: ServicesMappingService,
         @Inject(MODULE_OPTIONS_TOKEN) private options: FactoryModuleOptions, // private readonly mailerService: MailerService,
-        private readonly queueService: BullMqService,
     ) {}
 
     async checkClient(organizationId: string, token: string) {
@@ -163,6 +161,7 @@ export class FactoriesRegistrantService {
 
         //Check the status of factory and throw error in case that status is not what we expect
         if (factory.status === 'pending' || factory.status === 'suspended') {
+            factory.isActive = true;
             factory.status = 'online';
         } else {
             throw new BadRequestException('It is not possible to update the status of the factory');
@@ -199,6 +198,7 @@ export class FactoriesRegistrantService {
         const factory = await this.repo.findOneOrFail({ id: factoryId });
 
         //Change status and save it
+        factory.isActive = false;
         factory.status = 'suspended';
         this.repo.getEntityManager().flush();
 
