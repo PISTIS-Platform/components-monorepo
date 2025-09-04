@@ -10,7 +10,7 @@
         "skipDefaultLibCheck": true,
         "baseUrl": "./src",
         "rootDir": "./src",
-        "outDir": "../../dist/apps/investement-planner-component",
+        "outDir": "../../dist/apps/investment-planner-component",
         "module": "commonjs",
         "types": ["node"],
         "target": "es2022",
