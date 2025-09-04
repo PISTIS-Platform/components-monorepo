@@ -205,8 +205,9 @@ export class ConsumerService {
                 assetInfo?.id,
                 this.options.catalogId,
                 factory.factoryPrefix,
-                assetId,
                 isStreamingData,
+                assetId,
+                '',
             );
         } catch (err) {
             this.logger.error('Metadata creation error:', err);
