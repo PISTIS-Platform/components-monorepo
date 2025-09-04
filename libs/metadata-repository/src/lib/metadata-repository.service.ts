@@ -5,6 +5,7 @@ import { catchError, firstValueFrom, map, of } from 'rxjs';
 
 import { MODULE_OPTIONS_TOKEN } from './metadata-repository-definition';
 import { MetadataRepositoryModuleOptions } from './metadata-repository-options.interface';
+import { access } from 'fs';
 
 @Injectable()
 export class MetadataRepositoryService {
@@ -67,6 +68,7 @@ export class MetadataRepositoryService {
         originalAssetId: string,
         streamingMetadata: any,
     ) {
+        let accessUrl: any;
         let metadata: any;
         if (isStreamingData && streamingMetadata && originalAssetId === '') {
             metadata = streamingMetadata;
@@ -99,8 +101,10 @@ export class MetadataRepositoryService {
 
         if (isStreamingData) {
             byteSizeValue = '';
+            accessUrl = metadata.distributions[0].access_url[0];
         } else {
             byteSizeValue = getValue('byte_size');
+            accessUrl = `https://${factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api/files/get_file?asset_uuid=${assetId}`;
         }
         const byteSizeEntry = byteSizeValue ? `dcat:byteSize  "${byteSizeValue}"^^xsd:decimal ;` : '';
 
@@ -142,7 +146,7 @@ export class MetadataRepositoryService {
                             ] ;
                 dct:format     <${getDistributionsValue('format')}> ;
                 ${byteSizeEntry}
-                dcat:accessURL <https://${factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api/files/get_file?asset_uuid=${assetId}> .
+                dcat:accessURL ${accessUrl} .
         `;
 
         try {
