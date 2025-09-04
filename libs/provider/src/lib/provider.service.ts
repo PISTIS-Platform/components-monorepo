@@ -189,10 +189,12 @@ export class ProviderService {
 
         try {
             await this.metadataRepositoryService.createMetadata(
-                metadata,
+                assetId,
                 this.options.catalogOwnedId,
                 factory.factoryPrefix,
                 true,
+                '',
+                metadata,
             );
         } catch (e) {
             this.logger.error('Error creating streaming metadata:', e);
