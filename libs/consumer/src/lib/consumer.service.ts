@@ -14,6 +14,7 @@ import { KafkaService } from '@pistis/kafka';
 import { MetadataRepositoryService } from '@pistis/metadata-repository';
 import { getHeaders } from '@pistis/shared';
 import { catchError, firstValueFrom, map, of } from 'rxjs';
+import { v4 as uuidV4 } from 'uuid';
 
 import { AssetRetrievalInfo } from './asset-retrieval-info.entity';
 import { CONSUMER_MODULE_OPTIONS } from './consumer.module-definition';
@@ -191,12 +192,37 @@ export class ConsumerService {
                 throw new BadGatewayException('Transfer file data error');
             }
         } else {
-            metadata.distributions.map((item: any) => {
-                if (item.access_url) {
-                    return (item.access_url = [`https://${factory.factoryPrefix}.pistis-market.eu:9094`]);
-                }
-                return;
-            });
+            try {
+                const consumerAssetId = uuidV4();
+                const url = `https://${factory.factoryPrefix}.pistis-market.eu:9094`;
+                const { kafkaUser } = await this.createKafkaUserAndTopic(consumerAssetId);
+                await this.getDataFromProvider(assetId, token, {
+                    consumerPrefix: factory.factoryPrefix,
+                    providerPrefix: providerFactory.factoryPrefix,
+                    kafkaConfig: {
+                        id: consumerAssetId,
+                        username: kafkaUser.name,
+                        password: kafkaUser.secret,
+                        bootstrapServers: url,
+                    },
+                });
+                metadata.distributions.map((item: any) => {
+                    if (item.access_url) {
+                        return (item.access_url = [url]);
+                    }
+                    return;
+                });
+
+                assetInfo = em.create(AssetRetrievalInfo, {
+                    id: consumerAssetId,
+                    cloudAssetId: assetId,
+                    version: '',
+                    offset: 0,
+                });
+            } catch (err) {
+                this.logger.error('Transfer streaming data error:', err);
+                throw new BadGatewayException('Transfer streaming data error');
+            }
         }
 
         try {
@@ -231,6 +257,12 @@ export class ConsumerService {
             columns?: Column[];
             consumerPrefix?: string;
             providerPrefix?: string;
+            kafkaConfig?: {
+                id: string;
+                username: string;
+                password: string;
+                bootstrapServers: string;
+            };
         },
     ) {
         return await firstValueFrom(
@@ -250,6 +282,14 @@ export class ConsumerService {
                     }),
                 ),
         );
+    }
+
+    async getAssetId(cloudAssetId: string) {
+        return (await this.repo.findOne({ cloudAssetId }))?.id;
+    }
+
+    async deleteKafkaStream(source: string, target: string) {
+        await this.kafkaService.deleteMM2Connector(source, target);
     }
 
     private async retrieveFactory(token: string) {

@@ -1,21 +1,14 @@
 import { Body, Controller, Param, Post } from '@nestjs/common';
-import {
-    ApiBearerAuth,
-    ApiBody,
-    ApiNotFoundResponse,
-    ApiOkResponse,
-    ApiTags,
-    ApiUnauthorizedResponse,
-} from '@nestjs/swagger';
+import { ApiBody, ApiNotFoundResponse, ApiOkResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { AuthToken } from '@pistis/shared';
 
-import { PaginationDto } from './dto/pagination.dto';
+import { ConfigDataDto } from './dto/configurationData.dto';
 import { StreamingDataDto } from './dto/streaming-data.dto';
 import { ProviderService } from './provider.service';
 
 @Controller('provider')
 @ApiTags('provider')
-@ApiBearerAuth()
+// @ApiBearerAuth()
 @ApiUnauthorizedResponse({
     description: 'Unauthorized.',
     schema: {
@@ -49,8 +42,11 @@ export class ProviderController {
         },
     })
     @ApiBody({ type: StreamingDataDto })
-    async createStreamingData(@Body() streamingData: StreamingDataDto, @AuthToken() token: string) {
-        return await this.providerService.createStreamingMetadata(token, streamingData);
+    async createStreamingData(
+        @Body() streamingData: StreamingDataDto,
+        // , @AuthToken() token: string
+    ) {
+        return await this.providerService.createStreamingMetadata('token', streamingData);
     }
 
     @Post(':assetId')
@@ -79,12 +75,12 @@ export class ProviderController {
             },
         },
     })
-    @ApiBody({ type: PaginationDto })
+    @ApiBody({ type: StreamingDataDto })
     async downloadDataset(
         @Param('assetId') assetId: string,
-        @Body() paginationData: PaginationDto,
+        @Body() configurationData: ConfigDataDto,
         @AuthToken() token: string,
     ) {
-        return await this.providerService.downloadDataset(assetId, paginationData, token);
+        return await this.providerService.downloadDataset(assetId, configurationData, token);
     }
 }

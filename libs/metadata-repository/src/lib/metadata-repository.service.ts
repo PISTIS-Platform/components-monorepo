@@ -5,7 +5,6 @@ import { catchError, firstValueFrom, map, of } from 'rxjs';
 
 import { MODULE_OPTIONS_TOKEN } from './metadata-repository-definition';
 import { MetadataRepositoryModuleOptions } from './metadata-repository-options.interface';
-import { access } from 'fs';
 
 @Injectable()
 export class MetadataRepositoryService {
@@ -76,6 +75,7 @@ export class MetadataRepositoryService {
             metadata = await this.retrieveMetadata(originalAssetId);
         }
         let byteSizeValue;
+        let keywords: any;
 
         const getDistributionsValue = (key: string) => {
             const entry = metadata.distributions.find((item: any) => item[key]);
@@ -100,9 +100,15 @@ export class MetadataRepositoryService {
         };
 
         if (isStreamingData) {
+            keywords = '';
             byteSizeValue = '';
-            accessUrl = metadata.distributions[0].access_url[0];
+            accessUrl = `<${metadata.distributions[0].access_url[0]}>`;
         } else {
+            keywords = `dcat:keyword        ${
+                metadata.keywords != null
+                    ? metadata.keywords.map((keyword: any) => `"${keyword.label}"@${keyword.language}`).join(', ')
+                    : ''
+            } ;`;
             byteSizeValue = getValue('byte_size');
             accessUrl = `https://${factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api/files/get_file?asset_uuid=${assetId}`;
         }
@@ -121,11 +127,7 @@ export class MetadataRepositoryService {
                 a                   dcat:Dataset ;
                 dct:description     ${getValue(metadata.description)} ;
                 dct:title           ${getValue(metadata.title)} ;
-                dcat:keyword        ${
-                    metadata.keywords != null
-                        ? metadata.keywords.map((keyword: any) => `"${keyword.label}"@${keyword.language}`).join(', ')
-                        : ''
-                } ;
+                ${keywords}
                 dct:publisher       [ a     foaf:${metadata.publisher.type} ;
                                             foaf:mbox <${metadata.publisher.email}> ;
                                             foaf:name "${metadata.publisher.name}" ; ] ;
@@ -198,6 +200,7 @@ export class MetadataRepositoryService {
                 );
             }
         } catch (err) {
+            console.log(err);
             this.logger.error('Metadata creation error:', err);
             throw new Error(`Metadata creation error: ${err}`);
         }

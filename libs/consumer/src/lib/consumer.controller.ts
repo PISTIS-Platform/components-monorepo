@@ -1,6 +1,6 @@
 import { InjectQueue } from '@nestjs/bull';
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
-import { ApiBearerAuth, ApiNotFoundResponse, ApiOkResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import { ApiNotFoundResponse, ApiOkResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { CONNECTOR_QUEUE } from '@pistis/bullMq';
 import { AuthToken, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
 import { Queue } from 'bullmq';
@@ -11,7 +11,7 @@ import { RetrieveDataDTO } from './retrieveData.dto';
 
 @Controller('consumer')
 @ApiTags('consumer')
-@ApiBearerAuth()
+// @ApiBearerAuth()
 @ApiUnauthorizedResponse({
     description: 'Unauthorized.',
     schema: {
@@ -68,6 +68,18 @@ export class ConsumerController {
                 {
                     name: `scheduled-retrieval-sync-for-${assetId}`,
                     data: { assetId, user, token, data },
+                },
+            );
+        } else if (metadata.monetization[0].purchase_offer[0].type === 'kafka-streaming') {
+            const target = await this.consumerService.getAssetId(assetId);
+            await this.connectorQueue.upsertJobScheduler(
+                'deleteStreamingConnector',
+                {
+                    endDate: undefined, // Add the termionation date for data retrieval
+                },
+                {
+                    name: `streaming-connector-removal-for-${assetId}`,
+                    data: { assetId, target },
                 },
             );
         }
