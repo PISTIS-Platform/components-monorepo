@@ -173,7 +173,7 @@ export class ProviderService {
                 {
                     title: { en: 'Kafka Stream' },
                     access_url: [
-                        `http://${this.options.factoryPrefix}.pistis-market.eu/srv/data-connector/kafka/${assetId}`,
+                        `https://${this.options.factoryPrefix}.pistis-market.eu/srv/data-connector/api/provider/kafka/${assetId}`,
                     ],
                     format: {
                         resource: 'http://publications.europa.eu/resource/authority/file-type/CSV',

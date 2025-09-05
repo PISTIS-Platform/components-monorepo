@@ -2,9 +2,8 @@ import { CoreV1Api, CustomObjectsApi, KubeConfig, PatchUtils, V1Secret } from '@
 import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { generatePassword, getHeaders } from '@pistis/shared';
+import { generatePassword } from '@pistis/shared';
 import { IncomingMessage } from 'http';
-import { catchError, firstValueFrom, map, of } from 'rxjs';
 
 import { MM2ConnectorConfig, StrimziAcl } from './typings';
 
@@ -355,29 +354,15 @@ export class KafkaService {
 
     /**
      * Retrieve the Read-Only access user and connection details
-     * @param token The factory authenticated user token for retrieving factory data
      * @returns
      */
-    async getFactoryConnectionDetails(token: string): Promise<{
+    async getFactoryConnectionDetails(): Promise<{
         username: string;
         password: string;
         bootstrapServers: string;
         securityProtocol: string;
         saslMechanism: string;
     }> {
-        // retrieve factory data
-        const factory = await firstValueFrom(
-            this.httpService
-                .get(`${this.config.get('app.factoryRegistryUrl')}/api/factories/user-factory`, {
-                    headers: getHeaders(token),
-                })
-                .pipe(
-                    map(async (res) => res.data),
-                    catchError((e) => of({ error: `'Error occurred during retrieving factory: ${e}` })),
-                ),
-        );
-
-        const factoryName = factory.factoryPrefix;
         const ro_user = 'kafka-user-ro';
 
         // retrieve user to validate if exists with the given name
@@ -385,7 +370,7 @@ export class KafkaService {
         // retrieve decoded password from secret
         const password = (await this.getDecodedSecret(ro_user)) ?? '';
 
-        return { username: factoryName, password, ...this.getKafkaConfig() };
+        return { username: ro_user, password, ...this.getKafkaConfig() };
     }
 
     /**
