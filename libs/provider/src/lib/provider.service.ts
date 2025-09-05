@@ -1,20 +1,11 @@
 import { HttpService } from '@nestjs/axios';
-import {
-    BadGatewayException,
-    BadRequestException,
-    Inject,
-    Injectable,
-    Logger,
-    NotFoundException,
-} from '@nestjs/common';
+import { BadGatewayException, BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
 import { DataStorageService } from '@pistis/data-storage';
 import { KafkaService } from '@pistis/kafka';
 import { MetadataRepositoryService } from '@pistis/metadata-repository';
-import { getHeaders } from '@pistis/shared';
-import { catchError, firstValueFrom, map, of } from 'rxjs';
 import { v4 as uuidV4 } from 'uuid';
 
-import { PaginationDto } from './dto/pagination.dto';
+import { ConfigDataDto } from './dto/configurationData.dto';
 import { StreamingDataDto } from './dto/streaming-data.dto';
 import { PROVIDER_MODULE_OPTIONS } from './provider.module-definition';
 import { ProviderModuleOptions } from './provider-module-options.interface';
@@ -30,12 +21,12 @@ export class ProviderService {
         private readonly httpService: HttpService,
     ) {}
 
-    async downloadDataset(assetId: string, paginationData: PaginationDto, token: string) {
+    async downloadDataset(assetId: string, configData: ConfigDataDto, token: string) {
         let data;
         let returnedValue;
         let metadata;
 
-        let columnsInfo = paginationData.columns || [];
+        let columnsInfo = configData.columns || [];
         try {
             metadata = await this.metadataRepositoryService.retrieveMetadata(assetId);
         } catch (err) {
@@ -75,11 +66,11 @@ export class ProviderService {
                 // In case the consumer asked for columns and metadata
                 // (if columns were not send in dto (during first retrieval), the provider needs to retrieve them below)
 
-                if (columnsInfo.length === 0 && paginationData.offset === 0) {
+                if (columnsInfo.length === 0 && configData.offset === 0) {
                     columnsInfo = await this.dataStorageService.getColumns(
                         storageId[0],
                         token,
-                        paginationData.providerPrefix,
+                        configData.providerPrefix,
                     );
                 }
                 //transform this into the object needed for columns , for retrieving paginated data
@@ -99,10 +90,10 @@ export class ProviderService {
                 data = await this.dataStorageService.retrievePaginatedData(
                     storageId,
                     token,
-                    paginationData.offset || 0,
-                    paginationData.batchSize || 1000,
+                    configData.offset || 0,
+                    configData.batchSize || 1000,
                     columnsForPagination,
-                    paginationData.providerPrefix,
+                    configData.providerPrefix,
                 );
 
                 returnedValue = {
@@ -114,9 +105,9 @@ export class ProviderService {
                 this.logger.error('Provider SQL retrieval error:', err);
                 throw new BadGatewayException('Provider SQL retrieval error');
             }
-        } else {
+        } else if (format[0] === 'CSV') {
             try {
-                data = await this.dataStorageService.retrieveFile(storageId, token, paginationData.providerPrefix);
+                data = await this.dataStorageService.retrieveFile(storageId, token, configData.providerPrefix);
 
                 returnedValue = {
                     data,
@@ -126,6 +117,13 @@ export class ProviderService {
             } catch (err) {
                 this.logger.error('Provider File retrieval error:', err);
                 throw new BadGatewayException('Provider File retrieval error');
+            }
+        } else {
+            if (configData.kafkaConfig) {
+                returnedValue = await this.kafkaService.createMM2Connector({
+                    source: { id: assetId },
+                    target: configData.kafkaConfig,
+                });
             }
         }
         return returnedValue;
@@ -145,15 +143,7 @@ export class ProviderService {
     }
 
     async createStreamingMetadata(token: string, data: StreamingDataDto) {
-        let factory;
         const assetId = uuidV4();
-
-        try {
-            factory = await this.retrieveFactory(token);
-        } catch (err) {
-            this.logger.error('Factory retrieval error:', err);
-            throw new NotFoundException(`Factory not found: ${err}`);
-        }
 
         const metadata = {
             id: assetId,
@@ -162,26 +152,32 @@ export class ProviderService {
             publisher: {
                 type: 'Organization',
                 email: 'mailto:admin@pistis.eu',
-                name: factory.factoryPrefix.toUpperCase(),
+                name: this.options.organisationFullname,
             },
             keywords: null,
             monetization: [
                 {
-                    purchase_offer: {
-                        license: {
-                            id: '_:g1',
-                            label: 'Subscription License',
-                            description: 'Subscription License',
-                            resource: 'https://pistis-market.eu/license/497c3001-8ab2-4a3f-8e3d-5dba6ac0760b',
+                    purchase_offer: [
+                        {
+                            license: {
+                                id: '_:g1',
+                                label: 'Subscription License',
+                                description: 'Subscription License',
+                                resource: 'https://pistis-market.eu/license/497c3001-8ab2-4a3f-8e3d-5dba6ac0760b',
+                            },
                         },
-                    },
+                    ],
                 },
             ],
             distributions: [
                 {
-                    title: { en: 'Streaming Data Distribution' },
-                    access_url: [`http://${factory.factoryPrefix}.pistis-market.eu:9094`],
-                    format: { resource: 'Kafka-stream' },
+                    title: { en: 'Kafka Stream' },
+                    access_url: [
+                        `http://${this.options.factoryPrefix}.pistis-market.eu/srv/data-connector/kafka/${assetId}`,
+                    ],
+                    format: {
+                        resource: 'http://publications.europa.eu/resource/authority/file-type/CSV',
+                    },
                     byte_size: '0',
                 },
             ],
@@ -191,7 +187,7 @@ export class ProviderService {
             await this.metadataRepositoryService.createMetadata(
                 assetId,
                 this.options.catalogOwnedId,
-                factory.factoryPrefix,
+                this.options.factoryPrefix,
                 true,
                 '',
                 metadata,
@@ -210,21 +206,7 @@ export class ProviderService {
         }
     }
 
-    private async retrieveFactory(token: string) {
-        return await firstValueFrom(
-            this.httpService
-                .get(`${this.options.factoryRegistryUrl}/api/factories/user-factory`, {
-                    headers: getHeaders(token),
-                })
-                .pipe(
-                    map(async (res) => {
-                        return res.data;
-                    }),
-                    catchError((error) => {
-                        this.logger.error('Factory retrieval error:', error);
-                        return of({ error: 'Error occurred during retrieving factory' });
-                    }),
-                ),
-        );
+    async getTopicDetails(assetId: string) {
+        return { url: `https://${this.options.factoryPrefix}.pistis-market.eu:9094`, topic: `ds-${assetId}` };
     }
 }

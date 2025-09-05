@@ -15,7 +15,7 @@ export class ColumnDto {
     data_model!: any;
 }
 
-export class PaginationDto {
+export class ConfigDataDto {
     @IsOptional()
     @ApiProperty({ type: ColumnDto })
     @ValidateNested({ each: true })
@@ -41,4 +41,13 @@ export class PaginationDto {
     @IsString()
     @ApiProperty()
     providerPrefix?: string;
+
+    @IsOptional()
+    @ApiProperty()
+    kafkaConfig?: {
+        id: string;
+        username: string;
+        password: string;
+        bootstrapServers: string;
+    };
 }

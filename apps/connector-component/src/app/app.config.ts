@@ -12,6 +12,8 @@ export type IConnectorConfig = IAppConfig & {
     catalogOwnedId: string;
     catalogKey: string;
     catalogUrl: string;
+    organisationFullname: string;
+    factoryPrefix: string;
 };
 
 export const AppConfig = registerAs(
@@ -44,5 +46,7 @@ export const AppConfig = registerAs(
         catalogKey: process.env.CATALOG_API_KEY,
         catalogUrl: process.env.CATALOG_URL,
         catalogOwnedId: process.env.CATALOG_OWNED_ID,
+        organisationFullname: process.env.ORGANISATION_FULLNAME,
+        factoryPrefix: process.env.FACTORY_NAME,
     }),
 );
