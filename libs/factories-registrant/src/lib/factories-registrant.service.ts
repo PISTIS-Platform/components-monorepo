@@ -107,14 +107,13 @@ export class FactoriesRegistrantService {
                 ######################################################################
 
                 # Factory
-                PISTIS_FACTORY_URL= https://${factoryPrefix}.pistis-market.eu
-                PISTIS_FACTORY_URL_DOMAIN= ${factoryPrefix}.pistis-market.eu
-                PISTIS_FACTORY_NAME= ${factoryPrefix}
-                PISTIS_FACTORY_FULLNAME= ${organizationName}
-                PISTIS_FACTORY_ID= ${organizationId}
-                PISTIS_FACTORY_LOGO= ${factoryPrefix}.png
-                PISTIS_FACTORY_OWNED_CATALOG= my-data
-                PISTIS_FACTORY_ACQUIRED_CATALOG= acquired-data
+                PISTIS_FACTORY_URL=https://${factoryPrefix}.pistis-market.eu
+                PISTIS_FACTORY_URL_DOMAIN=${factoryPrefix}.pistis-market.eu
+                PISTIS_FACTORY_NAME=${factoryPrefix}
+                PISTIS_FACTORY_FULLNAME=${organizationName}
+                PISTIS_FACTORY_ID=${organizationId}
+                PISTIS_FACTORY_OWNED_CATALOG=my-data
+                PISTIS_FACTORY_ACQUIRED_CATALOG=acquired-data
 
                 # Keycloak Clients
                 `;

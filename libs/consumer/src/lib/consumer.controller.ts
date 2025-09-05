@@ -70,6 +70,18 @@ export class ConsumerController {
                     data: { assetId, user, token, data },
                 },
             );
+        } else if (metadata.monetization[0].purchase_offer[0].type === 'kafka-streaming') {
+            const target = await this.consumerService.getAssetId(assetId);
+            await this.connectorQueue.upsertJobScheduler(
+                'deleteStreamingConnector',
+                {
+                    endDate: undefined, // Add the termionation date for data retrieval
+                },
+                {
+                    name: `streaming-connector-removal-for-${assetId}`,
+                    data: { assetId, target },
+                },
+            );
         }
         return {
             message: 'Data retrieval ok',

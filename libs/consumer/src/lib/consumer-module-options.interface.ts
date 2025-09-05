@@ -11,4 +11,5 @@ export interface ConsumerModuleOptions {
     secret: string;
     authServerUrl: string;
     catalogOwnedId: string;
+    organisationFullname: string;
 }

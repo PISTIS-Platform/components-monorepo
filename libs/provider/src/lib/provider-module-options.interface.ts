@@ -9,4 +9,6 @@ export interface ProviderModuleOptions {
     catalogKey: string;
     factoryRegistryUrl: string;
     catalogOwnedId: string;
+    organisationFullname: string;
+    factoryPrefix: string;
 }

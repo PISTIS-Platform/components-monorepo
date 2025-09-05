@@ -48,6 +48,11 @@ export class ConnectorProcessor {
         );
     }
 
+    @Process('deleteStreamingConnector')
+    async handleMM2ConnectorDeletion(job: Job<any>): Promise<any> {
+        await this.consumerService.deleteKafkaStream(job.data.assetId, job.data.target);
+    }
+
     private getNow() {
         return dayjs(new Date()).format('DD/MM/YYYY HH:mm:ss');
     }

@@ -1,4 +1,4 @@
-import { Body, Controller, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import {
     ApiBearerAuth,
     ApiBody,
@@ -9,7 +9,7 @@ import {
 } from '@nestjs/swagger';
 import { AuthToken } from '@pistis/shared';
 
-import { PaginationDto } from './dto/pagination.dto';
+import { ConfigDataDto } from './dto/configurationData.dto';
 import { StreamingDataDto } from './dto/streaming-data.dto';
 import { ProviderService } from './provider.service';
 
@@ -49,8 +49,8 @@ export class ProviderController {
         },
     })
     @ApiBody({ type: StreamingDataDto })
-    async createStreamingData(@Body() streamingData: StreamingDataDto, @AuthToken() token: string) {
-        return await this.providerService.createStreamingMetadata(token, streamingData);
+    async createStreamingData(@Body() streamingData: StreamingDataDto) {
+        return await this.providerService.createStreamingMetadata(streamingData);
     }
 
     @Post(':assetId')
@@ -79,12 +79,26 @@ export class ProviderController {
             },
         },
     })
-    @ApiBody({ type: PaginationDto })
+    @ApiBody({ type: StreamingDataDto })
     async downloadDataset(
         @Param('assetId') assetId: string,
-        @Body() paginationData: PaginationDto,
+        @Body() configurationData: ConfigDataDto,
         @AuthToken() token: string,
     ) {
-        return await this.providerService.downloadDataset(assetId, paginationData, token);
+        return await this.providerService.downloadDataset(assetId, configurationData, token);
+    }
+
+    @Get('/kafka/:assetId')
+    @ApiOkResponse({
+        description: 'Retrieve connection details for kafka',
+        schema: {
+            example: {
+                url: 'http://develop.pistis-market.eu:9094',
+                topic: 'ds-ec221eea-fcc6-4e74-8f4d-4ccd5206c5e0',
+            },
+        },
+    })
+    async getTopicDetails(@Param('assetId') assetId: string) {
+        return this.providerService.getTopicDetails(assetId);
     }
 }
