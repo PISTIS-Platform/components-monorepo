@@ -30,7 +30,6 @@ export class InvestmentPlannerService {
         const investmentPlan = this.repo.create({
             cloudAssetId: data.cloudAssetId,
             assetId: data.assetId,
-            title: data.title,
             description: data.description,
             terms: data.terms,
             sellerId: user.id,
@@ -41,8 +40,6 @@ export class InvestmentPlannerService {
             maxShares: data.maxShares,
             price: data.price,
             status: data.status,
-            accessPolicy: data.accessPolicy,
-            keywords: data.keywords,
         });
         try {
             await this.repo.getEntityManager().persistAndFlush(investmentPlan);
