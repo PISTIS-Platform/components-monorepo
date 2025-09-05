@@ -4,6 +4,7 @@ import { ApiBearerAuth, ApiNotFoundResponse, ApiOkResponse, ApiTags, ApiUnauthor
 import { CONNECTOR_QUEUE } from '@pistis/bullMq';
 import { AuthToken, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
 import { Queue } from 'bullmq';
+import dayjs from 'dayjs';
 import { AuthenticatedUser } from 'nest-keycloak-connect';
 
 import { ConsumerService } from './consumer.service';
@@ -48,6 +49,18 @@ export class ConsumerController {
         @AuthToken() token: string,
     ) {
         const metadata = await this.consumerService.retrieveMetadata(assetId);
+        const frequency = metadata.monetization[0].purchase_offer[0].update_frequency;
+        let updatePattern = '';
+
+        if (frequency === 'hourly') {
+            updatePattern = '0 * * * *'; // Runs at the top of every hour
+        } else if (frequency === 'daily') {
+            updatePattern = '0 0 * * *'; // Runs every day at midnight
+        } else if (frequency === 'weekly') {
+            updatePattern = '0 0 * * 1'; // Runs every Monday at midnight
+        } else if (frequency === 'monthly') {
+            updatePattern = '0 0 1 * *'; // Runs on the first day of every month at midnight
+        }
         const format = metadata.distributions
             .map(({ format }: any) => format?.id ?? null)
             .filter((id: any) => id !== null)[0];
@@ -57,25 +70,25 @@ export class ConsumerController {
             { attempts: 3, removeOnComplete: true },
         );
 
-        //TODO discuss how we want to check more conditions for investment etc
         if (metadata.monetization[0].purchase_offer[0].type === 'subscription') {
             await this.connectorQueue.upsertJobScheduler(
                 'retrieveScheduledData',
                 {
-                    pattern: '0 0 * * 1', // Runs every Monday at midnight (cron schedule)
-                    endDate: undefined, // Add the termionation date for data retrieval
+                    pattern: updatePattern,
+                    endDate: dayjs(metadata.monetization[0].purchase_offer[0].term_date),
                 },
                 {
                     name: `scheduled-retrieval-sync-for-${assetId}`,
                     data: { assetId, user, token, data },
                 },
             );
-        } else if (metadata.monetization[0].purchase_offer[0].type === 'kafka-streaming') {
+        }
+        if (metadata.distributions[0].title.en === 'Kafka Stream') {
             const target = await this.consumerService.getAssetId(assetId);
             await this.connectorQueue.upsertJobScheduler(
                 'deleteStreamingConnector',
                 {
-                    endDate: undefined, // Add the termionation date for data retrieval
+                    endDate: dayjs(metadata.monetization[0].purchase_offer[0].term_date),
                 },
                 {
                     name: `streaming-connector-removal-for-${assetId}`,

@@ -18,22 +18,13 @@ export class InvestmentPlanner {
     assetId!: string;
 
     @Property()
-    title!: string;
-
-    @Property()
     description!: string;
 
     @Property({ type: 'json' })
     terms!: Record<string, any>[];
 
-    @Property({ type: 'json' })
-    accessPolicy!: Record<string, any>[];
-
     @Property()
     sellerId!: string;
-
-    @Property()
-    keywords!: string[];
 
     @Property({ type: 'timestamptz' })
     dueDate!: Date;

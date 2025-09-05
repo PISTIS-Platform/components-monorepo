@@ -15,24 +15,11 @@ export class CreateInvestmentPlanDTO {
     @IsString()
     @IsNotEmpty()
     @ApiProperty()
-    title!: string;
-
-    @IsString()
-    @IsNotEmpty()
-    @ApiProperty()
     description!: string;
 
     @IsNotEmpty()
     @ApiProperty()
     terms!: any;
-
-    @IsNotEmpty()
-    @ApiProperty()
-    keywords!: string[];
-
-    @IsNotEmpty()
-    @ApiProperty()
-    accessPolicy!: string[];
 
     @IsString()
     @IsNotEmpty()
