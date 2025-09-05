@@ -344,19 +344,6 @@ export class KafkaService {
     }
 
     /**
-     * Retrieve a Kafka user from the Kubernetes cluster.
-     * @param name The name of the Kafka user.
-     * @returns
-     */
-    async getUserName(name: string): Promise<string> {
-        const username = `${KAFKA_USER_PREFIX}-${name}`;
-        this.logger.debug(`Retrieving Kafka user "${username}"`);
-        const response = await this.getUser(username);
-
-        return (response.body as any).metadata.name;
-    }
-
-    /**
      * Retrieve decoded secret for a Kafka user
      * @param name The name of the Kafka secret
      * @returns

@@ -142,11 +142,11 @@ export class ProviderService {
         }
     }
 
-    async createStreamingMetadata(token: string, data: StreamingDataDto) {
+    async createStreamingMetadata(data: StreamingDataDto) {
         const assetId = uuidV4();
 
         const metadata = {
-            id: '54a29573-7263-4f6f-b51b-3be6fbe07128',
+            id: assetId,
             title: { en: data.title },
             description: { en: data.description },
             publisher: {
@@ -193,7 +193,6 @@ export class ProviderService {
                 metadata,
             );
         } catch (e) {
-            console.log(e);
             this.logger.error('Error creating streaming metadata:', e);
             throw new BadGatewayException('Error creating streaming metadata');
         }

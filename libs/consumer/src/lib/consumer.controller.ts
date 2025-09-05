@@ -1,6 +1,6 @@
 import { InjectQueue } from '@nestjs/bull';
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
-import { ApiNotFoundResponse, ApiOkResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiNotFoundResponse, ApiOkResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { CONNECTOR_QUEUE } from '@pistis/bullMq';
 import { AuthToken, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
 import { Queue } from 'bullmq';
@@ -11,7 +11,7 @@ import { RetrieveDataDTO } from './retrieveData.dto';
 
 @Controller('consumer')
 @ApiTags('consumer')
-// @ApiBearerAuth()
+@ApiBearerAuth()
 @ApiUnauthorizedResponse({
     description: 'Unauthorized.',
     schema: {

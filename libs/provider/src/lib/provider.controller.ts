@@ -1,5 +1,12 @@
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
-import { ApiBody, ApiNotFoundResponse, ApiOkResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import {
+    ApiBearerAuth,
+    ApiBody,
+    ApiNotFoundResponse,
+    ApiOkResponse,
+    ApiTags,
+    ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { AuthToken } from '@pistis/shared';
 
 import { ConfigDataDto } from './dto/configurationData.dto';
@@ -8,7 +15,7 @@ import { ProviderService } from './provider.service';
 
 @Controller('provider')
 @ApiTags('provider')
-// @ApiBearerAuth()
+@ApiBearerAuth()
 @ApiUnauthorizedResponse({
     description: 'Unauthorized.',
     schema: {
@@ -42,11 +49,8 @@ export class ProviderController {
         },
     })
     @ApiBody({ type: StreamingDataDto })
-    async createStreamingData(
-        @Body() streamingData: StreamingDataDto,
-        // , @AuthToken() token: string
-    ) {
-        return await this.providerService.createStreamingMetadata('token', streamingData);
+    async createStreamingData(@Body() streamingData: StreamingDataDto) {
+        return await this.providerService.createStreamingMetadata(streamingData);
     }
 
     @Post(':assetId')
