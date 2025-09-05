@@ -115,7 +115,7 @@ export class ConsumerController {
             },
         },
     })
-    async getFactoryConnectionDetails(@AuthToken() token: string) {
-        return this.consumerService.getFactoryConnectionDetails(token);
+    async getFactoryConnectionDetails() {
+        return this.consumerService.getFactoryConnectionDetails();
     }
 }
