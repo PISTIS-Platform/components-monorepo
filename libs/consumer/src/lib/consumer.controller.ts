@@ -4,7 +4,6 @@ import { ApiBearerAuth, ApiNotFoundResponse, ApiOkResponse, ApiTags, ApiUnauthor
 import { CONNECTOR_QUEUE } from '@pistis/bullMq';
 import { AuthToken, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
 import { Queue } from 'bullmq';
-import dayjs from 'dayjs';
 import { AuthenticatedUser } from 'nest-keycloak-connect';
 
 import { ConsumerService } from './consumer.service';
@@ -75,7 +74,7 @@ export class ConsumerController {
                 'retrieveScheduledData',
                 {
                     pattern: updatePattern,
-                    endDate: dayjs(metadata.monetization[0].purchase_offer[0].term_date),
+                    endDate: new Date(metadata.monetization[0].purchase_offer[0].term_date),
                 },
                 {
                     name: `scheduled-retrieval-sync-for-${assetId}`,
@@ -88,7 +87,7 @@ export class ConsumerController {
             await this.connectorQueue.upsertJobScheduler(
                 'deleteStreamingConnector',
                 {
-                    endDate: dayjs(metadata.monetization[0].purchase_offer[0].term_date),
+                    endDate: new Date(metadata.monetization[0].purchase_offer[0].term_date),
                 },
                 {
                     name: `streaming-connector-removal-for-${assetId}`,
