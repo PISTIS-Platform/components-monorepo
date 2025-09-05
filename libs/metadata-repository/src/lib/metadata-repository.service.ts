@@ -200,6 +200,7 @@ export class MetadataRepositoryService {
                 );
             }
         } catch (err) {
+            console.log(err);
             this.logger.error('Metadata creation error:', err);
             throw new Error(`Metadata creation error: ${err}`);
         }

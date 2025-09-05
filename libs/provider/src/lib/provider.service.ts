@@ -146,7 +146,7 @@ export class ProviderService {
         const assetId = uuidV4();
 
         const metadata = {
-            id: assetId,
+            id: '54a29573-7263-4f6f-b51b-3be6fbe07128',
             title: { en: data.title },
             description: { en: data.description },
             publisher: {
@@ -182,7 +182,7 @@ export class ProviderService {
                 },
             ],
         };
-
+        //TODO return this ${factory.factoryPrefix} to accessUrl
         try {
             await this.metadataRepositoryService.createMetadata(
                 assetId,
@@ -193,6 +193,7 @@ export class ProviderService {
                 metadata,
             );
         } catch (e) {
+            console.log(e);
             this.logger.error('Error creating streaming metadata:', e);
             throw new BadGatewayException('Error creating streaming metadata');
         }
