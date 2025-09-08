@@ -50,6 +50,8 @@ export class ConsumerController {
         const metadata = await this.consumerService.retrieveMetadata(assetId);
         const frequency = metadata.monetization[0].purchase_offer[0].update_frequency;
         let updatePattern = '';
+        const termDate = metadata.monetization[0].purchase_offer[0].term_date;
+        const endDate = termDate ? new Date(termDate) : undefined;
 
         if (frequency === 'hourly') {
             updatePattern = '0 * * * *'; // Runs at the top of every hour
@@ -74,7 +76,7 @@ export class ConsumerController {
                 'retrieveScheduledData',
                 {
                     pattern: updatePattern,
-                    endDate: new Date(metadata.monetization[0].purchase_offer[0].term_date),
+                    endDate: endDate,
                 },
                 {
                     name: `scheduled-retrieval-sync-for-${assetId}`,
@@ -87,7 +89,7 @@ export class ConsumerController {
             await this.connectorQueue.upsertJobScheduler(
                 'deleteStreamingConnector',
                 {
-                    endDate: new Date(metadata.monetization[0].purchase_offer[0].term_date),
+                    endDate: endDate,
                 },
                 {
                     name: `streaming-connector-removal-for-${assetId}`,
