@@ -1,4 +1,4 @@
-import { Paginate, PaginateQuery } from '@emulienfou/nestjs-mikro-orm-paginate';
+import { ApiPaginate, Paginate, PaginateQuery } from '@emulienfou/nestjs-mikro-orm-paginate';
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ADMIN_ROLE } from '@pistis/shared';
@@ -22,6 +22,7 @@ export class TransactionsAuditorController {
     @Get()
     @Roles({ roles: [ADMIN_ROLE] })
     @ApiOperation({ summary: 'Retrieve transactions' })
+    @ApiPaginate()
     async retrieveAll(@Paginate() query: PaginateQuery) {
         return this.service.retrieveAll(query);
     }
