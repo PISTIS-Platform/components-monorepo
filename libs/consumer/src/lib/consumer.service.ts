@@ -37,7 +37,7 @@ export class ConsumerService {
     async retrieveData(em: EntityManager, assetId: string, user: any, token: string, data: RetrieveDataDTO) {
         let factory: any;
         let metadata;
-        let lineageData: any;
+        // let lineageData: any;
         let isStreamingData: boolean;
 
         let providerFactory: any;
@@ -67,12 +67,13 @@ export class ConsumerService {
             return accessUrl[7].split('=')[1];
         });
 
-        try {
-            lineageData = await this.metadataRepositoryService.retrieveLineage(accessId[0], token);
-        } catch (err) {
-            this.logger.error('Lineage retrieval error:', err);
-            throw new BadGatewayException('Lineage retrieval error');
-        }
+        //FIXME: temporary solution to avoid lineage data throw an error and stop the process
+        // try {
+        const lineageData = await this.metadataRepositoryService.retrieveLineage(accessId[0], token);
+        // } catch (err) {
+        //     this.logger.error('Lineage retrieval error:', err);
+        //     throw new BadGatewayException('Lineage retrieval error');
+        // }
 
         const storageUrl = `https://${factory.factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api`;
         let assetInfo: AssetRetrievalInfo | null;
@@ -240,12 +241,13 @@ export class ConsumerService {
             throw new BadGatewayException('Metadata creation error');
         }
 
-        try {
-            await this.metadataRepositoryService.createLineage(lineageData, token, factory.factoryPrefix);
-        } catch (err) {
-            this.logger.error('Metadata creation error:', err);
-            throw new BadGatewayException('Metadata creation error');
-        }
+        //FIXME: temporary solution to avoid lineage data throw an error and stop the process
+        // try {
+        await this.metadataRepositoryService.createLineage(lineageData, token, factory.factoryPrefix);
+        // } catch (err) {
+        //     this.logger.error('Metadata creation error:', err);
+        //     throw new BadGatewayException('Metadata creation error');
+        // }
     }
 
     async getDataFromProvider(
