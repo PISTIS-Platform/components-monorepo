@@ -79,8 +79,8 @@ export class MetadataRepositoryService {
 
         const getDistributionsValue = (key: string) => {
             const entry = metadata.distributions.find((item: any) => item[key]);
-            if (key === 'byte_size') {
-                return entry[key] ? entry[key] : '';
+            if (key === 'format') {
+                return entry[key] ? entry[key].resource : '';
             }
             return Object.values(entry[key])[0];
         };
@@ -101,7 +101,7 @@ export class MetadataRepositoryService {
 
         if (isStreamingData) {
             keywords = '';
-            byteSizeValue = '';
+            byteSizeValue = 0;
             accessUrl = `<${metadata.distributions[0].access_url[0]}>`;
         } else {
             keywords = `dcat:keyword        ${
@@ -109,10 +109,11 @@ export class MetadataRepositoryService {
                     ? metadata.keywords.map((keyword: any) => `"${keyword.label}"@${keyword.language}`).join(', ')
                     : ''
             } ;`;
-            byteSizeValue = getValue('byte_size');
-            accessUrl = `https://${factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api/files/get_file?asset_uuid=${assetId}`;
+            byteSizeValue = metadata.distributions[0].byte_size;
+            accessUrl = `<https://${factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api/files/get_file?asset_uuid=${assetId}>`;
         }
-        const byteSizeEntry = byteSizeValue ? `dcat:byteSize  "${byteSizeValue}"^^xsd:decimal ;` : '';
+
+        const byteSizeEntry = byteSizeValue > 0 ? `dcat:byteSize  "${byteSizeValue}"^^xsd:nonNegativeInteger ;` : '';
 
         const rdfData = `
             @prefix dcat:                <http://www.w3.org/ns/dcat#> .
