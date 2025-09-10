@@ -1,5 +1,5 @@
 import { registerAs } from '@nestjs/config';
-import { IAppConfig } from '@pistis/shared';
+import { IAppConfig, IRedisConfig } from '@pistis/shared';
 
 export type IConnectorConfig = IAppConfig & {
     dataStorageUrl: string;
@@ -14,6 +14,7 @@ export type IConnectorConfig = IAppConfig & {
     catalogUrl: string;
     organisationFullname: string;
     factoryPrefix: string;
+    redis: IRedisConfig;
 };
 
 export const AppConfig = registerAs(
@@ -48,5 +49,9 @@ export const AppConfig = registerAs(
         catalogOwnedId: process.env.CATALOG_OWNED_ID,
         organisationFullname: process.env.ORGANISATION_FULLNAME,
         factoryPrefix: process.env.FACTORY_NAME,
+        redis: {
+            host: process.env.REDIS_HOST,
+            port: +process.env.REDIS_PORT,
+        },
     }),
 );

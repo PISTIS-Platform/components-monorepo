@@ -17,8 +17,6 @@ import { AppConfig, IFactoryConfig } from './app.config';
 
 // import { MailerModule } from '@nestjs-modules/mailer';
 
-const isDevelopment = process.env.NODE_ENV !== 'production';
-
 @Module({
     imports: [
         ConfigModule.forRoot({ isGlobal: true }),
