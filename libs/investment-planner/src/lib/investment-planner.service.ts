@@ -3,7 +3,7 @@ import { InjectRepository } from '@mikro-orm/nestjs';
 import { HttpService } from '@nestjs/axios';
 import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
 import { getHeaders, UserInfo } from '@pistis/shared';
-import { catchError, firstValueFrom, map, of, tap, throwError } from 'rxjs';
+import { catchError, firstValueFrom, map, NotFoundError, of, tap, throwError } from 'rxjs';
 
 import { CreateInvestmentPlanDTO } from './create-investment-plan.dto';
 import { InvestmentPlanner } from './entities/investment-planner.entity';
@@ -80,12 +80,24 @@ export class InvestmentPlannerService {
     }
 
     async getUserInvestmentPlan(assetId: string, user: UserInfo) {
-        const investmentPlan = await this.repo.findOneOrFail({ id: assetId, status: true });
-        return await this.userInvestmentRepo.findOneOrFail({
-            cloudAssetId: assetId,
-            userId: user.id,
-            investmentPlan: { id: investmentPlan.id, status: investmentPlan.status },
-        });
+        let investmentPlan;
+        let investment;
+        try {
+            investmentPlan = await this.repo.findOneOrFail({ id: assetId, status: true });
+        } catch (error) {
+            throw Error(`Dataset not found: ${error}`);
+        }
+        try {
+            investment = await this.userInvestmentRepo.findOneOrFail({
+                cloudAssetId: assetId,
+                userId: user.id,
+                investmentPlan: { id: investmentPlan.id, status: investmentPlan.status },
+            });
+        } catch (error) {
+            throw Error(`Could not retrieve investment plan: ${error}`);
+        }
+
+        return investment;
     }
 
     //TODO: check if we want notifications for this component
