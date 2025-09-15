@@ -80,22 +80,13 @@ export class InvestmentPlannerService {
     }
 
     async getUserInvestmentPlan(assetId: string, user: UserInfo) {
-        let investmentPlan;
-        let investment;
-        try {
-            investmentPlan = await this.repo.findOneOrFail({ id: assetId, status: true });
-        } catch (error) {
-            throw Error(`Dataset not found: ${error}`);
-        }
-        try {
-            investment = await this.userInvestmentRepo.findOneOrFail({
-                cloudAssetId: assetId,
-                userId: user.id,
-                investmentPlan: { id: investmentPlan.id, status: investmentPlan.status },
-            });
-        } catch (error) {
-            throw Error(`Could not retrieve investment plan: ${error}`);
-        }
+        const investmentPlan = await this.repo.findOneOrFail({ id: assetId, status: true });
+
+        const investment = await this.userInvestmentRepo.findOneOrFail({
+            cloudAssetId: assetId,
+            userId: user.id,
+            investmentPlan: { id: investmentPlan.id, status: investmentPlan.status },
+        });
 
         return investment;
     }

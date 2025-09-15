@@ -68,19 +68,11 @@ export class AnswersService {
     }
 
     async getAnswers(assetId: string, user: UserInfo) {
-        let questionnaire;
-        let answers;
-
-        try {
-            questionnaire = await this.questionnaireRepo.findOne({
+        const questionnaire = await this.questionnaireRepo.findOneOrFail({
                 creatorId: user.id,
             });
-        } catch (error) {
-            throw new NotFoundException(`Could not find questionnaire: ${error}`);
-        }
 
-        try {
-            answers = await this.answersRepo.find(
+        const answers = await this.answersRepo.find(
                 {
                     assetId,
                 },
@@ -88,10 +80,7 @@ export class AnswersService {
                     fields: ['responses', 'createdAt'],
                 },
             );
-        } catch (error) {
-            throw new NotFoundException(`Could not find answers to this questionnaire: ${error}`);
-        }
-
+        
         //If user is the creator or if the user is an admin (no organizationId), allow
         if (user.id === questionnaire?.creatorId || !user.organizationId) {
             return answers;
