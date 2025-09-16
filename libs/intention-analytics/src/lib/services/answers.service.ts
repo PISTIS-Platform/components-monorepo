@@ -129,7 +129,7 @@ export class AnswersService {
             isForVerifiedBuyers: forVerifiedBuyers,
         });
 
-        const answers = await this.answersRepo.findOne(
+        const answers = await this.answersRepo.find(
             {
                 assetId: assetId,
                 questionnaire: { id: questionnaire.id },
