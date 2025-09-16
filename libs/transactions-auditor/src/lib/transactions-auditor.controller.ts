@@ -1,5 +1,5 @@
 import { ApiPaginate, Paginate, PaginateQuery } from '@emulienfou/nestjs-mikro-orm-paginate';
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ADMIN_ROLE } from '@pistis/shared';
 import { Roles } from 'nest-keycloak-connect';
@@ -25,5 +25,12 @@ export class TransactionsAuditorController {
     @ApiPaginate()
     async retrieveAll(@Paginate() query: PaginateQuery) {
         return this.service.retrieveAll(query);
+    }
+
+    @Get('/transaction/:userId/:assetId')
+    @ApiOperation({ summary: 'Retrieve transaction by asset and user Id' })
+    @ApiPaginate()
+    async findByUserAndAssetId(@Param('userId') userId: string, @Param('assetId') assetId: string) {
+        return this.service.findByUserAndAssetId(userId, assetId);
     }
 }
