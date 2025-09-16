@@ -1,6 +1,6 @@
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityRepository, EntityManager } from '@mikro-orm/postgresql';
-import { BadRequestException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { wrap } from '@mikro-orm/core';
 import { UserInfo } from '@pistis/shared';
 
@@ -68,24 +68,24 @@ export class AnswersService {
     }
 
     async getAnswers(assetId: string, user: UserInfo) {
-        const questionnaire = await this.questionnaireRepo.findOne({
-            creatorId: user.id,
-        });
+        const questionnaire = await this.questionnaireRepo.findOneOrFail({
+                creatorId: user.id,
+            });
 
         const answers = await this.answersRepo.find(
-            {
-                assetId,
-            },
-            {
-                fields: ['responses', 'createdAt'],
-            },
-        );
-
+                {
+                    assetId,
+                },
+                {
+                    fields: ['responses', 'createdAt'],
+                },
+            );
+        
         //If user is the creator or if the user is an admin (no organizationId), allow
         if (user.id === questionnaire?.creatorId || !user.organizationId) {
             return answers;
         } else {
-            throw new UnauthorizedException();
+            throw new UnauthorizedException(`You are not authorized to view these answers`);
         }
     }
 }
