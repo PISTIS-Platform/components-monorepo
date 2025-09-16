@@ -35,6 +35,10 @@ import { AppConfig, IAnalyticsConfig } from './app.config';
             imports: [ConfigModule.forFeature(AppConfig)],
             useFactory: async (options: IAnalyticsConfig) => ({
                 blockchainUrl: options.blockchainUrl,
+                transactionAuditorUrl: options.transactionAuditorUrl,
+                clientId: options.keycloak.clientId,
+                secret: options.keycloak.clientSecret,
+                authServerUrl: options.keycloak.url,
             }),
             inject: [AppConfig.KEY],
         }),

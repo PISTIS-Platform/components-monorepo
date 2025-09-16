@@ -21,4 +21,8 @@ export class TransactionsAuditorService {
     async retrieveAll(query: PaginateQuery): Promise<PaginateResponse<TransactionAuditorDTO>> {
         return new PageFactory(query, this.repo).create();
     }
+
+    async findByUserAndAssetId(userId: string, assetId: string): Promise<TransactionsAuditor | null> {
+        return await this.repo.findOne({ factoryBuyerId: userId, assetId });
+    }
 }

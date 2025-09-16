@@ -152,6 +152,44 @@ export class QuestionnaireController {
         return await this.answersService.getUserQuestionnaire(assetId, user.id, false);
     }
 
+    @Get(':assetId/active-questionnaire')
+    @ApiResponse({
+        description: 'User questionnaires',
+        schema: {
+            example: {
+                id: 'e96f396b-10ba-4164-96be-e432056e2114',
+                version: '9',
+                title: 'User questionnaires',
+                description: 'test description',
+                questions: [
+                    {
+                        id: '16e15fa3-f745-4b7f-8953-91969209c96a',
+                        type: 'Checkbox',
+                        title: 'Checkbox question',
+                        isRequired: true,
+                        options: [
+                            {
+                                text: 'Text 1',
+                                description: 'Description 1',
+                            },
+                            {
+                                text: 'Text 2',
+                                description: 'Description 2',
+                            },
+                        ],
+                    },
+                ],
+            },
+        },
+        status: 200,
+    })
+    async getUserQuestionnaire(
+        @Param('assetId') assetId: string,
+        @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
+    ) {
+        return await this.answersService.getUserQuestionnaire1(assetId, user.id);
+    }
+
     @Get('active-version/verified-buyers')
     @Roles({ roles: [ADMIN_ROLE] })
     @ApiResponse({
@@ -224,7 +262,7 @@ export class QuestionnaireController {
         return this.answersService.findActiveVersion(false);
     }
 
-    @Get(':assetId/answers')
+    @Get(':assetId/answers/:verifiedBuyers')
     @UseInterceptors(TransformAnswersInterceptor)
     @ApiResponse({
         description: 'Questionnaire answers',
@@ -239,8 +277,12 @@ export class QuestionnaireController {
         },
         status: 200,
     })
-    async getAnswers(@Param('assetId') assetId: string, @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo) {
-        return this.answersService.getAnswers(assetId, user);
+    async getAnswers(
+        @Param('assetId') assetId: string,
+        @Param('verifiedBuyers') verifiedBuyers: boolean,
+        @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
+    ) {
+        return this.answersService.getAnswers(assetId, user, verifiedBuyers);
     }
 
     @Post()
