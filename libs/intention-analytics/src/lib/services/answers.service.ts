@@ -76,13 +76,7 @@ export class AnswersService {
     }
 
     async getUserQuestionnaire1(assetId: string, userId: string) {
-        let forVerifiedBuyers: boolean;
-        const transaction = await this.verifyTransaction(userId, assetId);
-        if (transaction) {
-            forVerifiedBuyers = true;
-        } else {
-            forVerifiedBuyers = false;
-        }
+        const forVerifiedBuyers = !!(await this.verifyTransaction(userId, assetId));
         const questionnaire = await this.findActiveVersion(forVerifiedBuyers);
 
         const answers = await this.answersRepo.findOne({
