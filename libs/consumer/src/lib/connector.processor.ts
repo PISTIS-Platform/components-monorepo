@@ -8,6 +8,7 @@ import { Job } from 'bull'; // FIX: Use Job from 'bull'
 import dayjs from 'dayjs';
 import { catchError, firstValueFrom, map, switchMap, tap, throwError } from 'rxjs';
 
+import { AssetRetrievalInfo } from './asset-retrieval-info.entity';
 import { CONSUMER_MODULE_OPTIONS } from './consumer.module-definition';
 import { ConsumerService } from './consumer.service';
 import { ConsumerModuleOptions } from './consumer-module-options.interface';
@@ -98,29 +99,34 @@ export class ConnectorProcessor {
 
     @OnQueueCompleted()
     async onCompleted(job: Job) {
-        job.log(`✅ Job Completed! (Date: ${this.getNow()} UTC)`);
-        const notification = {
-            userId: job.data.user.id,
-            organizationId: job.data.user.organizationId,
-            type: job.data.format !== 'SQL' && job.data.format !== 'CSV' ? 'streaming_data' : 'asset_retrieved',
-            message:
-                job.data.format !== 'SQL' && job.data.format !== 'CSV'
-                    ? 'Streaming data retrieval'
-                    : 'Asset retrieval finished',
-        };
-        await this.notifications(notification);
+        this.logger.log(`✅ Job Completed! (Date: ${this.getNow()} UTC)`);
+        await this.em.nativeUpdate(AssetRetrievalInfo, { cloudAssetId: job.data.assetId }, { updatedAt: new Date() });
+        // const notification = {
+        //     userId: job.data.user.id,
+        //     organizationId: job.data.user.organizationId,
+        //     type: job.data.format !== 'SQL' && job.data.format !== 'CSV' ? 'streaming_data' : 'asset_retrieved',
+        //     message:
+        //         job.data.format !== 'SQL' && job.data.format !== 'CSV'
+        //             ? 'Streaming data retrieval'
+        //             : 'Asset retrieval finished',
+        // };
+        // await this.notifications(notification);
     }
 
     @OnQueueFailed()
     async onFailed(job: Job) {
-        job.log(`❌ Job Failed (Date: ${this.getNow()} UTC) :`);
-        job.log(job.failedReason || 'Unknown error');
-        const notification = {
-            userId: job.data.user.id,
-            organizationId: job.data.user.organizationId,
-            type: 'asset_retrieval_failure',
-            message: 'Asset retrieval failed, please contact data provider',
-        };
-        await this.notifications(notification);
+        this.logger.log(`❌ Job Failed (Date: ${this.getNow()} UTC) :`);
+        this.logger.log(job.failedReason || 'Unknown error');
+        await this.em.nativeDelete(AssetRetrievalInfo, {
+            cloudAssetId: job.data.assetId,
+        });
+
+        // const notification = {
+        //     userId: job.data.user.id,
+        //     organizationId: job.data.user.organizationId,
+        //     type: 'asset_retrieval_failure',
+        //     message: 'Asset retrieval failed, please contact data provider',
+        // };
+        // await this.notifications(notification);
     }
 }

@@ -29,6 +29,8 @@ import { CONNECTOR_QUEUE } from './bullMq.constants';
                     type: 'exponential', // Exponential backoff strategy
                     delay: 3000, // Initial delay of 3 seconds
                 },
+                removeOnFail: { age: 3600 },
+                removeOnComplete: { age: 3600 },
             },
         }),
     ],
