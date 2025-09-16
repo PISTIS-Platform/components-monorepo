@@ -3,7 +3,7 @@ import { InjectRepository } from '@mikro-orm/nestjs';
 import { HttpService } from '@nestjs/axios';
 import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
 import { getHeaders, UserInfo } from '@pistis/shared';
-import { catchError, firstValueFrom, map, NotFoundError, of, tap, throwError } from 'rxjs';
+import { catchError, firstValueFrom, map, of, tap, throwError } from 'rxjs';
 
 import { CreateInvestmentPlanDTO } from './create-investment-plan.dto';
 import { InvestmentPlanner } from './entities/investment-planner.entity';
