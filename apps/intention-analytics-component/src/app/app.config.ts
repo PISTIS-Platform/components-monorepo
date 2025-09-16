@@ -3,6 +3,7 @@ import { IAppConfig } from '@pistis/shared';
 
 export type IAnalyticsConfig = IAppConfig & {
     blockchainUrl: string;
+    transactionAuditorUrl: string;
 };
 
 export const AppConfig = registerAs(
@@ -24,6 +25,7 @@ export const AppConfig = registerAs(
             clientSecret: process.env.KC_CLIENT_SECRET,
         },
         blockchainUrl: process.env.BLOCKCHAIN_URL,
+        transactionAuditorUrl: process.env.TRANSACTION_AUDITOR_URL,
         isDevelopment: process.env.NODE_ENV !== 'production',
         swaggerBaseUrl: process.env.SWAGGER_BASE_URL ?? '/',
     }),

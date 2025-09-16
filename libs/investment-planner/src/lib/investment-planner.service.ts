@@ -81,7 +81,7 @@ export class InvestmentPlannerService {
 
     async getUserInvestmentPlan(assetId: string, user: UserInfo) {
         const investmentPlan = await this.repo.findOneOrFail({ id: assetId, status: true });
-        return await this.userInvestmentRepo.findOneOrFail({
+        return this.userInvestmentRepo.findOneOrFail({
             cloudAssetId: assetId,
             userId: user.id,
             investmentPlan: { id: investmentPlan.id, status: investmentPlan.status },
