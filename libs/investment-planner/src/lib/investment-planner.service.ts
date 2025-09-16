@@ -81,14 +81,11 @@ export class InvestmentPlannerService {
 
     async getUserInvestmentPlan(assetId: string, user: UserInfo) {
         const investmentPlan = await this.repo.findOneOrFail({ id: assetId, status: true });
-
-        const investment = await this.userInvestmentRepo.findOneOrFail({
+        return await this.userInvestmentRepo.findOneOrFail({
             cloudAssetId: assetId,
             userId: user.id,
             investmentPlan: { id: investmentPlan.id, status: investmentPlan.status },
         });
-
-        return investment;
     }
 
     //TODO: check if we want notifications for this component
