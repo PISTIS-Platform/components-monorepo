@@ -4,7 +4,7 @@ import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq'; // FIX: C
 import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
 import { CONNECTOR_QUEUE } from '@pistis/bullMq';
 import { getHeaders } from '@pistis/shared';
-import { Job } from 'bullmq'; // FIX: Use Job from 'bull'
+import { Job } from 'bullmq';
 import dayjs from 'dayjs';
 import { catchError, firstValueFrom, map, switchMap, tap, throwError } from 'rxjs';
 
@@ -44,7 +44,7 @@ export class ConnectorProcessor extends WorkerHost {
                 const forkedEm = this.em.fork();
                 if (job.data.endDate && new Date() > new Date(job.data.endDate)) {
                     this.logger.verbose(`Job for ${job.data.assetId} reached endDate. Removing repeatable job.`);
-                    await job.remove(); // αφαιρεί το repeatable job
+                    await job.remove(); // remove repeatable job
                     return;
                 }
                 await this.consumerService.retrieveData(
@@ -59,7 +59,7 @@ export class ConnectorProcessor extends WorkerHost {
             case 'deleteStreamingConnector': {
                 if (job.data.endDate && new Date() > new Date(job.data.endDate)) {
                     this.logger.verbose(`Job for ${job.data.assetId} reached endDate. Removing repeatable job.`);
-                    await job.remove(); // αφαιρεί το repeatable job
+                    await job.remove(); // remove repeatable job
                     return;
                 }
                 await this.consumerService.deleteKafkaStream(job.data.assetId, job.data.target);

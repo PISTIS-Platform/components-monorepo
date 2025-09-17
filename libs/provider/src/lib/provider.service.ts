@@ -107,13 +107,6 @@ export class ProviderService {
             }
         } else if (format[0] === 'CSV') {
             try {
-                console.log('----------STORAGE ID---------');
-                console.log(storageId);
-                console.log('----------TOKEN---------');
-                console.log(token);
-                console.log('----------PREFIX---------');
-                console.log(configData.providerPrefix);
-                console.log('-------------------');
                 data = await this.dataStorageService.retrieveFile(storageId, token, configData.providerPrefix);
 
                 returnedValue = {

@@ -52,7 +52,7 @@ export class ConsumerController {
         let updatePattern = '';
         const termDate = metadata.monetization[0].purchase_offer[0].term_date;
         const endDate = termDate ? new Date(termDate) : undefined;
-        console.dir(metadata, { depth: null });
+
         if (frequency === 'hourly') {
             updatePattern = '0 * * * *'; // Runs at the top of every hour
         } else if (frequency === 'daily') {

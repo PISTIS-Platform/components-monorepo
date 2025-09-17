@@ -172,7 +172,6 @@ export class ConsumerService {
                 throw new BadGatewayException('Transfer SQL data error');
             }
         } else if (format[0] === 'CSV' && metadata.distributions[0].title.en !== 'Kafka Stream') {
-            console.log('CSV FILE');
             try {
                 const fileResult = await this.getDataFromProvider(assetId, token, {
                     providerPrefix: providerFactory.factoryPrefix,
