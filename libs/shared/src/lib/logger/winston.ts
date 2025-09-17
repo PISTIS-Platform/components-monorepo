@@ -24,7 +24,9 @@ const formatArgs = (args: any) => colors.gray(JSON.stringify(args));
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const myFormat = printf(({ level, message, timestamp, ...args }) => {
-    return `${formatDate(timestamp)} ${formatLevel(level)}: ${colors.brightCyan(message)} ${formatArgs(args)}`;
+    return `${formatDate(timestamp as any)} ${formatLevel(level)}: ${colors.brightCyan(message as any)} ${formatArgs(
+        args,
+    )}`;
 });
 
 export const consoleTransport = new transports.Console({

@@ -1,7 +1,14 @@
 import { EntityManager, EntityRepository } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { HttpService } from '@nestjs/axios';
-import { BadGatewayException, BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
+import {
+    BadGatewayException,
+    BadRequestException,
+    Inject,
+    Injectable,
+    Logger,
+    NotFoundException,
+} from '@nestjs/common';
 import { Column, DataStorageService } from '@pistis/data-storage';
 import { KafkaService } from '@pistis/kafka';
 import { MetadataRepositoryService } from '@pistis/metadata-repository';
@@ -27,19 +34,19 @@ export class ConsumerService {
         private readonly kafkaService: KafkaService,
     ) {}
 
-    async retrieveData(em: EntityManager, assetId: string, user: any, token: string, _data: RetrieveDataDTO) {
-        // let factory: any;
+    async retrieveData(em: EntityManager, assetId: string, user: any, token: string, data: RetrieveDataDTO) {
+        let factory: any;
         let metadata;
-        // let lineageData: any;
+        let _lineageData: any;
         let isStreamingData: boolean;
 
-        // let providerFactory: any;
-        // try {
-        //     factory = await this.retrieveFactory(token);
-        // } catch (err) {
-        //     this.logger.error('Factory retrieval error:', err);
-        //     throw new NotFoundException(`Factory not found: ${err}`);
-        // }
+        let providerFactory: any;
+        try {
+            factory = await this.retrieveFactory(token);
+        } catch (err) {
+            this.logger.error('Factory retrieval error:', err);
+            throw new NotFoundException(`Factory not found: ${err}`);
+        }
 
         try {
             metadata = await this.retrieveMetadata(assetId);
@@ -48,16 +55,27 @@ export class ConsumerService {
             throw new BadGatewayException('Metadata retrieval error');
         }
 
-        // try {
-        //     providerFactory = await this.retrieveProviderFactory(data.assetFactory, token);
-        // } catch (err) {
-        //     this.logger.error('Provider factory retrieval error:', err);
-        //     throw new NotFoundException(`Provider factory not found: ${err}`);
-        // }
+        try {
+            providerFactory = await this.retrieveProviderFactory(data.assetFactory, token);
+        } catch (err) {
+            this.logger.error('Provider factory retrieval error:', err);
+            throw new NotFoundException(`Provider factory not found: ${err}`);
+        }
 
-        const accessId = metadata.distributions.map((distribution: any) => {
-            const accessUrl = distribution.access_url[0].split('/');
-            return accessUrl[7].split('=')[1];
+        // FIXME: remove underscore from assetId when lineage tracker is fixed
+        const _accessId = metadata.distributions.map((distribution: any) => {
+            const accessUrl = distribution.access_url[0];
+            const urlParts = accessUrl.split('?');
+
+            if (urlParts.length > 1) {
+                // The URL has a query string, e.g., '.../get_file?asset_uuid=...'
+                const params = new URLSearchParams(urlParts[1]);
+                return params.get('asset_uuid');
+            } else {
+                // The URL has the UUID as the last path segment, e.g., '.../kafka/uuid'
+                const pathParts = accessUrl.split('/');
+                return pathParts.pop();
+            }
         });
 
         //FIXME: temporary solution to avoid lineage data throw an error and stop the process
@@ -68,8 +86,7 @@ export class ConsumerService {
         //     throw new BadGatewayException('Lineage retrieval error');
         // }
 
-        // `https://${factory.factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api`
-        const storageUrl = `https://develop.pistis-market.eu/srv/factory-data-storage/api`;
+        const storageUrl = `https://${factory.factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api`;
         let assetInfo: AssetRetrievalInfo | null;
         const format = metadata.distributions
             .map(({ format }: any) => format?.id ?? null)
@@ -98,8 +115,7 @@ export class ConsumerService {
                 results = await this.getDataFromProvider(assetId, token, {
                     offset,
                     batchSize: 1000,
-                    // providerFactory.factoryPrefix
-                    providerPrefix: 'acme',
+                    providerPrefix: providerFactory.factoryPrefix,
                 });
 
                 if (offset === 0 && 'data' in results) {
@@ -107,8 +123,7 @@ export class ConsumerService {
                     storeResult = await this.dataStorageService.createTableInStorage(
                         results,
                         token,
-                        'develop',
-                        // factory.factoryPrefix,
+                        factory.factoryPrefix,
                     );
 
                     offset += results.data.data.rows.length;
@@ -130,10 +145,8 @@ export class ConsumerService {
                             offset,
                             batchSize: this.options.downloadBatchSize,
                             columns: results.columns,
-                            // factory.factoryPrefix
-                            consumerPrefix: 'develop',
-                            //  providerFactory.factoryPrefix
-                            providerPrefix: 'acme',
+                            consumerPrefix: factory.factoryPrefix,
+                            providerPrefix: providerFactory.factoryPrefix,
                         });
                     }
 
@@ -159,12 +172,11 @@ export class ConsumerService {
                 throw new BadGatewayException('Transfer SQL data error');
             }
         } else if (format[0] === 'CSV' && metadata.distributions[0].title.en !== 'Kafka Stream') {
+            console.log('CSV FILE');
             try {
                 const fileResult = await this.getDataFromProvider(assetId, token, {
-                    // providerFactory.factoryPrefix
-                    providerPrefix: 'acme',
+                    providerPrefix: providerFactory.factoryPrefix,
                 });
-                console.log(fileResult);
                 const title = metadata.distributions
                     .map((distribution: any) => {
                         const titleObject = distribution.title;
@@ -180,16 +192,16 @@ export class ConsumerService {
                     fileResult,
                     title[0],
                     token,
-                    'develop',
-                    // factory.factoryPrefix,
+                    factory.factoryPrefix,
                 );
 
-                assetInfo = await em.upsert(AssetRetrievalInfo, {
+                assetInfo = em.create(AssetRetrievalInfo, {
                     id: createFile.asset_uuid,
                     cloudAssetId: assetId,
                     version: '',
                     offset: 0,
                 });
+                await em.upsert(AssetRetrievalInfo, assetInfo);
             } catch (err) {
                 this.logger.error('Transfer file data error:', err);
                 throw new BadGatewayException('Transfer file data error');
@@ -197,14 +209,11 @@ export class ConsumerService {
         } else {
             try {
                 const consumerAssetId = uuidV4();
-                // `https://${factory.factoryPrefix}.pistis-market.eu:9094`
-                const url = `https://develop.pistis-market.eu:9094`;
+                const url = `https://${factory.factoryPrefix}.pistis-market.eu:9094`;
                 const { kafkaUser } = await this.createKafkaUserAndTopic(consumerAssetId);
                 await this.getDataFromProvider(assetId, token, {
-                    // factory.factoryPrefix
-                    consumerPrefix: 'develop',
-                    //
-                    providerPrefix: 'acme',
+                    consumerPrefix: factory.factoryPrefix,
+                    providerPrefix: providerFactory.factoryPrefix,
                     kafkaConfig: {
                         id: consumerAssetId,
                         username: kafkaUser.name,
@@ -219,12 +228,13 @@ export class ConsumerService {
                     return;
                 });
 
-                assetInfo = await em.upsert(AssetRetrievalInfo, {
+                assetInfo = em.create(AssetRetrievalInfo, {
                     id: consumerAssetId,
                     cloudAssetId: assetId,
                     version: '',
                     offset: 0,
                 });
+                await em.upsert(AssetRetrievalInfo, assetInfo);
             } catch (err) {
                 this.logger.error('Transfer streaming data error:', err);
                 throw new BadGatewayException('Transfer streaming data error');
@@ -235,10 +245,8 @@ export class ConsumerService {
             isStreamingData = !(format[0] === 'SQL' || format[0] === 'CSV');
             await this.metadataRepositoryService.createMetadata(
                 assetInfo?.id,
-                'acquired-data',
-                // this.options.catalogId,
-                'develop',
-                // factory.factoryPrefix,
+                this.options.catalogId,
+                factory.factoryPrefix,
                 isStreamingData,
                 assetId,
                 '',

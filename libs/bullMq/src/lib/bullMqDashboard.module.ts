@@ -1,10 +1,9 @@
 // libs/shared/bullmq-shared/src/lib/bullmq-dashboard.module.ts
 import { createBullBoard } from '@bull-board/api';
-import { BullAdapter } from '@bull-board/api/bullAdapter'; // Correct adapter for BullMQ
 // If the above import still causes issues, try:
-// import { BullMQAdapter } from '@bull-board/bullmq'; // Some versions export this explicitly
+import { BullMQAdapter } from '@bull-board/api/bullMQAdapter'; // Some versions export this explicitly
 import { ExpressAdapter } from '@bull-board/express';
-import { BullModule, InjectQueue } from '@nestjs/bull';
+import { BullModule, InjectQueue } from '@nestjs/bullmq';
 import { DynamicModule, Logger, Module, OnModuleInit, UnauthorizedException } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { HttpAdapterHost } from '@nestjs/core';
@@ -82,7 +81,7 @@ export class BullmqDashboardModule implements OnModuleInit {
 
         createBullBoard({
             queues: [
-                new BullAdapter(this.clientSyncQueue as any), // Ensure this BullAdapter is from @bull-board/bullmq
+                new BullMQAdapter(this.clientSyncQueue), // Ensure this BullAdapter is from @bull-board/bullmq
                 // If using BullMQAdapter: new BullMQAdapter(this.clientSyncQueue),
                 // Add other queues here if you injected them above:
                 // new BullAdapter(this.emailQueue),

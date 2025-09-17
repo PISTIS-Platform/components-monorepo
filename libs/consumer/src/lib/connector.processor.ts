@@ -1,10 +1,10 @@
 import { EntityManager } from '@mikro-orm/core';
 import { HttpService } from '@nestjs/axios';
-import { OnQueueActive, OnQueueCompleted, OnQueueFailed, Process, Processor } from '@nestjs/bull'; // FIX: Correct imports for @nestjs/bull
+import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq'; // FIX: Correct imports for @nestjs/bull
 import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
 import { CONNECTOR_QUEUE } from '@pistis/bullMq';
 import { getHeaders } from '@pistis/shared';
-import { Job } from 'bull'; // FIX: Use Job from 'bull'
+import { Job } from 'bullmq'; // FIX: Use Job from 'bull'
 import dayjs from 'dayjs';
 import { catchError, firstValueFrom, map, switchMap, tap, throwError } from 'rxjs';
 
@@ -15,7 +15,7 @@ import { ConsumerModuleOptions } from './consumer-module-options.interface';
 
 @Processor(CONNECTOR_QUEUE)
 @Injectable()
-export class ConnectorProcessor {
+export class ConnectorProcessor extends WorkerHost {
     private readonly logger = new Logger(ConnectorProcessor.name);
 
     constructor(
@@ -23,35 +23,49 @@ export class ConnectorProcessor {
         private readonly consumerService: ConsumerService,
         @Inject(CONSUMER_MODULE_OPTIONS) private options: ConsumerModuleOptions,
         private readonly httpService: HttpService,
-    ) {}
-
-    @Process('retrieveData')
-    async handleImidiateDataRetrieval(job: Job<any>): Promise<any> {
-        const forkedEm = this.em.fork();
-        await this.consumerService.retrieveData(
-            forkedEm,
-            job.data.assetId,
-            job.data.user,
-            job.data.token,
-            job.data.data,
-        );
+    ) {
+        super();
     }
 
-    @Process('retrieveScheduledData')
-    async handleScheduledDataRetrieval(job: Job<any>): Promise<any> {
-        const forkedEm = this.em.fork();
-        await this.consumerService.retrieveData(
-            forkedEm,
-            job.data.assetId,
-            job.data.user,
-            job.data.token,
-            job.data.data,
-        );
-    }
-
-    @Process('deleteStreamingConnector')
-    async handleMM2ConnectorDeletion(job: Job<any>): Promise<any> {
-        await this.consumerService.deleteKafkaStream(job.data.assetId, job.data.target);
+    async process(job: Job<any, any, string>): Promise<any> {
+        switch (job.name) {
+            case 'retrieveData': {
+                const forkedEm = this.em.fork();
+                await this.consumerService.retrieveData(
+                    forkedEm,
+                    job.data.assetId,
+                    job.data.user,
+                    job.data.token,
+                    job.data.data,
+                );
+                return;
+            }
+            case 'retrieveScheduledData': {
+                const forkedEm = this.em.fork();
+                if (job.data.endDate && new Date() > new Date(job.data.endDate)) {
+                    this.logger.verbose(`Job for ${job.data.assetId} reached endDate. Removing repeatable job.`);
+                    await job.remove(); // αφαιρεί το repeatable job
+                    return;
+                }
+                await this.consumerService.retrieveData(
+                    forkedEm,
+                    job.data.assetId,
+                    job.data.user,
+                    job.data.token,
+                    job.data.data,
+                );
+                return;
+            }
+            case 'deleteStreamingConnector': {
+                if (job.data.endDate && new Date() > new Date(job.data.endDate)) {
+                    this.logger.verbose(`Job for ${job.data.assetId} reached endDate. Removing repeatable job.`);
+                    await job.remove(); // αφαιρεί το repeatable job
+                    return;
+                }
+                await this.consumerService.deleteKafkaStream(job.data.assetId, job.data.target);
+                return;
+            }
+        }
     }
 
     private getNow() {
@@ -92,41 +106,41 @@ export class ConnectorProcessor {
         );
     }
 
-    @OnQueueActive()
+    @OnWorkerEvent('active')
     async onActive(job: Job) {
-        job.log(`📦 Job Active! (Date: ${this.getNow()} UTC)`);
+        job.log(`📦 Job ${job.id} Active! (Date: ${this.getNow()} UTC)`);
     }
 
-    @OnQueueCompleted()
+    @OnWorkerEvent('completed')
     async onCompleted(job: Job) {
-        this.logger.log(`✅ Job Completed! (Date: ${this.getNow()} UTC)`);
+        this.logger.log(`✅ Job ${job.id} Completed! (Date: ${this.getNow()} UTC)`);
         await this.em.nativeUpdate(AssetRetrievalInfo, { cloudAssetId: job.data.assetId }, { updatedAt: new Date() });
-        // const notification = {
-        //     userId: job.data.user.id,
-        //     organizationId: job.data.user.organizationId,
-        //     type: job.data.format !== 'SQL' && job.data.format !== 'CSV' ? 'streaming_data' : 'asset_retrieved',
-        //     message:
-        //         job.data.format !== 'SQL' && job.data.format !== 'CSV'
-        //             ? 'Streaming data retrieval'
-        //             : 'Asset retrieval finished',
-        // };
-        // await this.notifications(notification);
+        const notification = {
+            userId: job.data.user.id,
+            organizationId: job.data.user.organizationId,
+            type: job.data.format !== 'SQL' && job.data.format !== 'CSV' ? 'streaming_data' : 'asset_retrieved',
+            message:
+                job.data.format !== 'SQL' && job.data.format !== 'CSV'
+                    ? 'Streaming data retrieval'
+                    : 'Asset retrieval finished',
+        };
+        await this.notifications(notification);
     }
 
-    @OnQueueFailed()
+    @OnWorkerEvent('failed')
     async onFailed(job: Job) {
-        this.logger.log(`❌ Job Failed (Date: ${this.getNow()} UTC) :`);
+        this.logger.log(`❌ Job ${job.id} Failed (Date: ${this.getNow()} UTC) :`);
         this.logger.log(job.failedReason || 'Unknown error');
         await this.em.nativeDelete(AssetRetrievalInfo, {
             cloudAssetId: job.data.assetId,
         });
 
-        // const notification = {
-        //     userId: job.data.user.id,
-        //     organizationId: job.data.user.organizationId,
-        //     type: 'asset_retrieval_failure',
-        //     message: 'Asset retrieval failed, please contact data provider',
-        // };
-        // await this.notifications(notification);
+        const notification = {
+            userId: job.data.user.id,
+            organizationId: job.data.user.organizationId,
+            type: 'asset_retrieval_failure',
+            message: 'Asset retrieval failed, please contact data provider',
+        };
+        await this.notifications(notification);
     }
 }
