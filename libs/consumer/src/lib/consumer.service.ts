@@ -37,7 +37,7 @@ export class ConsumerService {
     async retrieveData(em: EntityManager, assetId: string, user: any, token: string, data: RetrieveDataDTO) {
         let factory: any;
         let metadata;
-        // let lineageData: any;
+        let _lineageData: any;
         let isStreamingData: boolean;
 
         let providerFactory: any;
@@ -62,14 +62,25 @@ export class ConsumerService {
             throw new NotFoundException(`Provider factory not found: ${err}`);
         }
 
-        const accessId = metadata.distributions.map((distribution: any) => {
-            const accessUrl = distribution.access_url[0].split('/');
-            return accessUrl[7].split('=')[1];
+        // FIXME: remove underscore from assetId when lineage tracker is fixed
+        const _accessId = metadata.distributions.map((distribution: any) => {
+            const accessUrl = distribution.access_url[0];
+            const urlParts = accessUrl.split('?');
+
+            if (urlParts.length > 1) {
+                // The URL has a query string, e.g., '.../get_file?asset_uuid=...'
+                const params = new URLSearchParams(urlParts[1]);
+                return params.get('asset_uuid');
+            } else {
+                // The URL has the UUID as the last path segment, e.g., '.../kafka/uuid'
+                const pathParts = accessUrl.split('/');
+                return pathParts.pop();
+            }
         });
 
         //FIXME: temporary solution to avoid lineage data throw an error and stop the process
         // try {
-        const lineageData = await this.metadataRepositoryService.retrieveLineage(accessId[0], token);
+        // const lineageData = await this.metadataRepositoryService.retrieveLineage(accessId[0], token);
         // } catch (err) {
         //     this.logger.error('Lineage retrieval error:', err);
         //     throw new BadGatewayException('Lineage retrieval error');
@@ -96,6 +107,10 @@ export class ConsumerService {
 
                 let offset = 0;
 
+                if (assetInfo) {
+                    offset = assetInfo.offset ?? 0;
+                }
+
                 // first retrieval of data
                 results = await this.getDataFromProvider(assetId, token, {
                     offset,
@@ -120,7 +135,7 @@ export class ConsumerService {
                         version: storeResult.version_id,
                         offset: offset,
                     });
-                    await em.flush();
+                    await em.upsert(AssetRetrievalInfo, assetInfo);
                 }
 
                 // loop to retrieve data in batches
@@ -149,20 +164,18 @@ export class ConsumerService {
                     offset += results.data.rows.length;
 
                     if (assetInfo) {
-                        assetInfo.offset = offset;
-                        await em.flush();
+                        await em.nativeUpdate(AssetRetrievalInfo, { cloudAssetId: assetId }, { offset });
                     }
                 }
             } catch (err) {
                 this.logger.error('Transfer SQL data error:', err);
                 throw new BadGatewayException('Transfer SQL data error');
             }
-        } else if (format[0] === 'CSV') {
+        } else if (format[0] === 'CSV' && metadata.distributions[0].title.en !== 'Kafka Stream') {
             try {
                 const fileResult = await this.getDataFromProvider(assetId, token, {
                     providerPrefix: providerFactory.factoryPrefix,
                 });
-
                 const title = metadata.distributions
                     .map((distribution: any) => {
                         const titleObject = distribution.title;
@@ -187,7 +200,7 @@ export class ConsumerService {
                     version: '',
                     offset: 0,
                 });
-                await em.persistAndFlush(assetInfo);
+                await em.upsert(AssetRetrievalInfo, assetInfo);
             } catch (err) {
                 this.logger.error('Transfer file data error:', err);
                 throw new BadGatewayException('Transfer file data error');
@@ -220,6 +233,7 @@ export class ConsumerService {
                     version: '',
                     offset: 0,
                 });
+                await em.upsert(AssetRetrievalInfo, assetInfo);
             } catch (err) {
                 this.logger.error('Transfer streaming data error:', err);
                 throw new BadGatewayException('Transfer streaming data error');
@@ -243,7 +257,7 @@ export class ConsumerService {
 
         //FIXME: temporary solution to avoid lineage data throw an error and stop the process
         // try {
-        await this.metadataRepositoryService.createLineage(lineageData, token, factory.factoryPrefix);
+        // await this.metadataRepositoryService.createLineage(lineageData, token, /*factory.factoryPrefix*/ 'develop');
         // } catch (err) {
         //     this.logger.error('Metadata creation error:', err);
         //     throw new BadGatewayException('Metadata creation error');

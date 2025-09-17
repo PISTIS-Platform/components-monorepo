@@ -1,4 +1,4 @@
-import { BullModule } from '@nestjs/bull'; // Corrected type: BullModuleOptions
+import { BullModule } from '@nestjs/bullmq'; // Corrected type: BullModuleOptions
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
@@ -12,9 +12,9 @@ import { CONNECTOR_QUEUE } from './bullMq.constants';
             imports: [ConfigModule],
             inject: [ConfigService],
             useFactory: (configService: ConfigService) => ({
-                redis: {
+                connection: {
                     host: configService.get('app.redis.host'),
-                    port: configService.get('app.redis.port'),
+                    port: Number(configService.get('app.redis.port')),
                     username: configService.get('app.redis.username'),
                     password: configService.get('app.redis.password'),
                 },
@@ -29,6 +29,8 @@ import { CONNECTOR_QUEUE } from './bullMq.constants';
                     type: 'exponential', // Exponential backoff strategy
                     delay: 3000, // Initial delay of 3 seconds
                 },
+                removeOnFail: { age: 3600 },
+                removeOnComplete: { age: 3600 },
             },
         }),
     ],

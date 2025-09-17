@@ -1,4 +1,4 @@
-import { InjectQueue } from '@nestjs/bull';
+import { InjectQueue } from '@nestjs/bullmq';
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiNotFoundResponse, ApiOkResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { CONNECTOR_QUEUE } from '@pistis/bullMq';
@@ -84,7 +84,7 @@ export class ConsumerController {
                 },
             );
         }
-        if (metadata.distributions[0].title.en === 'Kafka Stream') {
+        if (metadata.distributions.length && metadata.distributions[0].title.en === 'Kafka Stream') {
             const target = await this.consumerService.getAssetId(assetId);
             await this.connectorQueue.upsertJobScheduler(
                 'deleteStreamingConnector',
