@@ -29,7 +29,15 @@ import { AppConfig } from './app.config';
             }),
             inject: [AppConfig.KEY],
         }),
-        NotificationsModule,
+        NotificationsModule.registerAsync({
+            imports: [ConfigModule.forFeature(AppConfig)],
+            useFactory: async (options: IAppConfig) => ({
+                clientId: options.keycloak.clientId,
+                secret: options.keycloak.clientSecret,
+                authServerUrl: options.keycloak.url,
+            }),
+            inject: [AppConfig.KEY],
+        }),
         KeycloakConnectModule.registerAsync({
             imports: [ConfigModule.forFeature(AppConfig)],
             inject: [AppConfig.KEY],
