@@ -55,7 +55,7 @@ export class NotificationService {
                         map(({ data }) => data.access_token),
                         switchMap((access_token) =>
                             this.httpService.get(
-                                `https://pistis-market.eu/srv/transactions-auditor/api/transactions-auditor/transaction/${buyerId}/${assetId}`,
+                                `${this.options.transactionAuditorUrl}/srv/transactions-auditor/api/transactions-auditor/transaction/${buyerId}/${assetId}`,
                                 { headers: getHeaders(access_token) },
                             ),
                         ),

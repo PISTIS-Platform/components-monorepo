@@ -13,7 +13,7 @@ import {
     TokenValidation,
 } from 'nest-keycloak-connect';
 
-import { AppConfig } from './app.config';
+import { AppConfig, INotificationsConfig } from './app.config';
 
 @Module({
     imports: [
@@ -31,10 +31,11 @@ import { AppConfig } from './app.config';
         }),
         NotificationsModule.registerAsync({
             imports: [ConfigModule.forFeature(AppConfig)],
-            useFactory: async (options: IAppConfig) => ({
+            useFactory: async (options: INotificationsConfig) => ({
                 clientId: options.keycloak.clientId,
                 secret: options.keycloak.clientSecret,
                 authServerUrl: options.keycloak.url,
+                transactionAuditorUrl: options.transactionAuditorUrl,
             }),
             inject: [AppConfig.KEY],
         }),
