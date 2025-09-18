@@ -1,9 +1,13 @@
 import { registerAs } from '@nestjs/config';
 import { IAppConfig } from '@pistis/shared';
 
+export type INotificationsConfig = IAppConfig & {
+    transactionAuditorUrl: string;
+};
+
 export const AppConfig = registerAs(
     'app',
-    (): IAppConfig => ({
+    (): INotificationsConfig => ({
         name: process.env.APP_NAME,
         port: +process.env.APP_PORT,
         database: {
@@ -21,5 +25,6 @@ export const AppConfig = registerAs(
         },
         isDevelopment: process.env.NODE_ENV !== 'production',
         swaggerBaseUrl: process.env.SWAGGER_BASE_URL ?? '/',
+        transactionAuditorUrl: process.env.TRANSACTION_AUDITOR_URL,
     }),
 );
