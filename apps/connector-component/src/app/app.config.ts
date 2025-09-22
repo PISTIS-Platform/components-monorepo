@@ -15,6 +15,7 @@ export type IConnectorConfig = IAppConfig & {
     organisationFullname: string;
     factoryPrefix: string;
     redis: IRedisConfig;
+    transactionAuditorUrl: string;
 };
 
 export const AppConfig = registerAs(
@@ -55,5 +56,6 @@ export const AppConfig = registerAs(
             username: process.env.REDIS_USERNAME,
             password: process.env.REDIS_PASSWORD,
         },
+        transactionAuditorUrl: process.env.TRANSACTION_AUDITOR_URL,
     }),
 );

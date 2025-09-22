@@ -6,7 +6,7 @@ import { CONNECTOR_QUEUE } from '@pistis/bullMq';
 import { getHeaders } from '@pistis/shared';
 import { Job } from 'bullmq';
 import dayjs from 'dayjs';
-import { catchError, firstValueFrom, map, switchMap, tap, throwError } from 'rxjs';
+import { catchError, firstValueFrom, map, of, switchMap, tap, throwError } from 'rxjs';
 
 import { AssetRetrievalInfo } from './asset-retrieval-info.entity';
 import { CONSUMER_MODULE_OPTIONS } from './consumer.module-definition';
@@ -27,18 +27,23 @@ export class ConnectorProcessor extends WorkerHost {
         super();
     }
 
+    private readonly tokenData = {
+        grant_type: 'client_credentials',
+        client_id: this.options.clientId,
+        client_secret: this.options.secret,
+    };
+
     async process(job: Job<any, any, string>): Promise<any> {
         switch (job.name) {
             case 'retrieveData': {
                 const forkedEm = this.em.fork();
-                await this.consumerService.retrieveData(
+                return await this.consumerService.retrieveData(
                     forkedEm,
                     job.data.assetId,
                     job.data.user,
                     job.data.token,
                     job.data.data,
                 );
-                return;
             }
             case 'retrieveScheduledData': {
                 const forkedEm = this.em.fork();
@@ -47,14 +52,13 @@ export class ConnectorProcessor extends WorkerHost {
                     await job.remove(); // remove repeatable job
                     return;
                 }
-                await this.consumerService.retrieveData(
+                return await this.consumerService.retrieveData(
                     forkedEm,
                     job.data.assetId,
                     job.data.user,
                     job.data.token,
                     job.data.data,
                 );
-                return;
             }
             case 'deleteStreamingConnector': {
                 if (job.data.endDate && new Date() > new Date(job.data.endDate)) {
@@ -62,8 +66,7 @@ export class ConnectorProcessor extends WorkerHost {
                     await job.remove(); // remove repeatable job
                     return;
                 }
-                await this.consumerService.deleteKafkaStream(job.data.assetId, job.data.target);
-                return;
+                return await this.consumerService.deleteKafkaStream(job.data.assetId, job.data.target);
             }
         }
     }
@@ -73,18 +76,13 @@ export class ConnectorProcessor extends WorkerHost {
     }
 
     private async notifications(notification: any) {
-        const tokenData = {
-            grant_type: 'client_credentials',
-            client_id: this.options.clientId,
-            client_secret: this.options.secret,
-        };
         return await firstValueFrom(
             this.httpService
-                .post(`${this.options.authServerUrl}/realms/PISTIS/protocol/openid-connect/token`, tokenData, {
+                .post(`${this.options.authServerUrl}/realms/PISTIS/protocol/openid-connect/token`, this.tokenData, {
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                     },
-                    data: tokenData,
+                    data: this.tokenData,
                 })
                 .pipe(
                     map(({ data }) => data.access_token),
@@ -106,6 +104,35 @@ export class ConnectorProcessor extends WorkerHost {
         );
     }
 
+    private async createTransaction(transaction: any) {
+        await firstValueFrom(
+            this.httpService
+                .post(`${this.options.authServerUrl}/realms/PISTIS/protocol/openid-connect/token`, this.tokenData, {
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    data: this.tokenData,
+                })
+                .pipe(
+                    map(({ data }) => data.access_token),
+                    switchMap((access_token) =>
+                        this.httpService.post(
+                            `${this.options.transactionAuditorUrl}/srv/transactions-auditor/api/transactions-auditor/`,
+                            transaction,
+                            { headers: getHeaders(access_token) },
+                        ),
+                    ),
+                    map(async (res) => {
+                        return res.data;
+                    }),
+                    catchError((error) => {
+                        this.logger.error('Transaction creation error:', error);
+                        return of({ error: 'Error occurred during transaction creation' });
+                    }),
+                ),
+        );
+    }
+
     @OnWorkerEvent('active')
     async onActive(job: Job) {
         job.log(`📦 Job ${job.id} Active! (Date: ${this.getNow()} UTC)`);
@@ -115,6 +142,20 @@ export class ConnectorProcessor extends WorkerHost {
     async onCompleted(job: Job) {
         this.logger.log(`✅ Job ${job.id} Completed! (Date: ${this.getNow()} UTC)`);
         await this.em.nativeUpdate(AssetRetrievalInfo, { cloudAssetId: job.data.assetId }, { updatedAt: new Date() });
+        const transaction = {
+            transactionId: job.returnvalue.transactionId,
+            transactionFee: job.returnvalue.transactionFee,
+            amount: job.returnvalue.amount,
+            factoryBuyerId: job.returnvalue.factoryBuyerId,
+            factoryBuyerName: job.returnvalue.factoryBuyerName,
+            factorySellerId: job.returnvalue.assetId,
+            factorySellerName: job.returnvalue.assetName,
+            assetId: job.returnvalue.assetId,
+            assetName: job.returnvalue.assetName,
+            terms: job.returnvalue.terms,
+        };
+
+        await this.createTransaction(transaction);
         const notification = {
             userId: job.data.user.id,
             organizationId: job.data.user.organizationId,

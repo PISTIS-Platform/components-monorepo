@@ -1,7 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsString } from 'class-validator';
 
-
 export class RetrieveDataDTO {
     @IsNotEmpty()
     @IsString()
@@ -13,4 +12,13 @@ export class RetrieveDataDTO {
     @ApiProperty()
     sellerId!: string;
 
+    @IsNotEmpty()
+    @IsString()
+    @ApiProperty()
+    transactionId!: string;
+
+    @IsNotEmpty()
+    @IsString()
+    @ApiProperty()
+    monetizationId!: string;
 }

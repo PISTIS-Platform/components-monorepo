@@ -254,6 +254,18 @@ export class ConsumerService {
             this.logger.error('Metadata creation error:', err);
             throw new BadGatewayException('Metadata creation error');
         }
+        const transaction = {
+            transactionId: data.transactionId,
+            transactionFee: 1,
+            amount: metadata.monetization[0].purchase_offer[0].price,
+            factoryBuyerId: user.organizationId,
+            factoryBuyerName: factory.organizationName,
+            factorySellerId: data.assetFactory,
+            factorySellerName: providerFactory.organizationName,
+            assetId: metadata.id,
+            assetName: metadata.title.en,
+            terms: metadata.monetization[0].purchase_offer[0].contract_terms,
+        };
 
         //FIXME: temporary solution to avoid lineage data throw an error and stop the process
         // try {
@@ -262,6 +274,8 @@ export class ConsumerService {
         //     this.logger.error('Metadata creation error:', err);
         //     throw new BadGatewayException('Metadata creation error');
         // }
+
+        return transaction;
     }
 
     async getDataFromProvider(

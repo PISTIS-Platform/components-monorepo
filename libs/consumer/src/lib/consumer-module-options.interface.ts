@@ -12,4 +12,5 @@ export interface ConsumerModuleOptions {
     authServerUrl: string;
     catalogOwnedId: string;
     organisationFullname: string;
+    transactionAuditorUrl: string;
 }
