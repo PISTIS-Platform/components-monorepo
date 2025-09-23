@@ -1,5 +1,5 @@
 import { InjectQueue } from '@nestjs/bullmq';
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Logger, Param, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiNotFoundResponse, ApiOkResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { CONNECTOR_QUEUE } from '@pistis/bullMq';
 import { AuthToken, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
@@ -31,6 +31,7 @@ import { RetrieveDataDTO } from './retrieveData.dto';
     },
 })
 export class ConsumerController {
+    private readonly logger = new Logger(ConsumerController.name);
     constructor(
         private readonly consumerService: ConsumerService,
         @InjectQueue(CONNECTOR_QUEUE) private connectorQueue: Queue,
@@ -114,6 +115,29 @@ export class ConsumerController {
     })
     async createKafkaUser(@Param('assetId') assetId: string) {
         return await this.consumerService.createKafkaUserAndTopic(assetId);
+    }
+
+    @Post('subscription/:assetId')
+    @ApiOkResponse({
+        description: 'Stop data transfer for failed payment',
+        schema: {
+            example: {
+                message: 'Data transfer stopped',
+            },
+        },
+    })
+    async removeQueue(@Param('assetId') assetId: string) {
+        const asset = await this.consumerService.getAssetId(assetId);
+        if (asset) {
+            const job = await this.connectorQueue.getJob(`scheduled-retrieval-sync-for-${assetId}`);
+            if (job) {
+                await job.remove();
+                this.logger.verbose(`Removed scheduled job for asset ${assetId}`);
+            }
+            return 'Data transfer stopped';
+        } else {
+            return 'No active data transfer found for this asset';
+        }
     }
 
     @Get()
