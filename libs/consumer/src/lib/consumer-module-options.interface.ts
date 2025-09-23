@@ -1,6 +1,6 @@
 export interface ConsumerModuleOptions {
     dataStorageUrl: string;
-    cloudUrl: string;
+    notificationsUrl: string;
     factoryRegistryUrl: string;
     downloadBatchSize: number;
     metadataRepositoryUrl: string;
@@ -12,6 +12,5 @@ export interface ConsumerModuleOptions {
     authServerUrl: string;
     catalogOwnedId: string;
     organisationFullname: string;
-    notificationsService: string;
-    transactionAuditorService: string;
+    transactionAuditorUrl: string;
 }

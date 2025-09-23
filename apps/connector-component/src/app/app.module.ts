@@ -34,7 +34,6 @@ import { KafkaConfig } from './kafka.config';
             imports: [ConfigModule.forFeature(AppConfig)],
             useFactory: async (options: IConnectorConfig) => ({
                 dataStorageUrl: options.dataStorageUrl,
-                cloudUrl: options.cloudUrl,
                 factoryRegistryUrl: options.factoryRegistryUrl,
                 downloadBatchSize: options.downloadBatchSize,
                 metadataRepositoryUrl: options.metadataRepositoryUrl,
@@ -46,8 +45,8 @@ import { KafkaConfig } from './kafka.config';
                 secret: options.keycloak.clientSecret,
                 authServerUrl: options.keycloak.url,
                 organisationFullname: options.organisationFullname,
-                notificationsService: options.notificationsService,
-                transactionAuditorService: options.transactionAuditorService,
+                notificationsUrl: options.notificationsUrl,
+                transactionAuditorUrl: options.transactionAuditorUrl,
             }),
             inject: [AppConfig.KEY],
         }),

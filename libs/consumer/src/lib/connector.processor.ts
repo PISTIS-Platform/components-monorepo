@@ -87,13 +87,9 @@ export class ConnectorProcessor extends WorkerHost {
                 .pipe(
                     map(({ data }) => data.access_token),
                     switchMap((access_token) =>
-                        this.httpService.post(
-                            `${this.options.cloudUrl}/${this.options.notificationsService}/api/notifications`,
-                            notification,
-                            {
-                                headers: getHeaders(access_token),
-                            },
-                        ),
+                        this.httpService.post(`${this.options.notificationsUrl}/api/notifications`, notification, {
+                            headers: getHeaders(access_token),
+                        }),
                     ),
                     tap((response) => this.logger.debug(response)),
                     catchError((error) => {
@@ -117,7 +113,7 @@ export class ConnectorProcessor extends WorkerHost {
                     map(({ data }) => data.access_token),
                     switchMap((access_token) =>
                         this.httpService.post(
-                            `${this.options.cloudUrl}/${this.options.transactionAuditorService}/api/transactions-auditor/`,
+                            `${this.options.transactionAuditorUrl}/api/transactions-auditor/`,
                             transaction,
                             { headers: getHeaders(access_token) },
                         ),
