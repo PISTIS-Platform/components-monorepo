@@ -1,5 +1,4 @@
 export interface BullMqModuleOptions {
-    notificationsUrl: string;
     identityAccessManagementUrl: string;
     clientId: string;
     secret: string;

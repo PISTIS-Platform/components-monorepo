@@ -3,7 +3,7 @@ import { IAppConfig, IRedisConfig } from '@pistis/shared';
 
 export type IConnectorConfig = IAppConfig & {
     dataStorageUrl: string;
-    notificationsUrl: string;
+    cloudUrl: string;
     factoryRegistryUrl: string;
     blockchainUrl: string;
     metadataRepositoryUrl: string;
@@ -15,7 +15,8 @@ export type IConnectorConfig = IAppConfig & {
     organisationFullname: string;
     factoryPrefix: string;
     redis: IRedisConfig;
-    transactionAuditorUrl: string;
+    notificationsService: string;
+    transactionAuditorService: string;
 };
 
 export const AppConfig = registerAs(
@@ -37,7 +38,7 @@ export const AppConfig = registerAs(
             clientSecret: process.env.KC_CLIENT_SECRET,
         },
         dataStorageUrl: process.env.DATA_STORE_URL,
-        notificationsUrl: process.env.CLOUD_URL,
+        cloudUrl: process.env.CLOUD_URL,
         factoryRegistryUrl: process.env.FACTORY_REGISTRY_URL,
         blockchainUrl: process.env.BLOCKCHAIN_URL,
         metadataRepositoryUrl: process.env.METADATA_REPOSITORY_URL,
@@ -56,6 +57,7 @@ export const AppConfig = registerAs(
             username: process.env.REDIS_USERNAME,
             password: process.env.REDIS_PASSWORD,
         },
-        transactionAuditorUrl: process.env.TRANSACTION_AUDITOR_URL,
+        notificationsService: process.env.TRANSACTION_AUDITOR_SERVICE,
+        transactionAuditorService: process.env.NOTIFICATIONS_SERVICE,
     }),
 );
