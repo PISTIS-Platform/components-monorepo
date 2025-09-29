@@ -11,13 +11,20 @@ import {
     TokenValidation,
 } from 'nest-keycloak-connect';
 
-import { AppConfig } from './app.config';
+import { AppConfig, ContractComposerConfig } from './app.config';
 
 @Module({
     imports: [
         ConfigModule.forRoot({ isGlobal: true }),
         ConfigModule.forFeature(AppConfig),
-        SCTCModule,
+        SCTCModule.registerAsync({
+            imports: [ConfigModule.forFeature(AppConfig)],
+            useFactory: async (options: ContractComposerConfig) => ({
+                metadataRepositoryUrl: options.metadataRepositoryUrl,
+                catalogKey: options.catalogKey,
+            }),
+            inject: [AppConfig.KEY],
+        }),
         KeycloakConnectModule.registerAsync({
             imports: [ConfigModule.forFeature(AppConfig)],
             inject: [AppConfig.KEY],

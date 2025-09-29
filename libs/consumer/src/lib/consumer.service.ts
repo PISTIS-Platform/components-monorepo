@@ -269,10 +269,30 @@ export class ConsumerService {
 
         //FIXME: temporary solution to avoid lineage data throw an error and stop the process
         // try {
-        // await this.metadataRepositoryService.createLineage(lineageData, token, /*factory.factoryPrefix*/ 'develop');
+        // await this.metadataRepositoryService.createLineage(lineageData, token, /*factory.factoryPrefix*/ 'develop', assetInfo?.id);
         // } catch (err) {
         //     this.logger.error('Metadata creation error:', err);
         //     throw new BadGatewayException('Metadata creation error');
+        // }
+
+        //SCTC
+        // try {
+        //     await firstValueFrom(
+        //         this.httpService
+        //             .post(`${this.options.sctcService}/sctc/create/${assetId}`, transaction, {
+        //                 headers: getHeaders(token),
+        //             })
+        //             .pipe(
+        //                 tap((response) => this.logger.debug(response)),
+        //                 catchError((error) => {
+        //                     this.logger.error('SCTC error:', error);
+        //                     return of({ error: 'Error occurred during recording transaction in SCTC' });
+        //                 }),
+        //             ),
+        //     );
+        // } catch (err) {
+        //     this.logger.error('SCTC error:', err);
+        //     throw new BadGatewayException('SCTC error');
         // }
 
         return transaction;

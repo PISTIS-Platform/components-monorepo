@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Param, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { ORGANISATION_MEMBER } from '@pistis/shared';
 import { Roles } from 'nest-keycloak-connect';
@@ -70,5 +70,40 @@ export class SCTCController {
     @ApiUnauthorizedResponse()
     async create(@Body() data: ContractComposerDto) {
         return this.service.composeContract(data);
+    }
+
+    @Post('/create/:assetId')
+    @ApiOkResponse({
+        description: 'Compose Contract Info',
+        schema: {
+            example: {
+                '@context': ['http://www.w3.org/ns/odrl.jsonld', 'https://pistis.eu/odrl/context.jsonld'],
+                permission: [
+                    {
+                        target: 'http://example.com/dataset/123',
+                        action: 'use',
+                        assignee: 'org:BuyerA',
+                        constraint: [
+                            {
+                                leftOperand: 'dateTime',
+                                operator: 'geq',
+                                rightOperand: '2023-01-01T00:00:00Z',
+                            },
+                            {
+                                leftOperand: 'dateTime',
+                                operator: 'leq',
+                                rightOperand: '2024-01-01T00:00:00Z',
+                            },
+                        ],
+                    },
+                ],
+            },
+        },
+    })
+    @Roles({ roles: [ORGANISATION_MEMBER] })
+    @ApiBody({ type: ContractComposerDto })
+    @ApiUnauthorizedResponse()
+    async createODRLContract(@Param('assetId') assetId: string) {
+        return this.service.createODRLContract(assetId);
     }
 }

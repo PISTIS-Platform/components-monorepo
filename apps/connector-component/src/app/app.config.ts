@@ -16,6 +16,7 @@ export type IConnectorConfig = IAppConfig & {
     factoryPrefix: string;
     redis: IRedisConfig;
     transactionAuditorUrl: string;
+    sctcService: string;
 };
 
 export const AppConfig = registerAs(
@@ -57,5 +58,6 @@ export const AppConfig = registerAs(
         },
         notificationsUrl: process.env.NOTIFICATIONS_URL,
         transactionAuditorUrl: process.env.TRANSACTION_AUDITOR_URL,
+        sctcService: process.env.SCTC_SERVICE,
     }),
 );
