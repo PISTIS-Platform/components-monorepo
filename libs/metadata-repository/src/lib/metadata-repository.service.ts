@@ -248,10 +248,15 @@ export class MetadataRepositoryService {
         );
     }
 
-    async createLineage(data: any, token: string, factoryPrefix: string) {
+    async createLineage(data: any, token: string, factoryPrefix: string, assetId: string) {
+        const lineageData = {
+            dataset_id: assetId,
+            direction: 'coud-to-factory',
+            dataset_lineage: data,
+        };
         await firstValueFrom(
             this.httpService
-                .post(`https://${factoryPrefix}.pistis-market.eu/srv/lineage-tracker/write_lineage`, data, {
+                .post(`https://${factoryPrefix}.pistis-market.eu/srv/lineage-tracker/write_lineage`, lineageData, {
                     headers: getHeaders(token),
                 })
                 .pipe(
