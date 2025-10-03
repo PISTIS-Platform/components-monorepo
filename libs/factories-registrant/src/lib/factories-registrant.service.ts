@@ -249,7 +249,7 @@ export class FactoriesRegistrantService {
     }
 
     async retrieveAcceptedFactories() {
-        const factories = await this.repo.findAll();
+        const factories = await this.repo.find({ status: { $ne: 'suspended' } });
         return factories.map(
             (factory: Loaded<FactoriesRegistrant, never, 'factoryPrefix', never>) =>
                 `https://${factory.factoryPrefix}.pistis-market.eu`,
