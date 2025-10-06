@@ -37,7 +37,7 @@ export class ConsumerService {
     async retrieveData(em: EntityManager, assetId: string, user: any, token: string, data: RetrieveDataDTO) {
         let factory: any;
         let metadata;
-        let _lineageData: any;
+        let lineageData: any;
         let isStreamingData: boolean;
 
         let providerFactory: any;
@@ -62,8 +62,7 @@ export class ConsumerService {
             throw new NotFoundException(`Provider factory not found: ${err}`);
         }
 
-        // FIXME: remove underscore from assetId when lineage tracker is fixed
-        const _accessId = metadata.distributions.map((distribution: any) => {
+        const accessId = metadata.distributions.map((distribution: any) => {
             const accessUrl = distribution.access_url[0];
             const urlParts = accessUrl.split('?');
 
@@ -78,13 +77,11 @@ export class ConsumerService {
             }
         });
 
-        //FIXME: temporary solution to avoid lineage data throw an error and stop the process
-        // try {
-        // const lineageData = await this.metadataRepositoryService.retrieveLineage(accessId[0], token);
-        // } catch (err) {
-        //     this.logger.error('Lineage retrieval error:', err);
-        //     throw new BadGatewayException('Lineage retrieval error');
-        // }
+        try {
+            lineageData = await this.metadataRepositoryService.retrieveLineage(accessId[0], token);
+        } catch (err) {
+            this.logger.error('Lineage tracker retrieval error:', err);
+        }
 
         const storageUrl = `https://${factory.factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api`;
         let assetInfo: AssetRetrievalInfo | null;
@@ -267,13 +264,11 @@ export class ConsumerService {
             terms: metadata.monetization[0].purchase_offer[0].contract_terms,
         };
 
-        //FIXME: temporary solution to avoid lineage data throw an error and stop the process
-        // try {
-        // await this.metadataRepositoryService.createLineage(lineageData, token, /*factory.factoryPrefix*/ 'develop');
-        // } catch (err) {
-        //     this.logger.error('Metadata creation error:', err);
-        //     throw new BadGatewayException('Metadata creation error');
-        // }
+        try {
+            await this.metadataRepositoryService.createLineage(lineageData, token, factory.factoryPrefix);
+        } catch (err) {
+            this.logger.error('Lineage tracker creation error:', err);
+        }
 
         return transaction;
     }
