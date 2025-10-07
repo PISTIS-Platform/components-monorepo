@@ -87,14 +87,15 @@ export class ConsumerController {
         }
         if (metadata.distributions.length && metadata.distributions[0].title.en === 'Kafka Stream') {
             const target = await this.consumerService.getAssetId(assetId);
-            await this.connectorQueue.upsertJobScheduler(
+            const delayUntilEndDate = endDate ? endDate.getTime() - new Date().getTime() : 0;
+
+            await this.connectorQueue.add(
                 'deleteStreamingConnector',
+                { assetId, target },
                 {
-                    endDate: endDate,
-                },
-                {
-                    name: `streaming-connector-removal-for-${assetId}`,
-                    data: { assetId, target },
+                    jobId: `streaming-connector-removal-for-${assetId}`,
+                    delay: delayUntilEndDate,
+                    removeOnComplete: true,
                 },
             );
         }
