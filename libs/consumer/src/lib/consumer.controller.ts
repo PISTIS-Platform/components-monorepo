@@ -91,7 +91,7 @@ export class ConsumerController {
 
             await this.connectorQueue.add(
                 'deleteStreamingConnector',
-                { assetId, target },
+                { assetId, target, user },
                 {
                     jobId: `streaming-connector-removal-for-${assetId}`,
                     delay: delayUntilEndDate,
