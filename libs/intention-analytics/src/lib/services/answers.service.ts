@@ -10,7 +10,6 @@ import { Answer, Question, Questionnaire } from '../entities';
 import { INTENSION_ANALYTICS_MODULE_OPTIONS } from '../intension-analytics.module-definition';
 import { IntensionAnalyticsModuleOptions } from '../intension-analytics-module-options.interface';
 import { MetadataRepositoryService } from '@pistis/metadata-repository';
-import { userInfo } from 'os';
 
 @Injectable()
 export class AnswersService {
