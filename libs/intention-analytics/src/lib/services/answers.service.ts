@@ -1,7 +1,7 @@
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityRepository } from '@mikro-orm/postgresql';
 import { HttpService } from '@nestjs/axios';
-import { BadRequestException, Inject, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, Logger, ForbiddenException } from '@nestjs/common';
 import { getHeaders, UserInfo } from '@pistis/shared';
 import { catchError, firstValueFrom, map, switchMap, throwError } from 'rxjs';
 
@@ -9,6 +9,7 @@ import { CreateAnswerDto } from '../dto/create-answer.dto';
 import { Answer, Question, Questionnaire } from '../entities';
 import { INTENSION_ANALYTICS_MODULE_OPTIONS } from '../intension-analytics.module-definition';
 import { IntensionAnalyticsModuleOptions } from '../intension-analytics-module-options.interface';
+import { MetadataRepositoryService } from '@pistis/metadata-repository';
 
 @Injectable()
 export class AnswersService {
@@ -18,6 +19,7 @@ export class AnswersService {
         @InjectRepository(Questionnaire) private readonly questionnaireRepo: EntityRepository<Questionnaire>,
         @InjectRepository(Question) private readonly questionRepo: EntityRepository<Question>,
         private readonly httpService: HttpService,
+        private readonly metadataRepositoryService: MetadataRepositoryService,
         @Inject(INTENSION_ANALYTICS_MODULE_OPTIONS) private options: IntensionAnalyticsModuleOptions,
     ) {}
 
@@ -123,11 +125,7 @@ export class AnswersService {
     }
 
     async getAnswers(assetId: string, user: UserInfo, forVerifiedBuyers: boolean) {
-        const questionnaire = await this.questionnaireRepo.findOneOrFail({
-            isActive: true,
-            creatorId: user.id,
-            isForVerifiedBuyers: forVerifiedBuyers,
-        });
+        const questionnaire = await this.findActiveVersion(forVerifiedBuyers);
 
         const answers = await this.answersRepo.find(
             {
@@ -137,11 +135,13 @@ export class AnswersService {
             { fields: ['responses', 'createdAt'] },
         );
 
-        //If user is the creator or if the user is an admin (no organizationId), allow
-        if (user.id === questionnaire?.creatorId || !user.organizationId) {
-            return answers;
+        const metadata = await this.metadataRepositoryService.retrieveMetadata(assetId);
+        const datasetOrgId = metadata.monetization[0].purchase_offer[0].publisher.organization_id;
+
+        if (datasetOrgId === user.organizationId || !user.organizationId) {
+            return answers || [];
         } else {
-            throw new UnauthorizedException(`You are not authorized to view these answers`);
+            throw new ForbiddenException(`You cannot view the answers of this asset's questionnaire.`);
         }
     }
 }

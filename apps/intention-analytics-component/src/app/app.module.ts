@@ -39,6 +39,8 @@ import { AppConfig, IAnalyticsConfig } from './app.config';
                 clientId: options.keycloak.clientId,
                 secret: options.keycloak.clientSecret,
                 authServerUrl: options.keycloak.url,
+                metadataRepositoryUrl: options.metadataRepositoryUrl,
+                catalogKey: options.catalogKey,
             }),
             inject: [AppConfig.KEY],
         }),

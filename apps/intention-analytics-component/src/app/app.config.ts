@@ -4,6 +4,8 @@ import { IAppConfig } from '@pistis/shared';
 export type IAnalyticsConfig = IAppConfig & {
     blockchainUrl: string;
     transactionAuditorUrl: string;
+    metadataRepositoryUrl: string;
+    catalogKey: string;
 };
 
 export const AppConfig = registerAs(
@@ -28,5 +30,7 @@ export const AppConfig = registerAs(
         transactionAuditorUrl: process.env.TRANSACTION_AUDITOR_URL,
         isDevelopment: process.env.NODE_ENV !== 'production',
         swaggerBaseUrl: process.env.SWAGGER_BASE_URL ?? '/',
+        metadataRepositoryUrl: process.env.METADATA_REPOSITORY_URL,
+        catalogKey: process.env.CATALOG_API_KEY
     }),
 );

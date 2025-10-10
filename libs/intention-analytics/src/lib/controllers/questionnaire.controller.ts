@@ -4,6 +4,7 @@ import {
     Delete,
     Get,
     Param,
+    ParseBoolPipe,
     ParseIntPipe,
     ParseUUIDPipe,
     Patch,
@@ -279,7 +280,7 @@ export class QuestionnaireController {
     })
     async getAnswers(
         @Param('assetId') assetId: string,
-        @Param('verifiedBuyers') verifiedBuyers: boolean,
+        @Param('verifiedBuyers', ParseBoolPipe) verifiedBuyers: boolean,
         @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
     ) {
         return this.answersService.getAnswers(assetId, user, verifiedBuyers);

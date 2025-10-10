@@ -9,6 +9,7 @@ import { ComponentHealthController } from './controllers/component-health.contro
 import { Answer } from './entities';
 import { Question } from './entities/question.entity';
 import { Questionnaire } from './entities/questionnaire.entity';
+import { MetadataRepositoryModule } from '@pistis/metadata-repository';
 import {
     ConfigurableModuleClass,
     INTENSION_ANALYTICS_ASYNC_OPTIONS_TYPE,
@@ -25,7 +26,10 @@ import { AnswersService } from './services/answers.service';
 export class IntentionAnalyticsModule extends ConfigurableModuleClass {
     static register(options: typeof INTENSION_ANALYTICS_OPTIONS_TYPE): DynamicModule {
         return {
-            imports: [BlockchainModule.register({ url: options.blockchainUrl })],
+            imports: [
+                BlockchainModule.register({ url: options.blockchainUrl }),
+                MetadataRepositoryModule.register({ url: options.metadataRepositoryUrl, apiKey: options.catalogKey }),
+            ],
             ...super.register(options),
         };
     }
@@ -42,6 +46,15 @@ export class IntentionAnalyticsModule extends ConfigurableModuleClass {
                     const options: any = asyncOptions.useFactory ? await asyncOptions.useFactory(config) : {};
 
                     return { url: options.blockchainUrl };
+                },
+            }),
+            MetadataRepositoryModule.registerAsync({
+                imports: asyncOptions?.imports,
+                inject: asyncOptions?.inject,
+                useFactory: async (config: typeof asyncOptions.inject) => {
+                    const options: any = asyncOptions.useFactory ? await asyncOptions.useFactory(config) : {};
+
+                    return { url: options.metadataRepositoryUrl, apiKey: options.catalogKey };
                 },
             }),
         ];

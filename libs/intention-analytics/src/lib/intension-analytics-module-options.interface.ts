@@ -4,4 +4,6 @@ export interface IntensionAnalyticsModuleOptions {
     secret: string;
     authServerUrl: string;
     transactionAuditorUrl: string;
+    metadataRepositoryUrl: string;
+    catalogKey: string;
 }
