@@ -123,13 +123,9 @@ export class AnswersService {
     }
 
     async getAnswers(assetId: string, user: UserInfo, forVerifiedBuyers: boolean) {
-        const questionnaire = await this.questionnaireRepo.findOneOrFail({
-            isActive: true,
-            creatorId: user.id,
-            isForVerifiedBuyers: forVerifiedBuyers,
-        });
+        const questionnaire = await this.findActiveVersion(forVerifiedBuyers);
 
-        const answers = await this.answersRepo.findOne(
+        const answers = await this.answersRepo.find(
             {
                 assetId: assetId,
                 questionnaire: { id: questionnaire.id },
@@ -137,11 +133,6 @@ export class AnswersService {
             { fields: ['responses', 'createdAt'] },
         );
 
-        //If user is the creator or if the user is an admin (no organizationId), allow
-        if (user.id === questionnaire?.creatorId || !user.organizationId) {
-            return answers;
-        } else {
-            throw new UnauthorizedException(`You are not authorized to view these answers`);
-        }
+        return answers || [];
     }
 }
