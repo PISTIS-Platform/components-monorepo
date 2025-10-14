@@ -252,6 +252,7 @@ export class ConsumerService {
             throw new BadGatewayException('Metadata creation error');
         }
         const transaction = {
+            sellerId: metadata.monetization[0].seller_id,
             transactionId: data.transactionId,
             transactionFee: 1,
             amount: metadata.monetization[0].purchase_offer[0].price,

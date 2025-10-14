@@ -152,16 +152,23 @@ export class ConnectorProcessor extends WorkerHost {
         };
 
         await this.createTransaction(transaction);
-        const notification = {
-            userId: job.data.user.id,
-            organizationId: job.data.user.organizationId,
-            type: job.data.format !== 'SQL' && job.data.format !== 'CSV' ? 'streaming_data' : 'asset_retrieved',
-            message:
-                job.data.format !== 'SQL' && job.data.format !== 'CSV'
-                    ? 'Streaming data retrieval'
-                    : 'Asset retrieval finished',
-        };
-        await this.notifications(notification);
+        const notification = [
+            {
+                userId: job.data.user.id,
+                organizationId: job.data.user.organizationId,
+                type: job.data.format !== 'SQL' && job.data.format !== 'CSV' ? 'streaming_data' : 'asset_retrieved',
+                message: `A purchase of Asset with Title: ${job.returnvalue.assetName} has been completed successfully. Buyer: ${job.returnvalue.factoryBuyerName}, Seller: ${job.returnvalue.factorySellerName}.`,
+            },
+            {
+                userId: job.returnvalue.sellerId,
+                organizationId: job.returnvalue.factorySellerId,
+                type: job.data.format !== 'SQL' && job.data.format !== 'CSV' ? 'streaming_data' : 'asset_retrieved',
+                message: `A purchase of Asset with Title: ${job.returnvalue.assetName} has been completed successfully. Buyer: ${job.returnvalue.factoryBuyerName}, Seller: ${job.returnvalue.factorySellerName}.`,
+            },
+        ];
+        for (const note of notification) {
+            await this.notifications(note);
+        }
     }
 
     @OnWorkerEvent('failed')
@@ -172,12 +179,22 @@ export class ConnectorProcessor extends WorkerHost {
             cloudAssetId: job.data.assetId,
         });
 
-        const notification = {
-            userId: job.data.user.id,
-            organizationId: job.data.user.organizationId,
-            type: 'asset_retrieval_failure',
-            message: 'Asset retrieval failed, please contact data provider',
-        };
-        await this.notifications(notification);
+        const notification = [
+            {
+                userId: job.data.user.id,
+                organizationId: job.data.user.organizationId,
+                type: 'asset_retrieval_failure',
+                message: `Asset retrieval failed for ${job.returnvalue.assetName}, please contact data provider`,
+            },
+            {
+                userId: job.returnvalue.sellerId,
+                organizationId: job.returnvalue.factorySellerId,
+                type: 'asset_retrieval_failure',
+                message: `Asset provision failed for ${job.returnvalue.assetName} for buyer ${job.returnvalue.factoryBuyerNameuyer}`,
+            },
+        ];
+        for (const note of notification) {
+            await this.notifications(note);
+        }
     }
 }
