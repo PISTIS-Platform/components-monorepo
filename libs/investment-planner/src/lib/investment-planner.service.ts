@@ -58,6 +58,14 @@ export class InvestmentPlannerService {
             investmentPlan.remainingShares -= data.numberOfShares;
         }
 
+        const userInvestment = await this.userInvestmentRepo.findOne({
+            cloudAssetId: investmentPlan.cloudAssetId,
+            userId: user.id,
+        });
+        if (userInvestment) {
+            throw new BadRequestException('User already has an investment plan for this asset');
+        }
+
         await this.repo.getEntityManager().persistAndFlush(investmentPlan);
         return await this.createUserInvestmentPlan(investmentPlan, data.numberOfShares, user.id);
     }
@@ -86,6 +94,18 @@ export class InvestmentPlannerService {
             userId: user.id,
             investmentPlan: { id: investmentPlan.id, status: investmentPlan.status },
         });
+    }
+
+    async getLoggedInUserInvestmentPlans(user: UserInfo) {
+        return await this.userInvestmentRepo.find({ userId: user.id }, { populate: ['investmentPlan'] });
+    }
+
+    async hasUserInvestmentPlan(assetId: string, user: UserInfo) {
+        const hasInvested = await this.userInvestmentRepo.findOne({ cloudAssetId: assetId, userId: user.id });
+        if (hasInvested) {
+            return true;
+        }
+        return false;
     }
 
     //TODO: check if we want notifications for this component

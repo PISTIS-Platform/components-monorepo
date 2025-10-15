@@ -57,6 +57,37 @@ export class InvestmentPlannerController {
         return await this.investmentPlannerService.retrieveInvestmentPlan(assetId);
     }
 
+    @Get('/user-investments')
+    @ApiOkResponse({
+        description: '',
+        schema: {
+            example: {
+                id: '1818ed08-9087-43f1-b41c-13284d9a6db3',
+                cloudAssetId: 'c74d8d5f-9351-428d-9c86-b7356526bf32',
+                userId: '1818ed08-9087-43f1-b41c-13284d9a6db3',
+                dueDate: '2025-07-23 21:00:00+00',
+                shares: 10,
+                investmentPlan: 'c74d8d5f-9351-428d-9c86-b7356526bf32',
+                createdAt: '2024-10-01T12:00:00Z',
+                updatedAt: '2024-10-01T12:00:00Z',
+            },
+        },
+    })
+    async getLoggedInUserInvestmentPlans(@AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo) {
+        return await this.investmentPlannerService.getLoggedInUserInvestmentPlans(user);
+    }
+
+    @Post('/user-has-invested')
+    @ApiOkResponse({
+        description: '',
+        schema: {
+            example: true,
+        },
+    })
+    async hasUserInvestmentPlan(@AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo, @Body() data: any) {
+        return await this.investmentPlannerService.hasUserInvestmentPlan(data.assetId, user);
+    }
+
     @Post()
     @ApiOkResponse({
         description: '',
