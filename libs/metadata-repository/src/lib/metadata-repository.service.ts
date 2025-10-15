@@ -138,6 +138,7 @@ export class MetadataRepositoryService {
                 dct:issued          "${new Date().toISOString()}"^^xsd:dateTime ;
                 dct:modified        "${new Date().toISOString()}"^^xsd:dateTime ;
                 dcat:distribution   <https://piveau.io/set/distribution/1> .
+                pistis:offer		<http://pistis-market.eu/offer/1> .
 
             <https://piveau.io/set/distribution/1>
                 a              dcat:Distribution ;
