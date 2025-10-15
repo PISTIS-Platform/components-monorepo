@@ -123,6 +123,7 @@ export class MetadataRepositoryService {
             @prefix vcard:               <http://www.w3.org/2006/vcard/ns#> .
             @prefix foaf:                <http://xmlns.com/foaf/0.1/> .
             @prefix skos:                <http://www.w3.org/2004/02/skos/core#> .
+            @prefix pistis:				<https://www.pistis-project.eu/ns/voc#> .
 
             <https://piveau.io/set/data/test-dataset>
                 a                   dcat:Dataset ;
@@ -150,6 +151,12 @@ export class MetadataRepositoryService {
                 dct:format     <${getDistributionsValue('format')}> ;
                 ${byteSizeEntry}
                 dcat:accessURL ${accessUrl} .
+
+            				
+            <http://pistis-market.eu/offer/1>
+                a  							pistis:Offer;
+                pistis:originalId			"${metadata.offer.original_id}";
+                pistis:marketplaceOfferId	"${metadata.id}" .
         `;
 
         try {
