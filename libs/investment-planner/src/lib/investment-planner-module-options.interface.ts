@@ -6,4 +6,5 @@ export interface InvestmentPlannerModuleOptions {
     sceeUrl: string;
     marketplaceKey: string;
     metadataRepositoryUrl: string;
+    cloudURL?: string;
 }

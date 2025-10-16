@@ -6,6 +6,7 @@ export type IAnalyticsConfig = IAppConfig & {
     transactionAuditorUrl: string;
     metadataRepositoryUrl: string;
     catalogKey: string;
+    cloudURL?: string;
 };
 
 export const AppConfig = registerAs(
@@ -31,6 +32,7 @@ export const AppConfig = registerAs(
         isDevelopment: process.env.NODE_ENV !== 'production',
         swaggerBaseUrl: process.env.SWAGGER_BASE_URL ?? '/',
         metadataRepositoryUrl: process.env.METADATA_REPOSITORY_URL,
-        catalogKey: process.env.CATALOG_API_KEY
+        catalogKey: process.env.CATALOG_API_KEY,
+        cloudURL: process.env.CLOUD_URL,
     }),
 );

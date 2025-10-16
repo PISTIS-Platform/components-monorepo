@@ -28,6 +28,7 @@ export class InvestmentPlannerModule extends ConfigurableModuleClass {
                 MetadataRepositoryModule.register({
                     url: options.metadataRepositoryUrl,
                     apiKey: options.marketplaceKey,
+                    cloudURL: options.cloudURL,
                 }),
             ],
 
@@ -46,7 +47,11 @@ export class InvestmentPlannerModule extends ConfigurableModuleClass {
                 useFactory: async (config: typeof asyncOptions.inject) => {
                     const options: any = asyncOptions.useFactory ? await asyncOptions.useFactory(config) : {};
 
-                    return { url: options.metadataRepositoryUrl, apiKey: options.marketplaceKey };
+                    return {
+                        url: options.metadataRepositoryUrl,
+                        apiKey: options.marketplaceKey,
+                        cloudURL: options.cloudURL,
+                    };
                 },
             }),
         ];

@@ -36,7 +36,11 @@ export class ConsumerModule extends ConfigurableModuleClass {
         return {
             imports: [
                 DataStorageModule.register({ url: options.dataStorageUrl }),
-                MetadataRepositoryModule.register({ url: options.metadataRepositoryUrl, apiKey: options.catalogKey }),
+                MetadataRepositoryModule.register({
+                    url: options.metadataRepositoryUrl,
+                    apiKey: options.catalogKey,
+                    cloudURL: options.cloudURL,
+                }),
             ],
 
             ...super.register(options),
@@ -63,7 +67,11 @@ export class ConsumerModule extends ConfigurableModuleClass {
                 useFactory: async (config: typeof asyncOptions.inject) => {
                     const options: any = asyncOptions.useFactory ? await asyncOptions.useFactory(config) : {};
 
-                    return { url: options.metadataRepositoryUrl, apiKey: options.catalogKey };
+                    return {
+                        url: options.metadataRepositoryUrl,
+                        apiKey: options.catalogKey,
+                        cloudURL: options.cloudURL,
+                    };
                 },
             }),
         ];

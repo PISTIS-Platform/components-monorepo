@@ -41,6 +41,7 @@ import { AppConfig, IAnalyticsConfig } from './app.config';
                 authServerUrl: options.keycloak.url,
                 metadataRepositoryUrl: options.metadataRepositoryUrl,
                 catalogKey: options.catalogKey,
+                cloudURL: options.cloudURL,
             }),
             inject: [AppConfig.KEY],
         }),

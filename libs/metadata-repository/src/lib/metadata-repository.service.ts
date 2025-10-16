@@ -19,7 +19,7 @@ export class MetadataRepositoryService {
         let metadata;
         try {
             metadata = await firstValueFrom(
-                this.httpService.get(`https://pistis-market.eu/srv/search/datasets/${assetId}`).pipe(
+                this.httpService.get(`${this.options.cloudURL}/srv/search/datasets/${assetId}`).pipe(
                     map((res) => {
                         return res.data.result;
                     }),
@@ -277,7 +277,7 @@ export class MetadataRepositoryService {
     async retrieveLineage(assetId: string, token: string) {
         return await firstValueFrom(
             this.httpService
-                .get(`https://pistis-market.eu/srv/lineage-tracker/read_lineage?dataset_id=${assetId}`, {
+                .get(`${this.options.cloudURL}/srv/lineage-tracker/read_lineage?dataset_id=${assetId}`, {
                     headers: getHeaders(token),
                 })
                 .pipe(
@@ -293,7 +293,7 @@ export class MetadataRepositoryService {
     }
 
     async updateInvestmentPlanMetadata(assetId: string) {
-        const metadata = await await fetch(`https://pistis-market.eu/srv/repo/datasets/${assetId}`)
+        const metadata = await fetch(`${this.options.cloudURL}/srv/repo/datasets/${assetId}`)
             .then((res) => {
                 if (!res.ok) {
                     throw new Error(`Error fetching the metadata: ${res.statusText}`);
@@ -317,7 +317,7 @@ export class MetadataRepositoryService {
                 return item;
             }),
         };
-        const response = await fetch(`https://pistis-market.eu/srv/repo/datasets/${assetId}`, {
+        const response = await fetch(`${this.options.cloudURL}/srv/repo/datasets/${assetId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

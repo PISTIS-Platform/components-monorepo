@@ -3,17 +3,16 @@ import { InjectRepository } from '@mikro-orm/nestjs';
 import { HttpService } from '@nestjs/axios';
 import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { MetadataRepositoryService } from '@pistis/metadata-repository';
 import { getHeaders, UserInfo } from '@pistis/shared';
 import dayjs from 'dayjs';
+import { catchError, firstValueFrom, map, of, tap, throwError } from 'rxjs';
 
 import { CreateInvestmentPlanDTO } from './create-investment-plan.dto';
 import { InvestmentPlanner } from './entities/investment-planner.entity';
 import { UserInvestment } from './entities/user-investment.entity';
 import { INVESTMENT_PLANNER_MODULE_OPTIONS } from './investment-planner.module-definition';
 import { InvestmentPlannerModuleOptions } from './investment-planner-module-options.interface';
-import isSameOrAfter = require('dayjs/plugin/isSameOrAfter');
-import { MetadataRepositoryService } from '@pistis/metadata-repository';
-import { catchError, firstValueFrom, map, of, tap, throwError } from 'rxjs';
 
 @Injectable()
 export class InvestmentPlannerService {
@@ -177,22 +176,20 @@ export class InvestmentPlannerService {
 
     @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
     async deactivateInvestmentPlan() {
-        dayjs.extend(isSameOrAfter);
-
+        const now = dayjs();
         try {
-            const investments = await this.repo.find({ status: true });
+            const investments = await this.repo.find({
+                status: true,
+                dueDate: { $lte: now },
+            });
             for (let i = 0; i < investments.length; i++) {
                 const investment = investments[i];
-                const dueDate = dayjs(investment.dueDate);
-                const now = dayjs();
 
-                if (!now.isSameOrAfter(dueDate, 'day')) {
-                    investment.status = false;
-                    await this.repo.getEntityManager().persistAndFlush(investment);
-                    await this.informSCEEForFinalization(investment.assetId);
-                    await this.metadataRepositoryService.updateInvestmentPlanMetadata(investment.cloudAssetId);
-                    this.logger.log(`Investment plan with id ${investment.id} has been deactivated`);
-                }
+                investment.status = false;
+                await this.repo.getEntityManager().persistAndFlush(investment);
+                await this.informSCEEForFinalization(investment.assetId);
+                await this.metadataRepositoryService.updateInvestmentPlanMetadata(investment.cloudAssetId);
+                this.logger.log(`Investment plan with id ${investment.id} has been deactivated`);
             }
         } catch (error) {
             this.logger.error(`Error during deactivation of investment plans: ${error}`);

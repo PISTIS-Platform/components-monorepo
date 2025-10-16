@@ -11,4 +11,5 @@ export interface ProviderModuleOptions {
     catalogOwnedId: string;
     organisationFullname: string;
     factoryPrefix: string;
+    cloudURL?: string;
 }
