@@ -24,6 +24,7 @@ export class TransactionsAuditorService {
     }
 
     async retrieveByFactory(query: PaginateQuery, user: UserInfo): Promise<PaginateResponse<TransactionAuditorDTO>> {
+
         const qb = this.repo.createQueryBuilder();
 
         // whitelist of fields users are allowed to filter on, for now only assetName
@@ -34,7 +35,17 @@ export class TransactionsAuditorService {
         if (query.filter && typeof query.filter === 'object') {
             for (const key of allowedFilterFields) {
                 if (key in query.filter) {
-                    sanitizedFilter[key] = query.filter[key];
+                    const value = query.filter[key];
+
+                    // only allow primitive values (string, number, boolean, null)
+                    // block objects that might contain operators like $ne, $gt, etc.
+                    if (typeof value !== 'object' || value === null) {
+                        sanitizedFilter[key] = value;
+                    }
+                    // allow arrays of non-objects for $in-like behavior
+                    else if (Array.isArray(value) && value.every((v) => typeof v !== 'object')) {
+                        sanitizedFilter[key] = value;
+                    }
                 }
             }
         }
