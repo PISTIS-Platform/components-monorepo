@@ -36,16 +36,6 @@ export class TransactionsAuditorService {
             for (const key of allowedFilterFields) {
                 if (key in query.filter) {
                     const value = query.filter[key];
-
-                    // only allow primitive values (string, number, boolean, null)
-                    // block objects that might contain operators like $ne, $gt, etc.
-                    if (typeof value !== 'object' || value === null) {
-                        sanitizedFilter[key] = value;
-                    }
-                    // allow arrays of non-objects for $in-like behavior
-                    else if (Array.isArray(value) && value.every((v) => typeof v !== 'object')) {
-                        sanitizedFilter[key] = value;
-                    }
                 }
             }
         }
