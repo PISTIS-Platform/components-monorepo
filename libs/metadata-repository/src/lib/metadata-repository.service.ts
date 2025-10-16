@@ -137,7 +137,7 @@ export class MetadataRepositoryService {
                 dct:language        <http://publications.europa.eu/resource/authority/language/ENG> ;
                 dct:issued          "${new Date().toISOString()}"^^xsd:dateTime ;
                 dct:modified        "${new Date().toISOString()}"^^xsd:dateTime ;
-                dcat:distribution   <https://piveau.io/set/distribution/1> .
+                dcat:distribution   <https://piveau.io/set/distribution/1> ; 
                 pistis:offer		<http://pistis-market.eu/offer/1> .
 
             <https://piveau.io/set/distribution/1>
@@ -290,5 +290,45 @@ export class MetadataRepositoryService {
                     }),
                 ),
         );
+    }
+
+    async updateInvestmentPlanMetadata(assetId: string) {
+        const metadata = await await fetch(`https://pistis-market.eu/srv/repo/datasets/${assetId}`)
+            .then((res) => {
+                if (!res.ok) {
+                    throw new Error(`Error fetching the metadata: ${res.statusText}`);
+                }
+                return res.json();
+            })
+            .then((response) => response);
+
+        const updatedMetadata = {
+            ...metadata,
+            '@graph': metadata['@graph'].map((item: any) => {
+                if (item['@type'] === 'https://www.pistis-project.eu/ns/voc#InvestmentOffer') {
+                    return {
+                        ...item,
+                        'https://www.pistis-project.eu/ns/voc#isActive': {
+                            '@value': false,
+                            '@type': 'http://www.w3.org/2001/XMLSchema#boolean',
+                        },
+                    };
+                }
+                return item;
+            }),
+        };
+        const response = await fetch(`https://pistis-market.eu/srv/repo/datasets/${assetId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-Key': this.options.apiKey,
+            },
+            body: updatedMetadata,
+        });
+
+        if (!response.ok) {
+            throw new Error(`Error updating metadata: ${response.statusText}`);
+        }
+        return;
     }
 }

@@ -17,8 +17,7 @@ import { AppConfig, IInvestmentPlannerConfig } from './app.config';
 
 @Module({
     imports: [
-        ConfigModule.forRoot({ isGlobal: true }),
-        ConfigModule.forFeature(AppConfig),
+        ConfigModule.forRoot({ isGlobal: true, load: [AppConfig] }),
         MikroOrmModule.forRootAsync({
             imports: [ConfigModule.forFeature(AppConfig)],
             useFactory: async (options: IAppConfig) => ({
@@ -48,6 +47,9 @@ import { AppConfig, IInvestmentPlannerConfig } from './app.config';
                 clientId: options.keycloak.clientId,
                 secret: options.keycloak.clientSecret,
                 authServerUrl: options.keycloak.url,
+                sceeUrl: options.sceeUrl,
+                marketplaceKey: options.marketplaceKey,
+                metadataRepositoryUrl: options.metadataRepositoryUrl,
             }),
             inject: [AppConfig.KEY],
         }),
