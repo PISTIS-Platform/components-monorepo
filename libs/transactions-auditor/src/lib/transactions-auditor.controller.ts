@@ -1,8 +1,8 @@
 import { ApiPaginate, Paginate, PaginateQuery } from '@emulienfou/nestjs-mikro-orm-paginate';
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { ADMIN_ROLE } from '@pistis/shared';
-import { Roles } from 'nest-keycloak-connect';
+import { ADMIN_ROLE, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
+import { AuthenticatedUser, Roles } from 'nest-keycloak-connect';
 
 import { TransactionAuditorDTO } from './dto';
 import { TransactionsAuditorService } from './transactions-auditor.service';
@@ -25,6 +25,16 @@ export class TransactionsAuditorController {
     @ApiPaginate()
     async retrieveAll(@Paginate() query: PaginateQuery) {
         return this.service.retrieveAll(query);
+    }
+
+    @Get('/transaction/factory')
+    @ApiOperation({ summary: 'Retrieve transactions by factoryId' })
+    @ApiPaginate()
+    async retrieveByFactory(
+        @Paginate() query: PaginateQuery,
+        @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
+    ) {
+        return this.service.retrieveByFactory(query, user);
     }
 
     @Get('/transaction/:userId/:assetId')
