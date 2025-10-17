@@ -105,7 +105,7 @@ export class ProviderService {
                 this.logger.error('Provider SQL retrieval error:', err);
                 throw new BadGatewayException('Provider SQL retrieval error');
             }
-        } else if (format[0] === 'CSV') {
+        } else if (format[0] === 'CSV' && metadata.distributions[0].title.en !== 'Kafka Stream') {
             try {
                 data = await this.dataStorageService.retrieveFile(storageId, token, configData.providerPrefix);
 
