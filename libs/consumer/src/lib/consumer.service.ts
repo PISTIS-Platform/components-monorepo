@@ -208,9 +208,9 @@ export class ConsumerService {
             this.logger.debug('Starting Kafka streaming connector...');
             try {
                 const consumerAssetId = uuidV4();
-                const url = `https://${factory.factoryPrefix}.pistis-market.eu/srv/data-connector/kafka/${consumerAssetId}`;
+                const url = `https://${factory.factoryPrefix}.pistis-market.eu/srv/data-connector/api/provider/kafka/${consumerAssetId}`;
                 const { kafkaUser } = await this.createKafkaUserAndTopic(consumerAssetId);
-                await this.getDataFromProvider(assetId, token, {
+                await this.getDataFromProvider(metadata.offer.original_id, token, {
                     consumerPrefix: factory.factoryPrefix,
                     providerPrefix: providerFactory.factoryPrefix,
                     kafkaConfig: {
