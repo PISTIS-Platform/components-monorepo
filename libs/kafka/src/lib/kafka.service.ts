@@ -374,6 +374,29 @@ export class KafkaService {
     }
 
     /**
+     * Retrieve topic connection details for specific asset id
+     * @param id The unique identifier for the Kafka user
+     * @returns
+     */
+    async getTopicConnectionDetails(id: string): Promise<{
+        username: string;
+        password: string;
+        bootstrapServers: string;
+        securityProtocol: string;
+        saslMechanism: string;
+    }> {
+        const user = `${KAFKA_USER_PREFIX}-${id}`;
+
+        // retrieve user to validate if exists with the given name
+        await this.getUser(user);
+
+        // retrieve decoded password from secret
+        const password = (await this.getDecodedSecret(user)) ?? '';
+
+        return { username: user, password, ...this.getKafkaConfig() };
+    }
+
+    /**
      * Retrieve a Kafka user secret from the Kubernetes cluster
      * @param name The name of the Kafka user secret
      * @returns

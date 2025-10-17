@@ -104,7 +104,7 @@ export class ConsumerController {
         };
     }
 
-    @Post('kafka-user/:assetId')
+    @Get('/kafka/:assetId')
     @ApiOkResponse({
         description: 'Create Kafka user',
         schema: {
@@ -115,7 +115,7 @@ export class ConsumerController {
         },
     })
     async createKafkaUser(@Param('assetId') assetId: string) {
-        return await this.consumerService.createKafkaUserAndTopic(assetId);
+        return await this.consumerService.retrieveKafkaUserAndTopic(assetId);
     }
 
     @Post('subscription/:assetId')

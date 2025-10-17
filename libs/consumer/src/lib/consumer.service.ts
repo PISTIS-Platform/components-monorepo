@@ -205,7 +205,7 @@ export class ConsumerService {
         } else {
             try {
                 const consumerAssetId = uuidV4();
-                const url = `https://${factory.factoryPrefix}.pistis-market.eu:9094`;
+                const url = `https://${factory.factoryPrefix}.pistis-market.eu/srv/data-connector/kafka/${consumerAssetId}`;
                 const { kafkaUser } = await this.createKafkaUserAndTopic(consumerAssetId);
                 await this.getDataFromProvider(assetId, token, {
                     consumerPrefix: factory.factoryPrefix,
@@ -367,6 +367,17 @@ export class ConsumerService {
         } catch (e) {
             this.logger.error('Error creating Kafka user and topic:', e);
             throw new BadGatewayException('Error creating Kafka user and topic');
+        }
+    }
+
+    async retrieveKafkaUserAndTopic(assetId: string) {
+        this.logger.log('Retrieving Kafka user and topic...');
+
+        try {
+            return await this.kafkaService.getTopicConnectionDetails(assetId);
+        } catch (e) {
+            this.logger.error('Error retrieving Kafka user and topic:', e);
+            throw new BadGatewayException('Error retrieving Kafka user and topic');
         }
     }
 
