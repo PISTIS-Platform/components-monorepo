@@ -176,7 +176,7 @@ export class InvestmentPlannerService {
 
     @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
     async deactivateInvestmentPlan() {
-        const now = dayjs();
+        const now = dayjs().startOf('day').toDate();
         try {
             const investments = await this.repo.find({
                 status: true,
