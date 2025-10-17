@@ -193,7 +193,7 @@ export class ProviderService {
                 metadata,
             );
         } catch (e) {
-            this.logger.error('Error creating streaming metadata:', e);
+            this.logger.error(`Error creating streaming metadata:${e}`);
             throw new BadGatewayException('Error creating streaming metadata');
         }
 

@@ -114,6 +114,12 @@ export class MetadataRepositoryService {
         }
 
         const byteSizeEntry = byteSizeValue > 0 ? `dcat:byteSize  "${byteSizeValue}"^^xsd:nonNegativeInteger ;` : '';
+        const offer = isStreamingData
+            ? ''
+            : `<http://pistis-market.eu/offer/1>
+        a  							pistis:Offer;
+        pistis:originalId			"${metadata.offer.original_id}";
+        pistis:marketplaceOfferId	"${metadata.id}" .`;
 
         const rdfData = `
             @prefix dcat:                <http://www.w3.org/ns/dcat#> .
@@ -153,13 +159,8 @@ export class MetadataRepositoryService {
                 ${byteSizeEntry}
                 dcat:accessURL ${accessUrl} .
 
-            				
-            <http://pistis-market.eu/offer/1>
-                a  							pistis:Offer;
-                pistis:originalId			"${metadata.offer.original_id}";
-                pistis:marketplaceOfferId	"${metadata.id}" .
+            	${offer}
         `;
-
         try {
             if (isStreamingData) {
                 await firstValueFrom(
