@@ -94,6 +94,7 @@ export class ConsumerService {
         }
 
         if (format[0] === 'SQL') {
+            this.logger.debug('Starting SQL data transfer...');
             try {
                 let results: any;
                 let storeResult: any;
@@ -169,6 +170,7 @@ export class ConsumerService {
                 throw new BadGatewayException('Transfer SQL data error');
             }
         } else if (format[0] === 'CSV' && metadata.distributions[0].title.en !== 'Kafka Stream') {
+            this.logger.debug('Starting CSV data transfer...');
             try {
                 const fileResult = await this.getDataFromProvider(assetId, token, {
                     providerPrefix: providerFactory.factoryPrefix,
@@ -203,6 +205,7 @@ export class ConsumerService {
                 throw new BadGatewayException('Transfer file data error');
             }
         } else {
+            this.logger.debug('Starting Kafka streaming connector...');
             try {
                 const consumerAssetId = uuidV4();
                 const url = `https://${factory.factoryPrefix}.pistis-market.eu/srv/data-connector/kafka/${consumerAssetId}`;
@@ -238,7 +241,10 @@ export class ConsumerService {
         }
 
         try {
-            isStreamingData = !(format[0] === 'SQL' || format[0] === 'CSV');
+            isStreamingData = !(
+                format[0] === 'SQL' ||
+                (format[0] === 'CSV' && metadata.distributions[0].title.en !== 'Kafka Stream')
+            );
             await this.metadataRepositoryService.createMetadata(
                 assetInfo?.id,
                 this.options.catalogId,
