@@ -2,7 +2,11 @@ import { EntityRepository } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { HttpService } from '@nestjs/axios';
 import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
-import { UserInfo } from '@pistis/shared';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { MetadataRepositoryService } from '@pistis/metadata-repository';
+import { getHeaders, UserInfo } from '@pistis/shared';
+import dayjs from 'dayjs';
+import { catchError, firstValueFrom, map, of, tap, throwError } from 'rxjs';
 
 import { CreateInvestmentPlanDTO } from './create-investment-plan.dto';
 import { InvestmentPlanner } from './entities/investment-planner.entity';
@@ -19,7 +23,36 @@ export class InvestmentPlannerService {
         @InjectRepository(InvestmentPlanner) private readonly repo: EntityRepository<InvestmentPlanner>,
         @InjectRepository(UserInvestment) private readonly userInvestmentRepo: EntityRepository<UserInvestment>,
         @Inject(INVESTMENT_PLANNER_MODULE_OPTIONS) private options: InvestmentPlannerModuleOptions,
+        private readonly metadataRepositoryService: MetadataRepositoryService,
     ) {}
+
+    private async retrieveToken() {
+        const tokenData = {
+            grant_type: 'client_credentials',
+            client_id: this.options.clientId,
+            client_secret: this.options.secret,
+        };
+        return await firstValueFrom(
+            this.httpService
+                .post(`${this.options.authServerUrl}/realms/PISTIS/protocol/openid-connect/token`, tokenData, {
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    data: tokenData,
+                })
+                .pipe(
+                    map(({ data }) => {
+                        return data.access_token;
+                    }),
+                    catchError((error) => {
+                        this.logger.error('Error occurred during SCEE create investment f: ', error);
+                        return throwError(
+                            () => new BadRequestException('Error occurred during SCEE create investment f'),
+                        );
+                    }),
+                ),
+        );
+    }
 
     async retrieveInvestmentPlan(assetId: string) {
         return await this.repo.findOneOrFail({ cloudAssetId: assetId });
@@ -49,7 +82,7 @@ export class InvestmentPlannerService {
         return investmentPlan;
     }
 
-    async updateInvestmentPlan(id: string, data: any, user: UserInfo) {
+    async updateInvestmentPlan(id: string, data: any, user: any) {
         const investmentPlan = await this.repo.findOneOrFail({ id: id });
         if (investmentPlan.remainingShares === null) {
             investmentPlan.remainingShares = investmentPlan.totalShares - data.numberOfShares;
@@ -66,10 +99,10 @@ export class InvestmentPlannerService {
         }
 
         await this.repo.getEntityManager().persistAndFlush(investmentPlan);
-        return await this.createUserInvestmentPlan(investmentPlan, data.numberOfShares, user.id);
+        return await this.createUserInvestmentPlan(investmentPlan, data.numberOfShares, data.ownerFactoryId, user.id);
     }
 
-    private async createUserInvestmentPlan(data: any, numberOfShares: number, userId: string) {
+    private async createUserInvestmentPlan(data: any, numberOfShares: number, factoryId: string, userId: string) {
         const userInvestment = this.userInvestmentRepo.create({
             cloudAssetId: data.cloudAssetId,
             userId: userId,
@@ -78,12 +111,46 @@ export class InvestmentPlannerService {
         });
         try {
             await this.userInvestmentRepo.getEntityManager().persistAndFlush(userInvestment);
+            const invest = {
+                assetId: data.cloudAssetId,
+                percentage: data.percentageOffer,
+                assetFactory: factoryId,
+                ownerId: data.sellerId,
+                price: data.price,
+            };
+            await this.storeInvestToScee(invest);
         } catch (error) {
             this.logger.error(`Error creating user investment plan: ${error}`);
             throw new Error(`Error creating user investment plan: ${error}`);
         }
 
         return userInvestment;
+    }
+
+    private async storeInvestToScee(data: any) {
+        return await firstValueFrom(
+            this.httpService
+                .post(
+                    `${this.options.sceeUrl}/api/scee/StoreInvestmentPlanInvestor`,
+                    {
+                        ...data,
+                    },
+                    {
+                        headers: getHeaders((await this.retrieveToken()) as string),
+                    },
+                )
+                .pipe(
+                    tap((response) => this.logger.debug(response)),
+                    map(() => of({ message: `SCEE create investment for assetId: ${data.assetId}` })),
+                    // Catch any error occurred during the notification creation
+                    catchError((error) => {
+                        this.logger.error('Error occurred during SCEE create investment f: ', error);
+                        return throwError(
+                            () => new BadRequestException('Error occurred during SCEE create investment f'),
+                        );
+                    }),
+                ),
+        );
     }
 
     async getUserInvestmentPlan(assetId: string, user: UserInfo) {
@@ -105,6 +172,54 @@ export class InvestmentPlannerService {
             return true;
         }
         return false;
+    }
+
+    @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+    async deactivateInvestmentPlan() {
+        const now = dayjs();
+        try {
+            const investments = await this.repo.find({
+                status: true,
+                dueDate: { $lte: now },
+            });
+            for (let i = 0; i < investments.length; i++) {
+                const investment = investments[i];
+
+                investment.status = false;
+                await this.repo.getEntityManager().persistAndFlush(investment);
+                await this.informSCEEForFinalization(investment.assetId);
+                await this.metadataRepositoryService.updateInvestmentPlanMetadata(investment.cloudAssetId);
+                this.logger.log(`Investment plan with id ${investment.id} has been deactivated`);
+            }
+        } catch (error) {
+            this.logger.error(`Error during deactivation of investment plans: ${error}`);
+        }
+    }
+
+    private async informSCEEForFinalization(assetId: string) {
+        return await firstValueFrom(
+            this.httpService
+                .post(
+                    `${this.options.sceeUrl}/api/scee/FinalizeInvestmentPlanSale`,
+                    {
+                        assetId: assetId,
+                    },
+                    {
+                        headers: getHeaders((await this.retrieveToken()) as string),
+                    },
+                )
+                .pipe(
+                    tap((response) => this.logger.debug(response)),
+                    map(() => of({ message: `SCEE updated for investment finalization for assetId: ${assetId}` })),
+                    // Catch any error occurred during the notification creation
+                    catchError((error) => {
+                        this.logger.error('Error occurred during SCEE investment finalization: ', error);
+                        return throwError(
+                            () => new BadRequestException('Error occurred during SCEE investment finalization'),
+                        );
+                    }),
+                ),
+        );
     }
 
     //TODO: check if we want notifications for this component

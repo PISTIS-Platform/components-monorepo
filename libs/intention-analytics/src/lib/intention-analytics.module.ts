@@ -3,13 +3,13 @@ import { HttpModule } from '@nestjs/axios';
 import { DynamicModule, Module } from '@nestjs/common';
 import { TerminusModule } from '@nestjs/terminus';
 import { BlockchainModule } from '@pistis/blockchain';
+import { MetadataRepositoryModule } from '@pistis/metadata-repository';
 
 import { QuestionnaireController } from './controllers';
 import { ComponentHealthController } from './controllers/component-health.controller';
 import { Answer } from './entities';
 import { Question } from './entities/question.entity';
 import { Questionnaire } from './entities/questionnaire.entity';
-import { MetadataRepositoryModule } from '@pistis/metadata-repository';
 import {
     ConfigurableModuleClass,
     INTENSION_ANALYTICS_ASYNC_OPTIONS_TYPE,
@@ -28,7 +28,11 @@ export class IntentionAnalyticsModule extends ConfigurableModuleClass {
         return {
             imports: [
                 BlockchainModule.register({ url: options.blockchainUrl }),
-                MetadataRepositoryModule.register({ url: options.metadataRepositoryUrl, apiKey: options.catalogKey }),
+                MetadataRepositoryModule.register({
+                    url: options.metadataRepositoryUrl,
+                    apiKey: options.catalogKey,
+                    cloudURL: options.cloudURL,
+                }),
             ],
             ...super.register(options),
         };
@@ -54,7 +58,11 @@ export class IntentionAnalyticsModule extends ConfigurableModuleClass {
                 useFactory: async (config: typeof asyncOptions.inject) => {
                     const options: any = asyncOptions.useFactory ? await asyncOptions.useFactory(config) : {};
 
-                    return { url: options.metadataRepositoryUrl, apiKey: options.catalogKey };
+                    return {
+                        url: options.metadataRepositoryUrl,
+                        apiKey: options.catalogKey,
+                        cloudURL: options.cloudURL,
+                    };
                 },
             }),
         ];

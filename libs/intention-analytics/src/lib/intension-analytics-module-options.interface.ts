@@ -6,4 +6,5 @@ export interface IntensionAnalyticsModuleOptions {
     transactionAuditorUrl: string;
     metadataRepositoryUrl: string;
     catalogKey: string;
+    cloudURL?: string;
 }
