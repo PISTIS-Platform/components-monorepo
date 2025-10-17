@@ -23,6 +23,11 @@ export class ConfigDataDto {
     columns?: ColumnDto[];
 
     @IsOptional()
+    @IsString()
+    @ApiProperty()
+    originalId?: string;
+
+    @IsOptional()
     @IsInt()
     @ApiProperty()
     offset?: number;

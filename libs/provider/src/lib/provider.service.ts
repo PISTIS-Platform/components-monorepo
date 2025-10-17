@@ -121,7 +121,7 @@ export class ProviderService {
         } else {
             if (configData.kafkaConfig) {
                 returnedValue = await this.kafkaService.createMM2Connector({
-                    source: { id: assetId },
+                    source: { id: configData.originalId! },
                     target: configData.kafkaConfig,
                 });
             }
