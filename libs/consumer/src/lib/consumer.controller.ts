@@ -51,8 +51,8 @@ export class ConsumerController {
         const metadata = await this.consumerService.retrieveMetadata(assetId);
         const frequency = metadata.monetization[0].purchase_offer[0].update_frequency;
         let updatePattern = '';
-        const termDate = metadata.monetization[0].purchase_offer[0].term_date;
-        const endDate = termDate ? new Date(termDate) : undefined;
+        const termDate = metadata.monetization[0].purchase_offer[0].duration;
+        const endDate = termDate ? new Date(Date.now() + termDate * 24 * 60 * 60 * 1000) : undefined;
 
         if (frequency === 'hourly') {
             updatePattern = '0 * * * *'; // Runs at the top of every hour
