@@ -121,6 +121,15 @@ export class MetadataRepositoryService {
         pistis:originalId			"${metadata.offer.original_id}";
         pistis:marketplaceOfferId	"${metadata.id}" .`;
 
+        const license = isStreamingData
+            ? ''
+            : `dct:license    [
+                                    dct:identifier "${getValueLicense('license', 'id')}" ;
+                                    dct:title "${getValueLicense('license', 'label')}" ;
+                                    skos:prefLabel "${getValueLicense('license', 'description')}" ;
+                                    skos:exactMatch <${getValueLicense('license', 'resource')}>
+                            ] ;`;
+
         const rdfData = `
             @prefix dcat:                <http://www.w3.org/ns/dcat#> .
             @prefix dct:                 <http://purl.org/dc/terms/> .
@@ -149,12 +158,7 @@ export class MetadataRepositoryService {
             <https://piveau.io/set/distribution/1>
                 a              dcat:Distribution ;
                 dct:title      "${getDistributionsValue('title')}" ;
-                dct:license    [
-                                    dct:identifier "${getValueLicense('license', 'id')}" ;
-                                    dct:title "${getValueLicense('license', 'label')}" ;
-                                    skos:prefLabel "${getValueLicense('license', 'description')}" ;
-                                    skos:exactMatch <${getValueLicense('license', 'resource')}>
-                            ] ;
+                ${license}
                 dct:format     <${getDistributionsValue('format')}> ;
                 ${byteSizeEntry}
                 dcat:accessURL ${accessUrl} .

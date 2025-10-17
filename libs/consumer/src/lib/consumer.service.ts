@@ -77,12 +77,6 @@ export class ConsumerService {
             }
         });
 
-        try {
-            lineageData = await this.metadataRepositoryService.retrieveLineage(accessId[0], token);
-        } catch (err) {
-            this.logger.error('Lineage tracker retrieval error:', err);
-        }
-
         const storageUrl = `https://${factory.factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api`;
         let assetInfo: AssetRetrievalInfo | null;
         const format = metadata.distributions
@@ -91,6 +85,19 @@ export class ConsumerService {
         if (format.length === 0) {
             this.logger.error('Format not found');
             throw new BadRequestException('Distribution format not found');
+        }
+
+        isStreamingData = !(
+            format[0] === 'SQL' ||
+            (format[0] === 'CSV' && metadata.distributions[0].title.en !== 'Kafka Stream')
+        );
+
+        try {
+            if (!isStreamingData) {
+                lineageData = await this.metadataRepositoryService.retrieveLineage(accessId[0], token);
+            }
+        } catch (err) {
+            this.logger.error('Lineage tracker retrieval error:', err);
         }
 
         if (format[0] === 'SQL') {
@@ -242,10 +249,6 @@ export class ConsumerService {
         }
 
         try {
-            isStreamingData = !(
-                format[0] === 'SQL' ||
-                (format[0] === 'CSV' && metadata.distributions[0].title.en !== 'Kafka Stream')
-            );
             await this.metadataRepositoryService.createMetadata(
                 assetInfo?.id,
                 this.options.catalogId,
@@ -273,7 +276,9 @@ export class ConsumerService {
         };
 
         try {
-            await this.metadataRepositoryService.createLineage(lineageData, token, factory.factoryPrefix);
+            if (!isStreamingData) {
+                await this.metadataRepositoryService.createLineage(lineageData, token, factory.factoryPrefix);
+            }
         } catch (err) {
             this.logger.error('Lineage tracker creation error:', err);
         }
