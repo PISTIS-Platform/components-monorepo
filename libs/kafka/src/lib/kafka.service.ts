@@ -247,7 +247,7 @@ export class KafkaService {
 
         const providerTopic = `${KAFKA_TOPIC_PREFIX}-${config.source.id}`;
         const providerUsername = `${KAFKA_USER_PREFIX}-${config.source.id}`;
-        const providerPassword = this.getDecodedSecret(providerUsername);
+        const providerPassword = await this.getDecodedSecret(providerUsername);
 
         const consumerTopic = `${KAFKA_TOPIC_PREFIX}-${config.target.id}`;
 
