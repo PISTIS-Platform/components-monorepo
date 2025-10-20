@@ -371,7 +371,7 @@ export class ConsumerService {
         return await this.metadataRepositoryService.retrieveMetadata(assetId);
     }
     async createKafkaUserAndTopic(assetId: string) {
-        this.logger.log('Creating Kafka user and topic...');
+        this.logger.log(`Creating Kafka user and topic. AssetId: ${assetId}`);
 
         try {
             const topic = await this.kafkaService.createTopic(assetId);
