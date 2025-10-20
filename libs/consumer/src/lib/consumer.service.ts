@@ -14,7 +14,6 @@ import { KafkaService } from '@pistis/kafka';
 import { MetadataRepositoryService } from '@pistis/metadata-repository';
 import { getHeaders } from '@pistis/shared';
 import { catchError, firstValueFrom, map, of } from 'rxjs';
-import { v4 as uuidV4 } from 'uuid';
 
 import { AssetRetrievalInfo } from './asset-retrieval-info.entity';
 import { CONSUMER_MODULE_OPTIONS } from './consumer.module-definition';
@@ -214,15 +213,15 @@ export class ConsumerService {
         } else {
             this.logger.debug('Starting Kafka streaming connector...');
             try {
-                const consumerAssetId = uuidV4();
-                const url = `https://${factory.factoryPrefix}.pistis-market.eu/srv/data-connector/kafka/${consumerAssetId}`;
-                const { kafkaUser } = await this.createKafkaUserAndTopic(consumerAssetId);
+                const originalId = metadata.offer.original_id;
+                const url = `https://${factory.factoryPrefix}.pistis-market.eu:9094`;
+                const { kafkaUser } = await this.createKafkaUserAndTopic(originalId);
                 await this.getDataFromProvider(assetId, token, {
                     consumerPrefix: factory.factoryPrefix,
                     providerPrefix: providerFactory.factoryPrefix,
-                    originalId: metadata.offer.original_id,
+                    originalId: originalId,
                     kafkaConfig: {
-                        id: consumerAssetId,
+                        id: originalId,
                         username: kafkaUser.name,
                         password: kafkaUser.secret,
                         bootstrapServers: url,
@@ -236,7 +235,7 @@ export class ConsumerService {
                 });
 
                 assetInfo = em.create(AssetRetrievalInfo, {
-                    id: consumerAssetId,
+                    id: originalId,
                     cloudAssetId: assetId,
                     version: '',
                     offset: 0,
