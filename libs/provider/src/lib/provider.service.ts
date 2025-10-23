@@ -207,6 +207,6 @@ export class ProviderService {
     }
 
     async getTopicDetails(assetId: string) {
-        return { url: `https://${this.options.factoryPrefix}.pistis-market.eu:9094`, topic: `ds-${assetId}` };
+        return { url: `${this.options.factoryPrefix}.pistis-market.eu:9094`, topic: `ds-${assetId}` };
     }
 }

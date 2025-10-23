@@ -268,7 +268,7 @@ export class KafkaService {
                     topics: providerTopic,
                     'target.cluster.alias': targetClusterAlias,
                     'source.cluster.alias': sourceClusterAlias,
-                    'source.cluster.bootstrap.servers': bootstrapServers,
+                    'source.cluster.bootstrap.servers': bootstrapServers.replace('https://', ''),
                     'source.consumer.auto.offset.reset': 'latest',
                     'source.cluster.security.protocol': securityProtocol,
                     'source.cluster.sasl.mechanism': saslMechanism,

@@ -93,7 +93,7 @@ export class ProviderController {
         description: 'Retrieve connection details for kafka',
         schema: {
             example: {
-                url: 'http://develop.pistis-market.eu:9094',
+                url: 'develop.pistis-market.eu:9094',
                 topic: 'ds-ec221eea-fcc6-4e74-8f4d-4ccd5206c5e0',
             },
         },
