@@ -292,7 +292,6 @@ export class KafkaService {
                     'sync.group.offsets.enabled': false,
                     'sync.topic.acls.enabled': false,
                     'sync.topic.configs.enabled': false,
-                    'emit.offset-syncs.enabled': false,
                     'offset-syncs.topic.replication.factor': 1,
                     'heartbeats.topic.replication.factor': 1,
                     'checkpoints.topic.replication.factor': 1,
