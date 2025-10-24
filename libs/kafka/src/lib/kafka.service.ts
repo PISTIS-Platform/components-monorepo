@@ -240,10 +240,10 @@ export class KafkaService {
         const name = `kc-${config.source.id}--${config.target.id}`;
         this.logger.debug(`Creating MirrorSource Kafka connector "${name}"`);
 
-        const { bootstrapServers, saslMechanism, securityProtocol } = this.getKafkaConfig();
+        const { saslMechanism, securityProtocol } = this.getKafkaConfig();
 
-        const sourceClusterAlias = `kc-source-${generatePassword(10)}`;
-        const targetClusterAlias = 'kc-target';
+        const sourceClusterAlias = `kc-source-${config.source.id}`;
+        const targetClusterAlias = `kc-target-${config.target.id}`;
 
         const providerTopic = `${KAFKA_TOPIC_PREFIX}-${config.source.id}`;
         const providerUsername = `${KAFKA_USER_PREFIX}-${config.source.id}`;
@@ -268,16 +268,16 @@ export class KafkaService {
                     topics: providerTopic,
                     'target.cluster.alias': targetClusterAlias,
                     'source.cluster.alias': sourceClusterAlias,
-                    'source.cluster.bootstrap.servers': bootstrapServers.replace('https://', ''),
+                    'source.cluster.bootstrap.servers': 'kafka-cluster-kafka-bootstrap:9092',
                     'source.consumer.auto.offset.reset': 'latest',
-                    'source.cluster.security.protocol': securityProtocol,
+                    'source.cluster.security.protocol': 'SASL_PLAINTEXT',
                     'source.cluster.sasl.mechanism': saslMechanism,
                     'source.cluster.sasl.jaas.config': `org.apache.kafka.common.security.scram.ScramLoginModule required username="${providerUsername}" password="${providerPassword}";`,
                     'target.cluster.bootstrap.servers': config.target.bootstrapServers,
                     'target.cluster.security.protocol': securityProtocol,
                     'target.cluster.sasl.mechanism': saslMechanism,
                     'target.cluster.sasl.jaas.config': `org.apache.kafka.common.security.scram.ScramLoginModule required username="${config.target.username}" password="${config.target.password}";`,
-                    'consumer.override.sasl.mechanism': saslMechanism,
+                    'consumer.override.sasl.mechanism': 'SASL_PLAINTEXT',
                     'consumer.override.security.protocol': securityProtocol,
                     'consumer.override.sasl.jaas.config': `org.apache.kafka.common.security.scram.ScramLoginModule required username="${providerUsername}" password="${providerPassword}";`,
                     'producer.override.sasl.mechanism': saslMechanism,
