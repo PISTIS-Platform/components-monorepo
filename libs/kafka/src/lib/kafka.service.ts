@@ -281,7 +281,7 @@ export class KafkaService {
                     'consumer.override.sasl.mechanism': saslMechanism,
                     'consumer.override.security.protocol': 'SASL_PLAINTEXT',
                     'consumer.override.sasl.jaas.config': `org.apache.kafka.common.security.scram.ScramLoginModule required username="${providerUsername}" password="${providerPassword}";`,
-                    'producer.bootstrap.server': config.target.bootstrapServers,
+                    'producer.bootstrap.servers': config.target.bootstrapServers,
                     'producer.override.bootstrap.servers': config.target.bootstrapServers,
                     'producer.override.sasl.mechanism': saslMechanism,
                     'producer.override.security.protocol': securityProtocol,
