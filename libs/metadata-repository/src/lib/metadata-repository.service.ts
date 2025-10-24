@@ -161,9 +161,9 @@ export class MetadataRepositoryService {
                 ${license}
                 dct:format     <${getDistributionsValue('format')}> ;
                 ${byteSizeEntry}
-                dcat:accessURL ${accessUrl} .
+                dcat:accessURL ${accessUrl}
 
-            	${offer}
+            ${offer}
         `;
         try {
             if (isStreamingData) {
