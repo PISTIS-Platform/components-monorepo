@@ -117,9 +117,9 @@ export class MetadataRepositoryService {
         const offer = isStreamingData
             ? ''
             : `<http://pistis-market.eu/offer/1>
-        a  							pistis:Offer;
-        pistis:originalId			"${metadata.offer.original_id}";
-        pistis:marketplaceOfferId	"${metadata.id}" .`;
+                    a  							pistis:Offer;
+                    pistis:originalId			"${metadata.offer.original_id}";
+                    pistis:marketplaceOfferId	"${metadata.id}" .`;
 
         const license = isStreamingData
             ? ''
@@ -161,10 +161,11 @@ export class MetadataRepositoryService {
                 ${license}
                 dct:format     <${getDistributionsValue('format')}> ;
                 ${byteSizeEntry}
-                dcat:accessURL ${accessUrl}
+                dcat:accessURL ${accessUrl} .
 
             ${offer}
         `;
+
         try {
             if (isStreamingData) {
                 await firstValueFrom(
