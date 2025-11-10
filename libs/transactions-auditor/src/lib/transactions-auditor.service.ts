@@ -64,8 +64,6 @@ export class TransactionsAuditorService {
         }
         qb.where({ $and: conditions });
 
-        console.log(qb._fields);
-
         return new PageFactory(query, qb, {
             // Explicitly select fields, so we can ignore "terms"
             select: [
