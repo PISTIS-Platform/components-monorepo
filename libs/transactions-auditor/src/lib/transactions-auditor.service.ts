@@ -2,10 +2,10 @@ import { PageFactory, PaginateQuery, PaginateResponse } from '@emulienfou/nestjs
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { SqlEntityRepository } from '@mikro-orm/postgresql';
 import { Injectable } from '@nestjs/common';
+import { UserInfo } from '@pistis/shared';
 
 import { TransactionAuditorDTO } from './dto';
 import { TransactionsAuditor } from './transactions-auditor.entity';
-import { UserInfo } from '@pistis/shared';
 
 @Injectable()
 export class TransactionsAuditorService {
@@ -23,12 +23,15 @@ export class TransactionsAuditorService {
         return new PageFactory(query, this.repo).create();
     }
 
-    async retrieveByFactory(query: PaginateQuery, user: UserInfo): Promise<PaginateResponse<TransactionAuditorDTO>> {
-        const qb = this.repo.createQueryBuilder();
+    async retrieveByFactory(
+        query: PaginateQuery,
+        user: UserInfo,
+    ): Promise<PaginateResponse<Omit<TransactionAuditorDTO, 'terms'>>> {
+        const qb = this.repo.createQueryBuilder('t');
         // whitelist of fields users are allowed to filter on
         const allowedFilterFields = ['assetName'];
         // sanitize the filter to only include allowed fields
-        const sanitizedFilter: any = {};
+        const sanitizedFilter: Record<string, any> = {};
         if (query.filter && typeof query.filter === 'object') {
             for (const key of allowedFilterFields) {
                 if (key in query.filter) {
@@ -45,7 +48,7 @@ export class TransactionsAuditorService {
         thirtyDaysAgo.setHours(0, 0, 0, 0); // start of 30 days ago
 
         // build the secure query
-        const conditions: any[] = [
+        const conditions: Record<string, any>[] = [
             {
                 $or: [{ factoryBuyerId: user.organizationId }, { factorySellerId: user.organizationId }],
             },
@@ -60,7 +63,26 @@ export class TransactionsAuditorService {
             conditions.push(sanitizedFilter);
         }
         qb.where({ $and: conditions });
-        return new PageFactory(query, qb).create();
+
+        console.log(qb._fields);
+
+        return new PageFactory(query, qb, {
+            // Explicitly select fields, so we can ignore "terms"
+            select: [
+                'id',
+                'transactionId',
+                'transactionFee',
+                'amount',
+                'factoryBuyerId',
+                'factoryBuyerName',
+                'factorySellerId',
+                'factorySellerName',
+                'assetId',
+                'assetName',
+                'createdAt',
+                'updatedAt',
+            ],
+        }).create();
     }
 
     async findByUserAndAssetId(userId: string, assetId: string): Promise<TransactionsAuditor | null> {
