@@ -273,8 +273,8 @@ export class MetadataRepositoryService {
                         return res;
                     }),
                     catchError((error) => {
-                        this.logger.error('Metadata creation error:', error);
-                        return of({ error: 'Error occurred during creation retrieval' });
+                        this.logger.error('Lineage creation error:', error);
+                        return of({ error: 'Error occurred during lineage creation' });
                     }),
                 ),
         );
