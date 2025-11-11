@@ -27,18 +27,7 @@ export class TransactionsAuditorService {
         query: PaginateQuery,
         user: UserInfo,
     ): Promise<PaginateResponse<Omit<TransactionAuditorDTO, 'terms'>>> {
-        const qb = this.repo.createQueryBuilder('t');
-        // whitelist of fields users are allowed to filter on
-        const allowedFilterFields = ['assetName'];
-        // sanitize the filter to only include allowed fields
-        const sanitizedFilter: Record<string, any> = {};
-        if (query.filter && typeof query.filter === 'object') {
-            for (const key of allowedFilterFields) {
-                if (key in query.filter) {
-                    sanitizedFilter[key] = query.filter[key];
-                }
-            }
-        }
+        query.filter = {};
 
         // calculate date range for last 30 days
         const today = new Date();
@@ -47,24 +36,7 @@ export class TransactionsAuditorService {
         thirtyDaysAgo.setDate(today.getDate() - 30);
         thirtyDaysAgo.setHours(0, 0, 0, 0); // start of 30 days ago
 
-        // build the secure query
-        const conditions: Record<string, any>[] = [
-            {
-                $or: [{ factoryBuyerId: user.organizationId }, { factorySellerId: user.organizationId }],
-            },
-            {
-                createdAt: {
-                    $gte: thirtyDaysAgo,
-                    $lte: today,
-                },
-            },
-        ];
-        if (Object.keys(sanitizedFilter).length > 0) {
-            conditions.push(sanitizedFilter);
-        }
-        qb.where({ $and: conditions });
-
-        return new PageFactory(query, qb, {
+        return new PageFactory(query, this.repo, {
             // Explicitly select fields, so we can ignore "terms"
             select: [
                 'id',
@@ -80,6 +52,18 @@ export class TransactionsAuditorService {
                 'createdAt',
                 'updatedAt',
             ],
+            where: {
+                $and: [
+                    {
+                        $or: [{ factoryBuyerId: user.organizationId }, { factorySellerId: user.organizationId }],
+                    },
+                    {
+                        createdAt: {
+                            $gte: thirtyDaysAgo,
+                        },
+                    },
+                ],
+            },
         }).create();
     }
 
