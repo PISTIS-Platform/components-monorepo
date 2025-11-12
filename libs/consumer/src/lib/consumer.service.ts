@@ -38,6 +38,7 @@ export class ConsumerService {
         let metadata;
         let lineageData: any;
         let isStreamingData: boolean;
+        let isNFT: boolean;
 
         let providerFactory: any;
         try {
@@ -91,8 +92,10 @@ export class ConsumerService {
             (format[0] === 'CSV' && metadata.distributions[0].title.en !== 'Kafka Stream')
         );
 
+        isNFT = !(metadata.monetization[0].purchase_offer[0].type !== 'nft');
+
         try {
-            if (!isStreamingData) {
+            if (!isStreamingData || isNFT) {
                 lineageData = await this.metadataRepositoryService.retrieveLineage(accessId[0], token);
             }
         } catch (err) {
@@ -275,7 +278,7 @@ export class ConsumerService {
         };
 
         try {
-            if (!isStreamingData) {
+            if (!isStreamingData || isNFT) {
                 await this.metadataRepositoryService.createLineage(lineageData, token, factory.factoryPrefix);
             }
         } catch (err) {
