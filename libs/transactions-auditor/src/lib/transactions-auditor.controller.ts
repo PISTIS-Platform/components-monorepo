@@ -37,6 +37,12 @@ export class TransactionsAuditorController {
         return this.service.retrieveByFactory(query, user);
     }
 
+    @Get('/transaction/sums-by-factory')
+    @ApiOperation({ summary: 'Retrieve expenses and income by factory from 30 days ago' })
+    async retrieveSums(@AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo) {
+        return this.service.getSumsByFactory(user);
+    }
+
     @Get('/transaction/:userId/:assetId')
     @ApiOperation({ summary: 'Retrieve transaction by asset and user Id' })
     @ApiPaginate()

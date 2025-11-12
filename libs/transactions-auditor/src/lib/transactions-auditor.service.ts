@@ -31,10 +31,8 @@ export class TransactionsAuditorService {
 
         // calculate date range for last 30 days
         const today = new Date();
-        today.setHours(23, 59, 59, 999); // end of today
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(today.getDate() - 30);
-        thirtyDaysAgo.setHours(0, 0, 0, 0); // start of 30 days ago
 
         return new PageFactory(query, this.repo, {
             // Explicitly select fields, so we can ignore "terms"
@@ -65,6 +63,41 @@ export class TransactionsAuditorService {
                 ],
             },
         }).create();
+    }
+
+    async getSumsByFactory(user: UserInfo) {
+        // calculate date range for last 30 days
+        const today = new Date();
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(today.getDate() - 30);
+
+        const expenses = await this.repo.find(
+            {
+                factoryBuyerId: user.organizationId,
+                createdAt: { $gte: thirtyDaysAgo },
+            },
+            {
+                fields: ['amount'],
+            },
+        );
+
+        const income = await this.repo.find(
+            {
+                factorySellerId: user.organizationId,
+                createdAt: { $gte: thirtyDaysAgo },
+            },
+            {
+                fields: ['amount'],
+            },
+        );
+
+        const expensesTotal = expenses.reduce((accumulator, current) => accumulator + current.amount, 0);
+        const incomeTotal = income.reduce((accumulator, current) => accumulator + current.amount, 0);
+
+        return {
+          expensesTotal,
+          incomeTotal
+        }
     }
 
     async findByUserAndAssetId(userId: string, assetId: string): Promise<TransactionsAuditor | null> {
