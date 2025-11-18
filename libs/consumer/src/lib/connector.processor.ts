@@ -86,6 +86,7 @@ export class ConnectorProcessor extends WorkerHost {
                 })
                 .pipe(
                     map(({ data }) => data.access_token),
+                    tap((access_token) => this.logger.debug(`Obtained access token: ${access_token}`)),
                     switchMap((access_token) =>
                         this.httpService.post(`${this.options.notificationsUrl}/api/notifications`, notification, {
                             headers: getHeaders(access_token),
