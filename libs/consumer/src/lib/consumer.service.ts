@@ -218,13 +218,13 @@ export class ConsumerService {
             try {
                 const originalId = metadata.offer.original_id;
                 const url = `${factory.factoryPrefix}.pistis-market.eu:9094`;
-                const { kafkaUser } = await this.createKafkaUserAndTopic(originalId);
+                const { kafkaUser } = await this.createKafkaUserAndTopic(assetId);
                 await this.getDataFromProvider(assetId, token, {
                     consumerPrefix: factory.factoryPrefix,
                     providerPrefix: providerFactory.factoryPrefix,
                     originalId: originalId,
                     kafkaConfig: {
-                        id: originalId,
+                        id: assetId,
                         username: kafkaUser.name,
                         password: kafkaUser.secret,
                         bootstrapServers: url,
@@ -257,7 +257,7 @@ export class ConsumerService {
                 factory.factoryPrefix,
                 isStreamingData,
                 assetId,
-                '',
+                isStreamingData ? metadata : '',
             );
         } catch (err) {
             this.logger.error('Metadata creation error:', err);
