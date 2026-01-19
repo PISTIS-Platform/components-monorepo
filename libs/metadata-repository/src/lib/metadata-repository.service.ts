@@ -102,7 +102,7 @@ export class MetadataRepositoryService {
         if (isStreamingData) {
             keywords = '';
             byteSizeValue = 0;
-            accessUrl = `<${metadata.distributions[0].access_url[0]}>`;
+            accessUrl = `<${factoryPrefix}.pistis-market.eu:9094>`;
         } else {
             keywords = `dcat:keyword        ${
                 metadata.keywords != null
