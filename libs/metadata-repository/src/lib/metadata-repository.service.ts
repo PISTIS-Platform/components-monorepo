@@ -130,6 +130,19 @@ export class MetadataRepositoryService {
                                     skos:exactMatch <${getValueLicense('license', 'resource')}>
                             ] ;`;
 
+        const distribution = isStreamingData
+            ? ` dct:format     <${metadata.distributions[0].format.resource}> ;
+                dcat:accessService  [ 
+                        rdf:type                  dcat:DataService;
+                        dct:title                 "${getDistributionsValue('title')}"@en;
+                        dcat:endpointDescription  <https://example.com>;
+                        dcat:endpointURL          <${metadata.distributions[0].access_url[0]}}>
+                        ] .`
+            : ` dct:format     <${getDistributionsValue('format')}> ;
+                ${license}
+                ${byteSizeEntry}
+                dcat:accessURL ${accessUrl} .`;
+
         const rdfData = `
             @prefix dcat:                <http://www.w3.org/ns/dcat#> .
             @prefix dct:                 <http://purl.org/dc/terms/> .
@@ -158,10 +171,8 @@ export class MetadataRepositoryService {
             <https://piveau.io/set/distribution/1>
                 a              dcat:Distribution ;
                 dct:title      "${getDistributionsValue('title')}" ;
-                ${license}
-                dct:format     <${getDistributionsValue('format')}> ;
-                ${byteSizeEntry}
-                dcat:accessURL ${accessUrl} .
+                
+                ${distribution}
 
             ${offer}
         `;

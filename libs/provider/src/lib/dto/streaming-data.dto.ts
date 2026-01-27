@@ -9,4 +9,8 @@ export class StreamingDataDto {
     @IsString()
     @ApiProperty()
     description?: string;
+
+    @IsString()
+    @ApiProperty()
+    format?: string;
 }
