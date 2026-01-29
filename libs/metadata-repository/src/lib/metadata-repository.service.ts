@@ -136,7 +136,7 @@ export class MetadataRepositoryService {
                         rdf:type                  dcat:DataService;
                         dct:title                 "${getDistributionsValue('title')}"@en;
                         dcat:endpointDescription  <https://example.com>;
-                        dcat:endpointURL          <${metadata.distributions[0].access_url[0]}}>
+                        dcat:endpointURL          <${metadata.distributions[0].access_url[0]}>
                         ] .`
             : ` dct:format     <${getDistributionsValue('format')}> ;
                 ${license}
@@ -152,6 +152,7 @@ export class MetadataRepositoryService {
             @prefix foaf:                <http://xmlns.com/foaf/0.1/> .
             @prefix skos:                <http://www.w3.org/2004/02/skos/core#> .
             @prefix pistis:				<https://www.pistis-project.eu/ns/voc#> .
+            @prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 
             <https://piveau.io/set/data/test-dataset>
                 a                   dcat:Dataset ;

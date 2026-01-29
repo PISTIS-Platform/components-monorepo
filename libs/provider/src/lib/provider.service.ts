@@ -182,7 +182,7 @@ export class ProviderService {
                 },
             ],
         };
-        //TODO return this ${factory.factoryPrefix} to accessUrl
+
         try {
             await this.metadataRepositoryService.createMetadata(
                 assetId,
