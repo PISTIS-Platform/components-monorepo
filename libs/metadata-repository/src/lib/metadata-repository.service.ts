@@ -130,6 +130,19 @@ export class MetadataRepositoryService {
                                     skos:exactMatch <${getValueLicense('license', 'resource')}>
                             ] ;`;
 
+        const distribution = isStreamingData
+            ? ` dct:format     <${metadata.distributions[0].format.resource}> ;
+                dcat:accessService  [ 
+                        rdf:type                  dcat:DataService;
+                        dct:title                 "${getDistributionsValue('title')}"@en;
+                        dcat:endpointDescription  <https://example.com>;
+                        dcat:endpointURL          <${metadata.distributions[0].access_url[0]}>
+                        ] .`
+            : ` dct:format     <${getDistributionsValue('format')}> ;
+                ${license}
+                ${byteSizeEntry}
+                dcat:accessURL ${accessUrl} .`;
+
         const rdfData = `
             @prefix dcat:                <http://www.w3.org/ns/dcat#> .
             @prefix dct:                 <http://purl.org/dc/terms/> .
@@ -139,6 +152,7 @@ export class MetadataRepositoryService {
             @prefix foaf:                <http://xmlns.com/foaf/0.1/> .
             @prefix skos:                <http://www.w3.org/2004/02/skos/core#> .
             @prefix pistis:				<https://www.pistis-project.eu/ns/voc#> .
+            @prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 
             <https://piveau.io/set/data/test-dataset>
                 a                   dcat:Dataset ;
@@ -158,10 +172,8 @@ export class MetadataRepositoryService {
             <https://piveau.io/set/distribution/1>
                 a              dcat:Distribution ;
                 dct:title      "${getDistributionsValue('title')}" ;
-                ${license}
-                dct:format     <${getDistributionsValue('format')}> ;
-                ${byteSizeEntry}
-                dcat:accessURL ${accessUrl} .
+                
+                ${distribution}
 
             ${offer}
         `;

@@ -176,13 +176,13 @@ export class ProviderService {
                         `https://${this.options.factoryPrefix}.pistis-market.eu/srv/data-connector/api/provider/kafka/${assetId}`,
                     ],
                     format: {
-                        resource: 'http://publications.europa.eu/resource/authority/file-type/CSV',
+                        resource: `http://publications.europa.eu/resource/authority/file-type/${data.format}`,
                     },
                     byte_size: '0',
                 },
             ],
         };
-        //TODO return this ${factory.factoryPrefix} to accessUrl
+
         try {
             await this.metadataRepositoryService.createMetadata(
                 assetId,
