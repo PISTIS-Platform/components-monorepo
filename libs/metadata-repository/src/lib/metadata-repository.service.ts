@@ -135,7 +135,6 @@ export class MetadataRepositoryService {
                 dcat:accessService  [ 
                         rdf:type                  dcat:DataService;
                         dct:title                 "${getDistributionsValue('title')}"@en;
-                        dcat:endpointDescription  <https://example.com>;
                         dcat:endpointURL          <${metadata.distributions[0].access_url[0]}>
                         ] .`
             : ` dct:format     <${getDistributionsValue('format')}> ;
