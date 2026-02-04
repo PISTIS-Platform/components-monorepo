@@ -9,6 +9,7 @@ import {
 } from '@nestjs/swagger';
 import { AuthToken } from '@pistis/shared';
 
+import { QuerySelectorDTO } from './dto';
 import { ConfigDataDto } from './dto/configurationData.dto';
 import { StreamingDataDto } from './dto/streaming-data.dto';
 import { ProviderService } from './provider.service';
@@ -100,5 +101,14 @@ export class ProviderController {
     })
     async getTopicDetails(@Param('assetId') assetId: string) {
         return this.providerService.getTopicDetails(assetId);
+    }
+
+    @Post('/query-selector')
+    @ApiOkResponse({
+        description: 'Consumer response',
+        schema: { example: { asset_uuid: 'ae755a90-b7bc-4c28-bfc8-7a4fb247328b', message: 'Table created' } },
+    })
+    async querySelector(@Body() data: QuerySelectorDTO) {
+        return await this.providerService.querySelectorCreate(data);
     }
 }

@@ -15,10 +15,10 @@ import { MetadataRepositoryService } from '@pistis/metadata-repository';
 import { getHeaders } from '@pistis/shared';
 import { catchError, firstValueFrom, map, of } from 'rxjs';
 
-import { AssetRetrievalInfo } from './asset-retrieval-info.entity';
 import { CONSUMER_MODULE_OPTIONS } from './consumer.module-definition';
 import { ConsumerModuleOptions } from './consumer-module-options.interface';
-import { RetrieveDataDTO } from './retrieveData.dto';
+import { RetrieveDataDTO } from './dto/retrieveData.dto';
+import { AssetRetrievalInfo } from './entities/asset-retrieval-info.entity';
 
 @Injectable()
 export class ConsumerService {
@@ -263,10 +263,18 @@ export class ConsumerService {
             this.logger.error('Metadata creation error:', err);
             throw new BadGatewayException('Metadata creation error');
         }
+
+        let transactionFee;
+        if (metadata.monetization[0].purchase_offer[0].is_free) {
+            transactionFee = 0;
+        } else {
+            transactionFee = 1;
+        }
+
         const transaction = {
             sellerId: metadata.monetization[0].seller_id,
             transactionId: data.transactionId,
-            transactionFee: 1,
+            transactionFee: transactionFee,
             amount: metadata.monetization[0].purchase_offer[0].price,
             factoryBuyerId: user.organizationId,
             factoryBuyerName: factory.organizationName,

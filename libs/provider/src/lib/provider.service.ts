@@ -1,3 +1,5 @@
+import { EntityRepository } from '@mikro-orm/core';
+import { InjectRepository } from '@mikro-orm/nestjs';
 import { HttpService } from '@nestjs/axios';
 import { BadGatewayException, BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
 import { DataStorageService } from '@pistis/data-storage';
@@ -5,16 +7,19 @@ import { KafkaService } from '@pistis/kafka';
 import { MetadataRepositoryService } from '@pistis/metadata-repository';
 import { v4 as uuidV4 } from 'uuid';
 
+import { QuerySelectorDTO } from './dto';
 import { ConfigDataDto } from './dto/configurationData.dto';
 import { StreamingDataDto } from './dto/streaming-data.dto';
 import { PROVIDER_MODULE_OPTIONS } from './provider.module-definition';
 import { ProviderModuleOptions } from './provider-module-options.interface';
+import { QuerySelector } from './query-selector.entity';
 
 @Injectable()
 export class ProviderService {
     private readonly logger = new Logger(ProviderService.name);
     constructor(
         private readonly dataStorageService: DataStorageService,
+        @InjectRepository(QuerySelector) private readonly repo: EntityRepository<QuerySelector>,
         @Inject(PROVIDER_MODULE_OPTIONS) private options: ProviderModuleOptions,
         private readonly metadataRepositoryService: MetadataRepositoryService,
         private readonly kafkaService: KafkaService,
@@ -208,5 +213,9 @@ export class ProviderService {
 
     async getTopicDetails(assetId: string) {
         return { url: `${this.options.factoryPrefix}.pistis-market.eu:9094`, topic: `ds-${assetId}` };
+    }
+
+    async querySelectorCreate(data: QuerySelectorDTO) {
+        return await this.repo.create(data);
     }
 }

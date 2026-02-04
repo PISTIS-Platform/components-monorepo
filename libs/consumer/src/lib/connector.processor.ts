@@ -8,10 +8,10 @@ import { Job } from 'bullmq';
 import dayjs from 'dayjs';
 import { catchError, firstValueFrom, map, of, switchMap, tap, throwError } from 'rxjs';
 
-import { AssetRetrievalInfo } from './asset-retrieval-info.entity';
 import { CONSUMER_MODULE_OPTIONS } from './consumer.module-definition';
 import { ConsumerService } from './consumer.service';
 import { ConsumerModuleOptions } from './consumer-module-options.interface';
+import { AssetRetrievalInfo } from './entities/asset-retrieval-info.entity';
 
 @Processor(CONNECTOR_QUEUE)
 @Injectable()
