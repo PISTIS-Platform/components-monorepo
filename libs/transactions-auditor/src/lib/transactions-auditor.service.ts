@@ -35,20 +35,21 @@ export class TransactionsAuditorService {
         thirtyDaysAgo.setDate(today.getDate() - 30);
 
         return new PageFactory(query, this.repo, {
-            // Explicitly select fields, so we can ignore "terms"
+            // Explicitly select fields
             select: [
                 'id',
                 'transactionId',
                 'transactionFee',
                 'amount',
-                'factoryBuyerId',
+                // 'factoryBuyerId',
                 'factoryBuyerName',
-                'factorySellerId',
+                // 'factorySellerId',
                 'factorySellerName',
                 'assetId',
                 'assetName',
                 'createdAt',
-                'updatedAt',
+                // 'updatedAt',
+                'terms',
             ],
             where: {
                 $and: [
