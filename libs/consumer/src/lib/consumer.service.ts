@@ -146,7 +146,11 @@ export class ConsumerService {
                 }
 
                 // loop to retrieve data in batches
-                while (offset % this.options.downloadBatchSize !== 0) {
+                // eslint-disable-next-line no-constant-condition
+                while (true) {
+                    const currentRows = results.data.rows;
+                    const rowCount = currentRows.length;
+                    if (rowCount === 0) break;
                     if ('columns' in results) {
                         results = await this.getDataFromProvider(assetId, token, {
                             offset,
@@ -168,11 +172,12 @@ export class ConsumerService {
                         token,
                         storageUrl,
                     );
-                    offset += results.data.rows.length;
+                    offset += rowCount;
 
                     if (assetInfo) {
                         await em.nativeUpdate(AssetRetrievalInfo, { cloudAssetId: assetId }, { offset });
                     }
+                    if (rowCount < this.options.downloadBatchSize) break;
                 }
             } catch (err) {
                 this.logger.error('Transfer SQL data error:', err);
