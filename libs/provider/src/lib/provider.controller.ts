@@ -44,8 +44,6 @@ export class ProviderController {
         schema: { example: { message: 'Query saved' } },
     })
     async querySelector(@Body() data: QuerySelectorDTO) {
-        console.log('HERE!!!');
-        console.log(data);
         return await this.providerService.querySelectorCreate(data);
     }
 
