@@ -1,11 +1,12 @@
 import { Entity, OptionalProps, PrimaryKey, Property, Unique } from '@mikro-orm/core';
+import { v4 as uuidV4 } from 'uuid';
 
 @Entity({ tableName: 'querySelector' })
 export class QuerySelector {
     [OptionalProps]?: 'id' | 'createdAt' | 'updatedAt';
 
-    @PrimaryKey()
-    id: string | undefined;
+    @PrimaryKey({ type: 'uuid' })
+    id: string = uuidV4();
 
     @Property()
     @Unique()
