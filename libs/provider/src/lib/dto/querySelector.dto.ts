@@ -9,5 +9,5 @@ export class QuerySelectorDTO {
 
     @IsNotEmpty()
     @ApiProperty()
-    params!: Record<string, any>[];
+    params!: Record<string, any>;
 }
