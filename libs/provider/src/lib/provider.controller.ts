@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
 import {
     ApiBearerAuth,
     ApiBody,
@@ -105,10 +105,16 @@ export class ProviderController {
 
     @Post('/query-selector')
     @ApiOkResponse({
-        description: 'Provider response',
+        description: 'Query selector',
         schema: { example: { message: 'Query saved' } },
     })
     async querySelector(@Body() data: QuerySelectorDTO) {
         return await this.providerService.querySelectorCreate(data);
+    }
+
+    @Delete(':assetId')
+    @ApiOkResponse({ description: 'Query delete', schema: { example: 'Query deleted' } })
+    async deleteModel(@Param('assetId') assetId: string) {
+        return await this.providerService.deleteQuery(assetId);
     }
 }

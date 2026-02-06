@@ -227,4 +227,9 @@ export class ProviderService {
         await this.repo.getEntityManager().persistAndFlush(query);
         return { message: 'Query saved' };
     }
+
+    async deleteQuery(id: string) {
+        const query = await this.repo.findOneOrFail({ cloudAssetId: id });
+        return await this.repo.getEntityManager().removeAndFlush(query);
+    }
 }
