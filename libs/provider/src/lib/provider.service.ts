@@ -223,6 +223,8 @@ export class ProviderService {
     }
 
     async querySelectorCreate(data: QuerySelectorDTO) {
-        return await this.repo.create(data);
+        const query = this.repo.create(data);
+        await this.repo.getEntityManager().persistAndFlush(query);
+        return { message: 'Query saved' };
     }
 }

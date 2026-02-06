@@ -105,8 +105,8 @@ export class ProviderController {
 
     @Post('/query-selector')
     @ApiOkResponse({
-        description: 'Consumer response',
-        schema: { example: { asset_uuid: 'ae755a90-b7bc-4c28-bfc8-7a4fb247328b', message: 'Table created' } },
+        description: 'Provider response',
+        schema: { example: { message: 'Query saved' } },
     })
     async querySelector(@Body() data: QuerySelectorDTO) {
         return await this.providerService.querySelectorCreate(data);
