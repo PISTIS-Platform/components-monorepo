@@ -38,6 +38,17 @@ import { ProviderService } from './provider.service';
 export class ProviderController {
     constructor(private readonly providerService: ProviderService) {}
 
+    @Post('query-selector')
+    @ApiOkResponse({
+        description: 'Query selector',
+        schema: { example: { message: 'Query saved' } },
+    })
+    async querySelector(@Body() data: QuerySelectorDTO) {
+        console.log('HERE!!!');
+        console.log(data);
+        return await this.providerService.querySelectorCreate(data);
+    }
+
     @Post('streaming')
     @ApiOkResponse({
         description: 'Streaming data',
@@ -101,15 +112,6 @@ export class ProviderController {
     })
     async getTopicDetails(@Param('assetId') assetId: string) {
         return this.providerService.getTopicDetails(assetId);
-    }
-
-    @Post('/query-selector')
-    @ApiOkResponse({
-        description: 'Query selector',
-        schema: { example: { message: 'Query saved' } },
-    })
-    async querySelector(@Body() data: QuerySelectorDTO) {
-        return await this.providerService.querySelectorCreate(data);
     }
 
     @Delete(':assetId')
