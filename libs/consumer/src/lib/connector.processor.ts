@@ -139,9 +139,13 @@ export class ConnectorProcessor extends WorkerHost {
     async onCompleted(job: Job) {
         this.logger.log(`✅ Job ${job.id} Completed! (Date: ${this.getNow()} UTC)`);
         await this.em.nativeUpdate(AssetRetrievalInfo, { cloudAssetId: job.data.assetId }, { updatedAt: new Date() });
+
+        //Avoid tou charge fee in scheduled jobs
+        const finalTransactionFee = job.name === 'retrieveScheduledData' ? 0 : job.returnvalue.transactionFee;
+
         const transaction = {
             transactionId: job.returnvalue.transactionId,
-            transactionFee: job.returnvalue.transactionFee,
+            transactionFee: finalTransactionFee,
             amount: job.returnvalue.amount,
             factoryBuyerId: job.returnvalue.factoryBuyerId,
             factoryBuyerName: job.returnvalue.factoryBuyerName,
