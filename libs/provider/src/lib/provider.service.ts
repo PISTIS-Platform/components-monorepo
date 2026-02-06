@@ -1,3 +1,5 @@
+import { EntityRepository } from '@mikro-orm/core';
+import { InjectRepository } from '@mikro-orm/nestjs';
 import { HttpService } from '@nestjs/axios';
 import { BadGatewayException, BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
 import { DataStorageService } from '@pistis/data-storage';
@@ -5,16 +7,19 @@ import { KafkaService } from '@pistis/kafka';
 import { MetadataRepositoryService } from '@pistis/metadata-repository';
 import { v4 as uuidV4 } from 'uuid';
 
+import { QuerySelectorDTO } from './dto';
 import { ConfigDataDto } from './dto/configurationData.dto';
 import { StreamingDataDto } from './dto/streaming-data.dto';
 import { PROVIDER_MODULE_OPTIONS } from './provider.module-definition';
 import { ProviderModuleOptions } from './provider-module-options.interface';
+import { QuerySelector } from './query-selector.entity';
 
 @Injectable()
 export class ProviderService {
     private readonly logger = new Logger(ProviderService.name);
     constructor(
         private readonly dataStorageService: DataStorageService,
+        @InjectRepository(QuerySelector) private readonly repo: EntityRepository<QuerySelector>,
         @Inject(PROVIDER_MODULE_OPTIONS) private options: ProviderModuleOptions,
         private readonly metadataRepositoryService: MetadataRepositoryService,
         private readonly kafkaService: KafkaService,
@@ -61,46 +66,53 @@ export class ProviderService {
             throw new BadRequestException('Distribution format not found');
         }
 
+        const querySelector = await this.repo.findOne({ cloudAssetId: assetId });
+
         if (format[0] === 'SQL') {
             try {
+                //FIXME: Refactor this when we have the new endpoint from data storage to avoid crash if sql is too big
                 // In case the consumer asked for columns and metadata
                 // (if columns were not send in dto (during first retrieval), the provider needs to retrieve them below)
+                if (!querySelector) {
+                    if (columnsInfo.length === 0 && configData.offset === 0) {
+                        columnsInfo = await this.dataStorageService.getColumns(
+                            storageId[0],
+                            token,
+                            configData.providerPrefix,
+                        );
+                    }
 
-                if (columnsInfo.length === 0 && configData.offset === 0) {
-                    columnsInfo = await this.dataStorageService.getColumns(
-                        storageId[0],
+                    //transform this into the object needed for columns , for retrieving paginated data
+                    const columnsForPagination: Record<string, null> = Object.fromEntries(
+                        columnsInfo[0].data_model.columns.map((column: any) => [column[0], null]),
+                    );
+
+                    //transform columns to send to consumer for table creation
+                    const columnsForNewTable: Record<string, null> = columnsInfo[0].data_model.columns.map(
+                        (column: any) => {
+                            const [name, dataType] = column;
+                            return { name, dataType };
+                        },
+                    );
+
+                    //use data storage functions
+                    data = await this.dataStorageService.retrievePaginatedData(
+                        storageId,
                         token,
+                        configData.offset || 0,
+                        configData.batchSize || 1000,
+                        columnsForPagination,
                         configData.providerPrefix,
                     );
+
+                    returnedValue = {
+                        data: data,
+                        metadata: { id: metadataName },
+                        data_model: { columns: columnsForNewTable },
+                    };
+                } else {
+                    //TODO: add here the logic to retrieve from data storage upon to query and send them to consumer
                 }
-                //transform this into the object needed for columns , for retrieving paginated data
-                const columnsForPagination: Record<string, null> = Object.fromEntries(
-                    columnsInfo[0].data_model.columns.map((column: any) => [column[0], null]),
-                );
-
-                //transform columns to send to consumer for table creation
-                const columnsForNewTable: Record<string, null> = columnsInfo[0].data_model.columns.map(
-                    (column: any) => {
-                        const [name, dataType] = column;
-                        return { name, dataType };
-                    },
-                );
-
-                //use data storage functions
-                data = await this.dataStorageService.retrievePaginatedData(
-                    storageId,
-                    token,
-                    configData.offset || 0,
-                    configData.batchSize || 1000,
-                    columnsForPagination,
-                    configData.providerPrefix,
-                );
-
-                returnedValue = {
-                    data: data,
-                    metadata: { id: metadataName },
-                    data_model: { columns: columnsForNewTable },
-                };
             } catch (err) {
                 this.logger.error('Provider SQL retrieval error:', err);
                 throw new BadGatewayException('Provider SQL retrieval error');
@@ -208,5 +220,16 @@ export class ProviderService {
 
     async getTopicDetails(assetId: string) {
         return { url: `${this.options.factoryPrefix}.pistis-market.eu:9094`, topic: `ds-${assetId}` };
+    }
+
+    async querySelectorCreate(data: QuerySelectorDTO) {
+        const query = this.repo.create(data);
+        await this.repo.getEntityManager().persistAndFlush(query);
+        return { message: 'Query saved' };
+    }
+
+    async deleteQuery(id: string) {
+        const query = await this.repo.findOneOrFail({ cloudAssetId: id });
+        return await this.repo.getEntityManager().removeAndFlush(query);
     }
 }

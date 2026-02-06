@@ -15,10 +15,10 @@ import { MetadataRepositoryService } from '@pistis/metadata-repository';
 import { getHeaders } from '@pistis/shared';
 import { catchError, firstValueFrom, map, of } from 'rxjs';
 
-import { AssetRetrievalInfo } from './asset-retrieval-info.entity';
 import { CONSUMER_MODULE_OPTIONS } from './consumer.module-definition';
 import { ConsumerModuleOptions } from './consumer-module-options.interface';
-import { RetrieveDataDTO } from './retrieveData.dto';
+import { RetrieveDataDTO } from './dto/retrieveData.dto';
+import { AssetRetrievalInfo } from './entities/asset-retrieval-info.entity';
 
 @Injectable()
 export class ConsumerService {
@@ -146,7 +146,11 @@ export class ConsumerService {
                 }
 
                 // loop to retrieve data in batches
-                while (offset % this.options.downloadBatchSize !== 0) {
+                // eslint-disable-next-line no-constant-condition
+                while (true) {
+                    const currentRows = results.data.rows;
+                    const rowCount = currentRows.length;
+                    if (rowCount === 0) break;
                     if ('columns' in results) {
                         results = await this.getDataFromProvider(assetId, token, {
                             offset,
@@ -168,11 +172,12 @@ export class ConsumerService {
                         token,
                         storageUrl,
                     );
-                    offset += results.data.rows.length;
+                    offset += rowCount;
 
                     if (assetInfo) {
                         await em.nativeUpdate(AssetRetrievalInfo, { cloudAssetId: assetId }, { offset });
                     }
+                    if (rowCount < this.options.downloadBatchSize) break;
                 }
             } catch (err) {
                 this.logger.error('Transfer SQL data error:', err);
@@ -263,10 +268,18 @@ export class ConsumerService {
             this.logger.error('Metadata creation error:', err);
             throw new BadGatewayException('Metadata creation error');
         }
+
+        let transactionFee;
+        if (metadata.monetization[0].purchase_offer[0].is_free) {
+            transactionFee = 0;
+        } else {
+            transactionFee = 1;
+        }
+
         const transaction = {
             sellerId: metadata.monetization[0].seller_id,
             transactionId: data.transactionId,
-            transactionFee: 1,
+            transactionFee: transactionFee,
             amount: metadata.monetization[0].purchase_offer[0].price,
             factoryBuyerId: user.organizationId,
             factoryBuyerName: factory.organizationName,

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
 import {
     ApiBearerAuth,
     ApiBody,
@@ -9,6 +9,7 @@ import {
 } from '@nestjs/swagger';
 import { AuthToken } from '@pistis/shared';
 
+import { QuerySelectorDTO } from './dto';
 import { ConfigDataDto } from './dto/configurationData.dto';
 import { StreamingDataDto } from './dto/streaming-data.dto';
 import { ProviderService } from './provider.service';
@@ -36,6 +37,15 @@ import { ProviderService } from './provider.service';
 })
 export class ProviderController {
     constructor(private readonly providerService: ProviderService) {}
+
+    @Post('query-selector')
+    @ApiOkResponse({
+        description: 'Query selector',
+        schema: { example: { message: 'Query saved' } },
+    })
+    async querySelector(@Body() data: QuerySelectorDTO) {
+        return await this.providerService.querySelectorCreate(data);
+    }
 
     @Post('streaming')
     @ApiOkResponse({
@@ -100,5 +110,11 @@ export class ProviderController {
     })
     async getTopicDetails(@Param('assetId') assetId: string) {
         return this.providerService.getTopicDetails(assetId);
+    }
+
+    @Delete(':assetId')
+    @ApiOkResponse({ description: 'Query delete', schema: { example: 'Query deleted' } })
+    async deleteModel(@Param('assetId') assetId: string) {
+        return await this.providerService.deleteQuery(assetId);
     }
 }

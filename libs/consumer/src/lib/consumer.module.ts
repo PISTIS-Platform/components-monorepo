@@ -7,7 +7,6 @@ import { DataStorageModule } from '@pistis/data-storage';
 import { KafkaModule } from '@pistis/kafka';
 import { MetadataRepositoryModule } from '@pistis/metadata-repository';
 
-import { AssetRetrievalInfo } from './asset-retrieval-info.entity';
 import { ComponentHealthController } from './component-health.controller';
 import { ConnectorProcessor } from './connector.processor';
 import { ConsumerController } from './consumer.controller';
@@ -17,6 +16,7 @@ import {
     CONSUMER_OPTIONS_TYPE,
 } from './consumer.module-definition';
 import { ConsumerService } from './consumer.service';
+import { AssetRetrievalInfo } from './entities/asset-retrieval-info.entity';
 
 @Module({
     imports: [

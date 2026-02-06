@@ -1,3 +1,4 @@
+import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { HttpModule } from '@nestjs/axios';
 import { DynamicModule, Module } from '@nestjs/common';
 import { BlockchainModule } from '@pistis/blockchain';
@@ -12,9 +13,10 @@ import {
     PROVIDER_OPTIONS_TYPE,
 } from './provider.module-definition';
 import { ProviderService } from './provider.service';
+import { QuerySelector } from './query-selector.entity';
 
 @Module({
-    imports: [HttpModule, KafkaModule],
+    imports: [HttpModule, KafkaModule, MikroOrmModule.forFeature([QuerySelector])],
     controllers: [ProviderController],
     providers: [ProviderService],
     exports: [],

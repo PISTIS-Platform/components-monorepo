@@ -7,7 +7,7 @@ import { Queue } from 'bullmq';
 import { AuthenticatedUser } from 'nest-keycloak-connect';
 
 import { ConsumerService } from './consumer.service';
-import { RetrieveDataDTO } from './retrieveData.dto';
+import { RetrieveDataDTO } from './dto/retrieveData.dto';
 
 @Controller('consumer')
 @ApiTags('consumer')
