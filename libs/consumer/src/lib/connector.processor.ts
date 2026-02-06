@@ -8,10 +8,10 @@ import { Job } from 'bullmq';
 import dayjs from 'dayjs';
 import { catchError, firstValueFrom, map, of, switchMap, tap, throwError } from 'rxjs';
 
-import { AssetRetrievalInfo } from './asset-retrieval-info.entity';
 import { CONSUMER_MODULE_OPTIONS } from './consumer.module-definition';
 import { ConsumerService } from './consumer.service';
 import { ConsumerModuleOptions } from './consumer-module-options.interface';
+import { AssetRetrievalInfo } from './entities/asset-retrieval-info.entity';
 
 @Processor(CONNECTOR_QUEUE)
 @Injectable()
@@ -139,9 +139,13 @@ export class ConnectorProcessor extends WorkerHost {
     async onCompleted(job: Job) {
         this.logger.log(`✅ Job ${job.id} Completed! (Date: ${this.getNow()} UTC)`);
         await this.em.nativeUpdate(AssetRetrievalInfo, { cloudAssetId: job.data.assetId }, { updatedAt: new Date() });
+
+        //Avoid tou charge fee in scheduled jobs
+        const finalTransactionFee = job.name === 'retrieveScheduledData' ? 0 : job.returnvalue.transactionFee;
+
         const transaction = {
             transactionId: job.returnvalue.transactionId,
-            transactionFee: job.returnvalue.transactionFee,
+            transactionFee: finalTransactionFee,
             amount: job.returnvalue.amount,
             factoryBuyerId: job.returnvalue.factoryBuyerId,
             factoryBuyerName: job.returnvalue.factoryBuyerName,
