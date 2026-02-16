@@ -87,10 +87,7 @@ export class ConsumerService {
             throw new BadRequestException('Distribution format not found');
         }
 
-        isStreamingData = !(
-            format[0] === 'SQL' ||
-            (format[0] === 'CSV' && metadata.distributions[0].title.en !== 'Kafka Stream')
-        );
+        isStreamingData = !(metadata.distributions[0].title.en !== 'Kafka Stream');
 
         isNFT = !(metadata.monetization[0].purchase_offer[0].type !== 'nft');
 
@@ -183,8 +180,8 @@ export class ConsumerService {
                 this.logger.error('Transfer SQL data error:', err);
                 throw new BadGatewayException('Transfer SQL data error');
             }
-        } else if (format[0] === 'CSV' && metadata.distributions[0].title.en !== 'Kafka Stream') {
-            this.logger.debug('Starting CSV data transfer...');
+        } else if (metadata.distributions[0].title.en !== 'Kafka Stream') {
+            this.logger.debug('Starting file data transfer...');
             try {
                 const fileResult = await this.getDataFromProvider(assetId, token, {
                     providerPrefix: providerFactory.factoryPrefix,
