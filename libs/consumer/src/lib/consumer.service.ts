@@ -186,6 +186,7 @@ export class ConsumerService {
                 const fileResult = await this.getDataFromProvider(assetId, token, {
                     providerPrefix: providerFactory.factoryPrefix,
                 });
+
                 const title = metadata.distributions
                     .map((distribution: any) => {
                         const titleObject = distribution.title;
@@ -343,7 +344,7 @@ export class ConsumerService {
         await this.kafkaService.deleteMM2Connector(source, target);
     }
 
-    private async retrieveFactory(token: string) {
+    async retrieveFactory(token: string) {
         return await firstValueFrom(
             this.httpService
                 .get(`${this.options.factoryRegistryUrl}/api/factories/user-factory`, {

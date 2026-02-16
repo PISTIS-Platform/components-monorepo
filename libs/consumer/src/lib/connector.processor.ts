@@ -183,19 +183,21 @@ export class ConnectorProcessor extends WorkerHost {
         await this.em.nativeDelete(AssetRetrievalInfo, {
             cloudAssetId: job.data.assetId,
         });
+        const metadata = await this.consumerService.retrieveMetadata(job.data.assetId);
+        const buyerFactory = await this.consumerService.retrieveFactory(job.data.token);
 
         const notification = [
             {
                 userId: job.data.user.id,
                 organizationId: job.data.user.organizationId,
                 type: 'asset_retrieval_failure',
-                message: `Asset retrieval failed for ${job.returnvalue.assetName}, please contact data provider`,
+                message: `Asset retrieval failed for ${metadata.title.en}, please contact data provider`,
             },
             {
-                userId: job.returnvalue.sellerId,
-                organizationId: job.returnvalue.factorySellerId,
+                userId: job.data.sellerId,
+                organizationId: job.data.assetFactory,
                 type: 'asset_retrieval_failure',
-                message: `Asset provision failed for ${job.returnvalue.assetName} for buyer ${job.returnvalue.factoryBuyerNameuyer}`,
+                message: `Asset provision failed for ${metadata.title.en} for buyer ${buyerFactory.organizationName}`,
             },
         ];
         for (const note of notification) {
