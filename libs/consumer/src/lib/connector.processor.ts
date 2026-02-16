@@ -185,6 +185,7 @@ export class ConnectorProcessor extends WorkerHost {
         });
         const metadata = await this.consumerService.retrieveMetadata(job.data.assetId);
         const buyerFactory = await this.consumerService.retrieveFactory(job.data.token);
+        const sellerId = metadata?.monetization?.[0]?.seller_id;
 
         const notification = [
             {
@@ -194,7 +195,7 @@ export class ConnectorProcessor extends WorkerHost {
                 message: `Asset retrieval failed for ${metadata.title.en}, please contact data provider`,
             },
             {
-                userId: job.data.sellerId,
+                userId: sellerId,
                 organizationId: job.data.assetFactory,
                 type: 'asset_retrieval_failure',
                 message: `Asset provision failed for ${metadata.title.en} for buyer ${buyerFactory.organizationName}`,

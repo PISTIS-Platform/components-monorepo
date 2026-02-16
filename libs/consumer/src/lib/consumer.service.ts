@@ -63,6 +63,9 @@ export class ConsumerService {
         }
 
         const accessId = metadata.distributions.map((distribution: any) => {
+            if (!distribution.access_url) {
+                return null;
+            }
             const accessUrl = distribution.access_url[0];
             const urlParts = accessUrl.split('?');
 
@@ -87,9 +90,9 @@ export class ConsumerService {
             throw new BadRequestException('Distribution format not found');
         }
 
-        isStreamingData = !(metadata.distributions[0].title.en !== 'Kafka Stream');
+        isStreamingData = metadata.distributions[0].title.en === 'Kafka Stream';
 
-        isNFT = !(metadata.monetization[0].purchase_offer[0].type !== 'nft');
+        isNFT = metadata.monetization[0].purchase_offer[0].type === 'nft';
 
         try {
             if (!isStreamingData || isNFT) {
@@ -267,11 +270,9 @@ export class ConsumerService {
             throw new BadGatewayException('Metadata creation error');
         }
 
-        let transactionFee;
-        if (metadata.monetization[0].purchase_offer[0].is_free) {
+        let transactionFee = 1;
+        if (metadata.monetization[0].purchase_offer[0].is_free === true) {
             transactionFee = 0;
-        } else {
-            transactionFee = 1;
         }
 
         const transaction = {
@@ -285,7 +286,7 @@ export class ConsumerService {
             factorySellerName: providerFactory.organizationName,
             assetId: metadata.id,
             assetName: metadata.title.en,
-            terms: metadata.monetization[0].purchase_offer[0].contract_terms,
+            terms: metadata.monetization[0].purchase_offer[0].contract_terms || '',
         };
 
         try {
