@@ -9,9 +9,8 @@ import { catchError, firstValueFrom, lastValueFrom, map, of } from 'rxjs';
 export class DataStorageService {
     private readonly logger = new Logger(DataStorageService.name);
     constructor(
-        private readonly httpService: HttpService,
-    ) // @Inject(MODULE_OPTIONS_TOKEN) private options: DataStorageModuleOptions,
-    {}
+        private readonly httpService: HttpService, // @Inject(MODULE_OPTIONS_TOKEN) private options: DataStorageModuleOptions,
+    ) {}
 
     private prepareUrl(factory: string) {
         return `https://${factory}.pistis-market.eu/srv/factory-data-storage/api`;
@@ -245,9 +244,7 @@ export class DataStorageService {
             const buffer = Buffer.from(data.data);
             formData.append('file', buffer, { filename, contentType: 'application/octet-stream' });
             // POST the data to create a new file
-            console.log('formData', formData);
-            console.log('filename', filename);
-            console.log(`${this.prepareUrl(consumerPrefix)}/files/create_file`);
+
             const uploadResponse = await axios.post(`${this.prepareUrl(consumerPrefix)}/files/create_file`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
