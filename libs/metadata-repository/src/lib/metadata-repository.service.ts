@@ -114,12 +114,14 @@ export class MetadataRepositoryService {
         }
 
         const byteSizeEntry = byteSizeValue > 0 ? `dcat:byteSize  "${byteSizeValue}"^^xsd:nonNegativeInteger ;` : '';
-        const offer = isStreamingData
-            ? ''
-            : `<http://pistis-market.eu/offer/1>
-                    a  							pistis:Offer;
-                    pistis:originalId			"${metadata.offer.original_id}";
-                    pistis:marketplaceOfferId	"${metadata.id}" .`;
+
+        const originalId = metadata.offer?.original_id || '';
+        const offer = originalId
+            ? `<http://pistis-market.eu/offer/1>
+                            a                           pistis:Offer;
+                            pistis:originalId           "${originalId}";
+                            pistis:marketplaceOfferId   "${metadata.id}" .`
+            : '';
 
         const license = isStreamingData
             ? ''
@@ -135,7 +137,7 @@ export class MetadataRepositoryService {
                 dcat:accessService  [ 
                         rdf:type                  dcat:DataService;
                         dct:title                 "${getDistributionsValue('title')}"@en;
-                        dcat:endpointURL          <${metadata.distributions[0].access_url[0]}>
+                        dcat:endpointURL          ${accessUrl}
                         ] .`
             : ` dct:format     <${getDistributionsValue('format')}> ;
                 ${license}
