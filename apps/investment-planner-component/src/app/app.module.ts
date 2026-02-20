@@ -51,6 +51,7 @@ import { AppConfig, IInvestmentPlannerConfig } from './app.config';
                 marketplaceKey: options.marketplaceKey,
                 metadataRepositoryUrl: options.metadataRepositoryUrl,
                 cloudURL: options.cloudURL,
+                factoryRegistryUrl: options.factoryRegistryUrl,
             }),
             inject: [AppConfig.KEY],
         }),

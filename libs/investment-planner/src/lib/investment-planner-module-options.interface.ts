@@ -7,4 +7,5 @@ export interface InvestmentPlannerModuleOptions {
     marketplaceKey: string;
     metadataRepositoryUrl: string;
     cloudURL?: string;
+    factoryRegistryUrl: string;
 }

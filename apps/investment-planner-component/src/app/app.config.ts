@@ -7,6 +7,7 @@ export type IInvestmentPlannerConfig = IAppConfig & {
     marketplaceKey: string;
     metadataRepositoryUrl: string;
     cloudURL: string;
+    factoryRegistryUrl: string;
 };
 
 export const AppConfig = registerAs(
@@ -34,5 +35,6 @@ export const AppConfig = registerAs(
         marketplaceKey: process.env.MARKETPLACE_API_KEY,
         metadataRepositoryUrl: process.env.METADATA_REPOSITORY_URL,
         cloudURL: process.env.CLOUD_URL,
+        factoryRegistryUrl: process.env.FACTORY_REGISTRY_URL,
     }),
 );

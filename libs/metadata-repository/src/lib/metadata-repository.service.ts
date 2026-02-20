@@ -320,6 +320,7 @@ export class MetadataRepositoryService {
                 return res.json();
             })
             .then((response) => response);
+        const organizationId = metadata?.result?.monetization?.[0]?.purchase_offer?.[0]?.publisher?.organization_id;
 
         const updatedMetadata = {
             ...metadata,
@@ -348,6 +349,6 @@ export class MetadataRepositoryService {
         if (!response.ok) {
             throw new Error(`Error updating metadata: ${response.statusText}`);
         }
-        return;
+        return organizationId;
     }
 }
