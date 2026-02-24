@@ -38,17 +38,14 @@ export class InvestmentPlannerService {
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                     },
-                    data: tokenData,
                 })
                 .pipe(
                     map(({ data }) => {
                         return data.access_token;
                     }),
                     catchError((error) => {
-                        this.logger.error('Error occurred during SCEE create investment f: ', error);
-                        return throwError(
-                            () => new BadRequestException('Error occurred during SCEE create investment f'),
-                        );
+                        this.logger.error('Error occurred during token retrieval: ', error);
+                        return throwError(() => new BadRequestException('Error occurred during token retrieval'));
                     }),
                 ),
         );
@@ -99,7 +96,7 @@ export class InvestmentPlannerService {
         }
 
         await this.repo.getEntityManager().persistAndFlush(investmentPlan);
-        return await this.createUserInvestmentPlan(investmentPlan, data.numberOfShares, data.ownerFactoryId, user.id);
+        return await this.createUserInvestmentPlan(investmentPlan, data.numberOfShares, user.organizationId, user.id);
     }
 
     private async createUserInvestmentPlan(data: any, numberOfShares: number, factoryId: string, userId: string) {
@@ -109,8 +106,8 @@ export class InvestmentPlannerService {
             shares: numberOfShares,
             investmentPlan: data,
         });
+        const factory = await this.retreiveFactory((await this.retrieveToken()) as string, factoryId);
         try {
-            await this.userInvestmentRepo.getEntityManager().persistAndFlush(userInvestment);
             const invest = {
                 assetId: data.cloudAssetId,
                 percentage: data.percentageOffer,
@@ -118,7 +115,8 @@ export class InvestmentPlannerService {
                 ownerId: data.sellerId,
                 price: data.price,
             };
-            await this.storeInvestToScee(invest);
+            await this.storeInvestToScee(invest, factory.factoryPrefix);
+            await this.userInvestmentRepo.getEntityManager().persistAndFlush(userInvestment);
         } catch (error) {
             this.logger.error(`Error creating user investment plan: ${error}`);
             throw new Error(`Error creating user investment plan: ${error}`);
@@ -127,11 +125,11 @@ export class InvestmentPlannerService {
         return userInvestment;
     }
 
-    private async storeInvestToScee(data: any) {
+    private async storeInvestToScee(data: any, factoryPrefix: string) {
         return await firstValueFrom(
             this.httpService
                 .post(
-                    `${this.options.sceeUrl}/api/scee/StoreInvestmentPlanInvestor`,
+                    `https://${factoryPrefix}.pistis-makret.eu/srv/smart-contract-execution-engine/api/scee/StoreInvestmentPlanInvestor`,
                     {
                         ...data,
                     },
@@ -144,9 +142,9 @@ export class InvestmentPlannerService {
                     map(() => of({ message: `SCEE create investment for assetId: ${data.assetId}` })),
                     // Catch any error occurred during the notification creation
                     catchError((error) => {
-                        this.logger.error('Error occurred during SCEE create investment f: ', error);
+                        this.logger.error('Error occurred during SCEE create investment: ', error);
                         return throwError(
-                            () => new BadRequestException('Error occurred during SCEE create investment f'),
+                            () => new BadRequestException('Error occurred during SCEE create investment'),
                         );
                     }),
                 ),
@@ -187,8 +185,11 @@ export class InvestmentPlannerService {
 
                 investment.status = false;
                 await this.repo.getEntityManager().persistAndFlush(investment);
-                await this.informSCEEForFinalization(investment.assetId);
-                await this.metadataRepositoryService.updateInvestmentPlanMetadata(investment.cloudAssetId);
+                const orgId = await this.metadataRepositoryService.updateInvestmentPlanMetadata(
+                    investment.cloudAssetId,
+                );
+                await this.informSCEEForFinalization(investment.assetId, orgId);
+
                 this.logger.log(`Investment plan with id ${investment.id} has been deactivated`);
             }
         } catch (error) {
@@ -196,11 +197,12 @@ export class InvestmentPlannerService {
         }
     }
 
-    private async informSCEEForFinalization(assetId: string) {
+    private async informSCEEForFinalization(assetId: string, orgId: string) {
+        const factory = await this.retreiveFactory((await this.retrieveToken()) as string, orgId);
         return await firstValueFrom(
             this.httpService
                 .post(
-                    `${this.options.sceeUrl}/api/scee/FinalizeInvestmentPlanSale`,
+                    `https://${factory.factoryPrefix}.pistis-makret.eu/srv/smart-contract-execution-engine/api/scee/FinalizeInvestmentPlanSale`,
                     {
                         assetId: assetId,
                     },
@@ -217,6 +219,24 @@ export class InvestmentPlannerService {
                         return throwError(
                             () => new BadRequestException('Error occurred during SCEE investment finalization'),
                         );
+                    }),
+                ),
+        );
+    }
+
+    private async retreiveFactory(token: string, factoryId: string) {
+        return await firstValueFrom(
+            this.httpService
+                .get(`${this.options.factoryRegistryUrl}/api/factories/organization/${factoryId}`, {
+                    headers: getHeaders(token),
+                })
+                .pipe(
+                    map(async (res) => {
+                        return res.data;
+                    }),
+                    catchError((error) => {
+                        this.logger.error('Factory retrieval error:', error);
+                        return of({ error: 'Error occurred during retrieving factory' });
                     }),
                 ),
         );
