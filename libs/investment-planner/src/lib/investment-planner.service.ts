@@ -129,7 +129,7 @@ export class InvestmentPlannerService {
         return await firstValueFrom(
             this.httpService
                 .post(
-                    `https://${factoryPrefix}.pistis-makret.eu/srv/smart-contract-execution-engine/api/scee/StoreInvestmentPlanInvestor`,
+                    `https://${factoryPrefix}.pistis-market.eu/srv/smart-contract-execution-engine/api/scee/StoreInvestmentPlanInvestor`,
                     {
                         ...data,
                     },
@@ -202,7 +202,7 @@ export class InvestmentPlannerService {
         return await firstValueFrom(
             this.httpService
                 .post(
-                    `https://${factory.factoryPrefix}.pistis-makret.eu/srv/smart-contract-execution-engine/api/scee/FinalizeInvestmentPlanSale`,
+                    `https://${factory.factoryPrefix}.pistis-market.eu/srv/smart-contract-execution-engine/api/scee/FinalizeInvestmentPlanSale`,
                     {
                         assetId: assetId,
                     },
