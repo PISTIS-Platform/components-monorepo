@@ -176,6 +176,7 @@ export class ConnectorProcessor extends WorkerHost {
         }
     }
 
+    //FIXME: Undefined org name from job, notification after the third job failure
     @OnWorkerEvent('failed')
     async onFailed(job: Job) {
         this.logger.log(`❌ Job ${job.id} Failed (Date: ${this.getNow()} UTC) :`);
@@ -183,6 +184,7 @@ export class ConnectorProcessor extends WorkerHost {
         await this.em.nativeDelete(AssetRetrievalInfo, {
             cloudAssetId: job.data.assetId,
         });
+
         const metadata = await this.consumerService.retrieveMetadata(job.data.assetId);
         const buyerFactory = await this.consumerService.retrieveFactory(job.data.token);
         const sellerId = metadata?.monetization?.[0]?.seller_id;

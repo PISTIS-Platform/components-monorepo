@@ -33,12 +33,13 @@ export class ConsumerService {
         private readonly kafkaService: KafkaService,
     ) {}
 
+    //TODO: Org name inside job
+
     async retrieveData(em: EntityManager, assetId: string, user: any, token: string, data: RetrieveDataDTO) {
         let factory: any;
         let metadata;
         let lineageData: any;
-        let isStreamingData: boolean;
-        let isNFT: boolean;
+        let storageAssetUUID = '';
 
         let providerFactory: any;
         try {
@@ -90,12 +91,12 @@ export class ConsumerService {
             throw new BadRequestException('Distribution format not found');
         }
 
-        isStreamingData = metadata.distributions[0].title.en === 'Kafka Stream';
+        const isStreamingData = metadata.distributions[0].title.en === 'Kafka Stream';
 
-        isNFT = metadata.monetization[0].purchase_offer[0].type === 'nft';
+        const isNFT = metadata.monetization[0].purchase_offer[0].type === 'nft';
 
         try {
-            if (!isStreamingData || isNFT) {
+            if (!isStreamingData) {
                 lineageData = await this.metadataRepositoryService.retrieveLineage(accessId[0], token);
             }
         } catch (err) {
@@ -132,7 +133,7 @@ export class ConsumerService {
                         token,
                         factory.factoryPrefix,
                     );
-
+                    storageAssetUUID = storeResult.asset_uuid;
                     offset += results.data.data.rows.length;
 
                     // store asset retrieval info in consumer's database
@@ -207,7 +208,7 @@ export class ConsumerService {
                     token,
                     factory.factoryPrefix,
                 );
-
+                storageAssetUUID = createFile.asset_uuid;
                 assetInfo = em.create(AssetRetrievalInfo, {
                     id: createFile.asset_uuid,
                     cloudAssetId: assetId,
@@ -291,7 +292,12 @@ export class ConsumerService {
 
         try {
             if (!isStreamingData || isNFT) {
-                await this.metadataRepositoryService.createLineage(lineageData, token, factory.factoryPrefix);
+                const newLineageData = {
+                    dataset_id: storageAssetUUID,
+                    direction: 'cloud-to-factory',
+                    dataset_lineage: lineageData,
+                };
+                await this.metadataRepositoryService.createLineage(newLineageData, token, factory.factoryPrefix);
             }
         } catch (err) {
             this.logger.error('Lineage tracker creation error:', err);

@@ -60,7 +60,7 @@ export class MetadataRepositoryService {
     }
 
     async createMetadata(
-        assetId: string,
+        assetId: string | undefined,
         catalogId: string,
         factoryPrefix: string,
         isStreamingData: boolean,
@@ -233,6 +233,7 @@ export class MetadataRepositoryService {
         }
     }
 
+    //@deprecated
     async createCatalog(catalogId: string, factory: any) {
         const rdfData = `
         @prefix dcat: <http://www.w3.org/ns/dcat#> .
