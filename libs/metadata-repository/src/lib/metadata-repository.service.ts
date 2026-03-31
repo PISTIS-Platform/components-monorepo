@@ -60,7 +60,7 @@ export class MetadataRepositoryService {
     }
 
     async createMetadata(
-        assetId: string,
+        assetId: string | undefined,
         catalogId: string,
         factoryPrefix: string,
         isStreamingData: boolean,
@@ -87,7 +87,8 @@ export class MetadataRepositoryService {
 
         const getValue = (obj: any): string | null => {
             if (Object.keys(obj).length > 0) {
-                return `"${Object.values(obj)[0]}"@${Object.keys(obj)[0]}`;
+                const value = (Object.values(obj)[0] as string).replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\r\n|\r|\n/g, '\\n');
+                return `"${value}"@${Object.keys(obj)[0]}`;
             }
             return null;
         };
@@ -233,6 +234,7 @@ export class MetadataRepositoryService {
         }
     }
 
+    //@deprecated
     async createCatalog(catalogId: string, factory: any) {
         const rdfData = `
         @prefix dcat: <http://www.w3.org/ns/dcat#> .

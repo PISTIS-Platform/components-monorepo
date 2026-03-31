@@ -180,9 +180,17 @@ export class ConnectorProcessor extends WorkerHost {
     async onFailed(job: Job) {
         this.logger.log(`❌ Job ${job.id} Failed (Date: ${this.getNow()} UTC) :`);
         this.logger.log(job.failedReason || 'Unknown error');
+
+        const maxAttempts = job.opts?.attempts ?? 1;
+        if (job.attemptsMade < maxAttempts) {
+            this.logger.log(`Attempt ${job.attemptsMade}/${maxAttempts} — skipping notification, will retry.`);
+            return;
+        }
+
         await this.em.nativeDelete(AssetRetrievalInfo, {
             cloudAssetId: job.data.assetId,
         });
+
         const metadata = await this.consumerService.retrieveMetadata(job.data.assetId);
         const buyerFactory = await this.consumerService.retrieveFactory(job.data.token);
         const sellerId = metadata?.monetization?.[0]?.seller_id;
@@ -201,6 +209,7 @@ export class ConnectorProcessor extends WorkerHost {
                 message: `Asset provision failed for ${metadata.title.en} for buyer ${buyerFactory.organizationName}`,
             },
         ];
+
         for (const note of notification) {
             await this.notifications(note);
         }

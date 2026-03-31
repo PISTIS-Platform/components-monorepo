@@ -114,7 +114,7 @@ export class ProviderController {
 
     @Delete(':assetId')
     @ApiOkResponse({ description: 'Query delete', schema: { example: 'Query deleted' } })
-    async deleteModel(@Param('assetId') assetId: string) {
+    async deleteQuery(@Param('assetId') assetId: string) {
         return await this.providerService.deleteQuery(assetId);
     }
 }
