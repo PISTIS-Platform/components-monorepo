@@ -110,7 +110,7 @@ export class InvestmentPlannerService {
         try {
             const invest = {
                 assetId: data.cloudAssetId,
-                percentage: data.percentageOffer,
+                percentage: (data.percentageOffer / data.totalShares) * numberOfShares,
                 assetFactory: factoryId,
                 ownerId: data.sellerId,
                 price: data.price,
