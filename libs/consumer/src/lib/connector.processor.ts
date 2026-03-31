@@ -176,11 +176,17 @@ export class ConnectorProcessor extends WorkerHost {
         }
     }
 
-    //FIXME: Undefined org name from job, notification after the third job failure
     @OnWorkerEvent('failed')
     async onFailed(job: Job) {
         this.logger.log(`❌ Job ${job.id} Failed (Date: ${this.getNow()} UTC) :`);
         this.logger.log(job.failedReason || 'Unknown error');
+
+        const maxAttempts = job.opts?.attempts ?? 1;
+        if (job.attemptsMade < maxAttempts) {
+            this.logger.log(`Attempt ${job.attemptsMade}/${maxAttempts} — skipping notification, will retry.`);
+            return;
+        }
+
         await this.em.nativeDelete(AssetRetrievalInfo, {
             cloudAssetId: job.data.assetId,
         });
@@ -203,6 +209,7 @@ export class ConnectorProcessor extends WorkerHost {
                 message: `Asset provision failed for ${metadata.title.en} for buyer ${buyerFactory.organizationName}`,
             },
         ];
+
         for (const note of notification) {
             await this.notifications(note);
         }
