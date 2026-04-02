@@ -117,4 +117,10 @@ export class ProviderController {
     async deleteQuery(@Param('assetId') assetId: string) {
         return await this.providerService.deleteQuery(assetId);
     }
+
+    @Delete('/kafka/:assetId')
+    @ApiOkResponse({ description: 'Delete kaka connection details for dataset' })
+    async deleteKafkaTopicAndUser(@Param('assetId') assetId: string) {
+        return this.providerService.deleteKafkaTopicAndUser(assetId);
+    }
 }

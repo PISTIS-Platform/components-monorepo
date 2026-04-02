@@ -1,6 +1,5 @@
 import { EntityRepository } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
-import { HttpService } from '@nestjs/axios';
 import { BadGatewayException, BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
 import { DataStorageService } from '@pistis/data-storage';
 import { KafkaService } from '@pistis/kafka';
@@ -23,7 +22,6 @@ export class ProviderService {
         @Inject(PROVIDER_MODULE_OPTIONS) private options: ProviderModuleOptions,
         private readonly metadataRepositoryService: MetadataRepositoryService,
         private readonly kafkaService: KafkaService,
-        private readonly httpService: HttpService,
     ) {}
 
     async downloadDataset(assetId: string, configData: ConfigDataDto, token: string) {
@@ -74,7 +72,7 @@ export class ProviderService {
                 // In case the consumer asked for columns and metadata
                 // (if columns were not send in dto (during first retrieval), the provider needs to retrieve them below)
                 if (!querySelector) {
-                    if (columnsInfo.length === 0 && configData.offset === 0) {
+                    if (configData.providerPrefix && columnsInfo.length === 0 && configData.offset === 0) {
                         columnsInfo = await this.dataStorageService.getColumns(
                             storageId[0],
                             token,
@@ -96,14 +94,15 @@ export class ProviderService {
                     );
 
                     //use data storage functions
-                    data = await this.dataStorageService.retrievePaginatedData(
-                        storageId,
-                        token,
-                        configData.offset || 0,
-                        configData.batchSize || 1000,
-                        columnsForPagination,
-                        configData.providerPrefix,
-                    );
+                    if (configData.providerPrefix)
+                        data = await this.dataStorageService.retrievePaginatedData(
+                            storageId,
+                            token,
+                            configData.offset || 0,
+                            configData.batchSize || 1000,
+                            columnsForPagination,
+                            configData.providerPrefix,
+                        );
 
                     returnedValue = {
                         data: data,
@@ -119,7 +118,8 @@ export class ProviderService {
             }
         } else if (metadata.distributions[0].title.en !== 'Kafka Stream') {
             try {
-                data = await this.dataStorageService.retrieveFile(storageId, token, configData.providerPrefix);
+                if (configData.providerPrefix)
+                    data = await this.dataStorageService.retrieveFile(storageId, token, configData.providerPrefix);
 
                 returnedValue = {
                     data,
@@ -131,9 +131,9 @@ export class ProviderService {
                 throw new BadGatewayException('Provider File retrieval error');
             }
         } else {
-            if (configData.kafkaConfig) {
+            if (configData.kafkaConfig && configData.originalId) {
                 returnedValue = await this.kafkaService.createMM2Connector({
-                    source: { id: configData.originalId! },
+                    source: { id: configData.originalId },
                     target: configData.kafkaConfig,
                 });
             }
@@ -231,5 +231,11 @@ export class ProviderService {
     async deleteQuery(id: string) {
         const query = await this.repo.findOneOrFail({ cloudAssetId: id });
         return await this.repo.getEntityManager().removeAndFlush(query);
+    }
+
+    async deleteKafkaTopicAndUser(assetId: string) {
+        await this.kafkaService.deleteTopic(assetId);
+        await this.kafkaService.deleteUser(assetId);
+        await this.kafkaService.deleteMM2ConnectorsBySourceId(assetId);
     }
 }

@@ -334,6 +334,39 @@ export class KafkaService {
     }
 
     /**
+     * Delete all MirrorSource Kafka connectors associated with a given source id
+     * @param sourceId The unique identifier for the source
+     */
+    async deleteMM2ConnectorsBySourceId(sourceId: string): Promise<void> {
+        const prefix = `kc-${sourceId}`;
+        this.logger.debug(`Deleting all Kafka connectors with prefix "${prefix}"`);
+
+        const response = await this.customObjectsApi.listNamespacedCustomObject(
+            STRIMZI_API_GROUP,
+            STRIMZI_API_VERSION,
+            KAFKA_NAMESPACE,
+            KAFKA_CONNECTOR_PLURAL,
+        );
+
+        const items: any[] = (response.body as any).items ?? [];
+        const matching = items.filter((item) => (item.metadata?.name as string)?.startsWith(prefix));
+
+        await Promise.all(
+            matching.map((item) => {
+                const name: string = item.metadata.name;
+                this.logger.debug(`Deleting Kafka connector "${name}"`);
+                return this.customObjectsApi.deleteNamespacedCustomObject(
+                    STRIMZI_API_GROUP,
+                    STRIMZI_API_VERSION,
+                    KAFKA_NAMESPACE,
+                    KAFKA_CONNECTOR_PLURAL,
+                    name,
+                );
+            }),
+        );
+    }
+
+    /**
      * Retrieve a Kafka user from the Kubernetes cluster.
      * @param name The name of the Kafka user.
      * @returns
