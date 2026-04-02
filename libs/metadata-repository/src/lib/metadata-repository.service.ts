@@ -87,7 +87,10 @@ export class MetadataRepositoryService {
 
         const getValue = (obj: any): string | null => {
             if (Object.keys(obj).length > 0) {
-                const value = (Object.values(obj)[0] as string).replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\r\n|\r|\n/g, '\\n');
+                const value = (Object.values(obj)[0] as string)
+                    .replace(/\\/g, '\\\\')
+                    .replace(/"/g, '\\"')
+                    .replace(/\r\n|\r|\n/g, '\\n');
                 return `"${value}"@${Object.keys(obj)[0]}`;
             }
             return null;
@@ -278,7 +281,8 @@ export class MetadataRepositoryService {
     }
 
     async createLineage(data: any, token: string, factoryPrefix: string) {
-        await firstValueFrom(
+        this.logger.log('Creating linegage');
+        return await firstValueFrom(
             this.httpService
                 .post(`https://${factoryPrefix}.pistis-market.eu/srv/lineage-tracker/write_lineage`, data, {
                     headers: getHeaders(token),
@@ -303,7 +307,7 @@ export class MetadataRepositoryService {
                 })
                 .pipe(
                     map((res) => {
-                        return res;
+                        return res.data;
                     }),
                     catchError((error) => {
                         this.logger.error('Lineage retrieval error:', error);
