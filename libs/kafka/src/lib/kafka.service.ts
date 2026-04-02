@@ -349,6 +349,8 @@ export class KafkaService {
         );
 
         const items: any[] = (response.body as any).items ?? [];
+        if (!items.length) return;
+
         const matching = items.filter((item) => (item.metadata?.name as string)?.startsWith(prefix));
 
         await Promise.all(
