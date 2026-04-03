@@ -146,7 +146,10 @@ export class MetadataRepositoryService {
             : ` dct:format     <${getDistributionsValue('format')}> ;
                 ${license}
                 ${byteSizeEntry}
-                dcat:accessURL ${accessUrl} .`;
+                dcat:accessURL ${accessUrl}
+                pst:isEncrypted ${getDistributionsValue('is_encrypted') ?? false}
+                pst:isTransformed ${getDistributionsValue('is_transformed') ?? false}
+                pst:isAnonymized ${getDistributionsValue('is_anonymized') ?? false} .`;
 
         const rdfData = `
             @prefix dcat:                <http://www.w3.org/ns/dcat#> .
@@ -158,6 +161,7 @@ export class MetadataRepositoryService {
             @prefix skos:                <http://www.w3.org/2004/02/skos/core#> .
             @prefix pistis:				<https://www.pistis-project.eu/ns/voc#> .
             @prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+            @prefix pst:                 <https://www.pistis-project.eu/ns/voc#> .     
 
             <https://piveau.io/set/data/test-dataset>
                 a                   dcat:Dataset ;
