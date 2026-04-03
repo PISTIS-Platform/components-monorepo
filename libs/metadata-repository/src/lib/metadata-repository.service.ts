@@ -78,9 +78,13 @@ export class MetadataRepositoryService {
         let keywords: any;
 
         const getDistributionsValue = (key: string) => {
-            const entry = metadata.distributions.find((item: any) => item[key]);
+            const entry = metadata.distributions.find((item: any) => key in item);
+            if (!entry) return '';
             if (key === 'format') {
                 return entry[key] ? entry[key].resource : '';
+            }
+            if (typeof entry[key] === 'boolean') {
+                return entry[key];
             }
             return Object.values(entry[key])[0];
         };
@@ -146,10 +150,10 @@ export class MetadataRepositoryService {
             : ` dct:format     <${getDistributionsValue('format')}> ;
                 ${license}
                 ${byteSizeEntry}
-                dcat:accessURL ${accessUrl}
-                pst:isEncrypted ${getDistributionsValue('is_encrypted') ?? false}
-                pst:isTransformed ${getDistributionsValue('is_transformed') ?? false}
-                pst:isAnonymized ${getDistributionsValue('is_anonymized') ?? false} .`;
+                dcat:accessURL ${accessUrl} ;
+                pst:isEncrypted ${getDistributionsValue('is_encrypted') || false} ;
+                pst:isTransformed ${getDistributionsValue('is_transformed') || false} ;
+                pst:isAnonymized ${getDistributionsValue('is_anonymized') || false} .`;
 
         const rdfData = `
             @prefix dcat:                <http://www.w3.org/ns/dcat#> .
