@@ -6,7 +6,7 @@ import { CONNECTOR_QUEUE } from '@pistis/bullMq';
 import { getHeaders } from '@pistis/shared';
 import { Job } from 'bullmq';
 import dayjs from 'dayjs';
-import { catchError, firstValueFrom, map, of, switchMap, tap, throwError } from 'rxjs';
+import { catchError, firstValueFrom, map, of, tap, throwError } from 'rxjs';
 
 import { CONSUMER_MODULE_OPTIONS } from './consumer.module-definition';
 import { ConsumerService } from './consumer.service';
@@ -37,11 +37,12 @@ export class ConnectorProcessor extends WorkerHost {
         switch (job.name) {
             case 'retrieveData': {
                 const forkedEm = this.em.fork();
+                const token = await this.getAccessToken();
                 return await this.consumerService.retrieveData(
                     forkedEm,
                     job.data.assetId,
                     job.data.user,
-                    job.data.token,
+                    token,
                     job.data.data,
                 );
             }
@@ -52,11 +53,12 @@ export class ConnectorProcessor extends WorkerHost {
                     await job.remove(); // remove repeatable job
                     return;
                 }
+                const token = await this.getAccessToken();
                 return await this.consumerService.retrieveData(
                     forkedEm,
                     job.data.assetId,
                     job.data.user,
-                    job.data.token,
+                    token,
                     job.data.data,
                 );
             }
@@ -75,23 +77,25 @@ export class ConnectorProcessor extends WorkerHost {
         return dayjs(new Date()).format('DD/MM/YYYY HH:mm:ss');
     }
 
-    private async notifications(notification: any) {
-        return await firstValueFrom(
+    private getAccessToken(): Promise<string> {
+        return firstValueFrom(
             this.httpService
                 .post(`${this.options.authServerUrl}/realms/PISTIS/protocol/openid-connect/token`, this.tokenData, {
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     data: this.tokenData,
                 })
+                .pipe(map(({ data }) => data.access_token)),
+        );
+    }
+
+    private async notifications(notification: any): Promise<void> {
+        const token = await this.getAccessToken();
+        await firstValueFrom(
+            this.httpService
+                .post(`${this.options.notificationsUrl}/api/notifications`, notification, {
+                    headers: getHeaders(token),
+                })
                 .pipe(
-                    map(({ data }) => data.access_token),
-                    tap((access_token) => this.logger.debug(`Obtained access token: ${access_token}`)),
-                    switchMap((access_token) =>
-                        this.httpService.post(`${this.options.notificationsUrl}/api/notifications`, notification, {
-                            headers: getHeaders(access_token),
-                        }),
-                    ),
                     tap((response) => this.logger.debug(response)),
                     catchError((error) => {
                         this.logger.error('Error occurred during notification creation: ', error);
@@ -101,27 +105,15 @@ export class ConnectorProcessor extends WorkerHost {
         );
     }
 
-    private async createTransaction(transaction: any) {
+    private async createTransaction(transaction: any): Promise<void> {
+        const token = await this.getAccessToken();
         await firstValueFrom(
             this.httpService
-                .post(`${this.options.authServerUrl}/realms/PISTIS/protocol/openid-connect/token`, this.tokenData, {
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    data: this.tokenData,
+                .post(`${this.options.transactionAuditorUrl}/api/transactions-auditor/`, transaction, {
+                    headers: getHeaders(token),
                 })
                 .pipe(
-                    map(({ data }) => data.access_token),
-                    switchMap((access_token) =>
-                        this.httpService.post(
-                            `${this.options.transactionAuditorUrl}/api/transactions-auditor/`,
-                            transaction,
-                            { headers: getHeaders(access_token) },
-                        ),
-                    ),
-                    map(async (res) => {
-                        return res.data;
-                    }),
+                    map((res) => res.data),
                     catchError((error) => {
                         this.logger.error('Transaction creation error:', error);
                         return of({ error: 'Error occurred during transaction creation' });
@@ -191,8 +183,9 @@ export class ConnectorProcessor extends WorkerHost {
             cloudAssetId: job.data.assetId,
         });
 
+        const token = await this.getAccessToken();
         const metadata = await this.consumerService.retrieveMetadata(job.data.assetId);
-        const buyerFactory = await this.consumerService.retrieveFactory(job.data.token);
+        const buyerFactory = await this.consumerService.retrieveFactory(token);
         const sellerId = metadata?.monetization?.[0]?.seller_id;
 
         const notification = [
