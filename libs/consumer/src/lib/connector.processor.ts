@@ -48,6 +48,11 @@ export class ConnectorProcessor extends WorkerHost {
             }
             case 'retrieveScheduledData': {
                 const forkedEm = this.em.fork();
+                if (job.data.endDate && new Date() > new Date(job.data.endDate)) {
+                    this.logger.verbose(`Job for ${job.data.assetId} reached endDate. Removing repeatable job.`);
+                    await job.remove(); // remove repeatable job
+                    return;
+                }
                 const token = await this.getAccessToken();
                 return await this.consumerService.retrieveData(
                     forkedEm,
