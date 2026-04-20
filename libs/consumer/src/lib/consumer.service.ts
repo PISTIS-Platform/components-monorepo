@@ -43,7 +43,7 @@ export class ConsumerService {
 
         let providerFactory: any;
         try {
-            factory = await this.retrieveFactory(token);
+            factory = await this.retrieveProviderFactory(user.organizationId, token);
         } catch (err) {
             this.logger.error('Factory retrieval error:', err);
             throw new NotFoundException(`Factory not found: ${err}`);
