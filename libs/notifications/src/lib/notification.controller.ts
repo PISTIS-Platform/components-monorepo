@@ -69,6 +69,12 @@ export class NotificationController {
         return this.notificationsService.countByUserId(user.id);
     }
 
+    @Patch('/user/read-all')
+    @ApiUnauthorizedResponse()
+    async markAllAsRead(@AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo): Promise<void> {
+        return this.notificationsService.markAllAsRead(user.id);
+    }
+
     @Patch('/:id/read')
     @ApiUnauthorizedResponse()
     async updateStatus(

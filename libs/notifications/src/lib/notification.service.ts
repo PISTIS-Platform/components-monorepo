@@ -42,6 +42,10 @@ export class NotificationService {
         this.repo.getEntityManager().flush();
     }
 
+    async markAllAsRead(userId: string): Promise<void> {
+        await this.repo.nativeUpdate({ userId, readAt: null }, { readAt: new Date() });
+    }
+
     async hide(id: string, userId: string): Promise<void> {
         const notification = await this.repo.findOneOrFail({ id, userId });
         notification.isHidden = true;
