@@ -29,11 +29,6 @@ export class TransactionsAuditorService {
     ): Promise<PaginateResponse<Omit<TransactionAuditorDTO, 'terms'>>> {
         query.filter = {};
 
-        // calculate date range for last 30 days
-        const today = new Date();
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(today.getDate() - 30);
-
         return new PageFactory(query, this.repo, {
             // Explicitly select fields
             select: [
@@ -52,40 +47,26 @@ export class TransactionsAuditorService {
                 'terms',
             ],
             where: {
-                $and: [
-                    {
-                        $or: [{ factoryBuyerId: user.organizationId }, { factorySellerId: user.organizationId }],
-                    },
-                    {
-                        createdAt: {
-                            $gte: thirtyDaysAgo,
-                        },
-                    },
-                ],
+                $or: [{ factoryBuyerId: user.organizationId }, { factorySellerId: user.organizationId }],
             },
         }).create();
     }
 
     async getSumsByFactory(user: UserInfo) {
-        // Calculate date range for last 30 days
-        const today = new Date();
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(today.getDate() - 30);
-
         const em = this.repo.getEntityManager();
 
         const expensesResult = await em.getConnection().execute(
-            `SELECT COALESCE(SUM(amount), 0) as total 
+            `SELECT COALESCE(SUM(amount), 0) as total
          FROM "transactionsAuditor"
-         WHERE factory_buyer_id = ? AND created_at >= ?`,
-            [user.organizationId, thirtyDaysAgo],
+         WHERE factory_buyer_id = ?`,
+            [user.organizationId],
         );
 
         const incomeResult = await em.getConnection().execute(
-            `SELECT COALESCE(SUM(amount), 0) as total 
-         FROM "transactionsAuditor" 
-         WHERE factory_seller_id = ? AND created_at >= ?`,
-            [user.organizationId, thirtyDaysAgo],
+            `SELECT COALESCE(SUM(amount), 0) as total
+         FROM "transactionsAuditor"
+         WHERE factory_seller_id = ?`,
+            [user.organizationId],
         );
 
         return {
