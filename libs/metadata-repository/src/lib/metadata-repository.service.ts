@@ -155,6 +155,8 @@ export class MetadataRepositoryService {
                 pst:isTransformed ${getDistributionsValue('is_transformed') || false} ;
                 pst:isAnonymized ${getDistributionsValue('is_anonymized') || false} .`;
 
+        const category = metadata.categories[0]?.id ?? 'EDUC';
+
         const rdfData = `
             @prefix dcat:                <http://www.w3.org/ns/dcat#> .
             @prefix dct:                 <http://purl.org/dc/terms/> .
@@ -175,7 +177,7 @@ export class MetadataRepositoryService {
                 dct:publisher       [ a     foaf:${metadata.publisher.type} ;
                                             foaf:mbox <${metadata.publisher.email}> ;
                                             foaf:name "${metadata.publisher.name}" ; ] ;
-                dcat:theme          <http://publications.europa.eu/resource/authority/data-theme/EDUC> ;
+                dcat:theme          <http://publications.europa.eu/resource/authority/data-theme/${category}> ;
                 dct:language        <http://publications.europa.eu/resource/authority/language/ENG> ;
                 dct:issued          "${new Date().toISOString()}"^^xsd:dateTime ;
                 dct:modified        "${new Date().toISOString()}"^^xsd:dateTime ;

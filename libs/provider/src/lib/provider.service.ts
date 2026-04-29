@@ -161,6 +161,11 @@ export class ProviderService {
             id: assetId,
             title: { en: data.title },
             description: { en: data.description },
+            categories: [
+                {
+                    id: data.category,
+                },
+            ],
             publisher: {
                 type: 'Organization',
                 email: 'mailto:admin@pistis.eu',
