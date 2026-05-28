@@ -101,36 +101,59 @@ export class DataStorageService {
         );
     }
 
-    async countRows(id: string, token: string, factory: string) {
-        const body = [
-            {
-                assetUUID: id,
-            },
-        ];
+    async retrieveSqlDataByDateRange(
+        token: string,
+        factory: string,
+        params: {
+            asset_uuid: string;
+            column_name: string;
+            column_datatype: string;
+            start_date: string;
+            end_date: string;
+        },
+    ) {
+        return firstValueFrom(
+            this.httpService
+                .get(`${this.prepareUrl(factory)}/tables/get_rows`, {
+                    params,
+                    headers: getHeaders(token),
+                })
+                .pipe(
+                    map(async (res) => {
+                        return {
+                            data: res.data[0].data,
+                        };
+                    }),
+                    catchError((err) => {
+                        this.logger.error(`Data rows retrieval error: ${err}`);
+                        throw new Error(`Data rows retrieval error: ${err}`);
+                    }),
+                ),
+        );
+    }
 
-        try {
-            return await firstValueFrom(
-                this.httpService
-                    .get(`${this.prepareUrl(factory)}/tables/count_rows`, {
-                        headers: getHeaders(token),
-                        params: body,
-                    })
-                    .pipe(
-                        map(async (res) => {
-                            return res.data['Number of rows'];
-                        }),
-                        // Catch any error occurred during rows retrieval
-                        catchError((error) => {
-                            this.logger.error('Count rows error:', error);
-                            return of({ error: 'Error occurred during count rows retrieval' });
-                        }),
-                    ),
-            );
-        } catch (err) {
-            console.error('Count rows error:', err);
-            this.logger.error('Count rows error:', err);
-            throw new Error(`Count rows error: ${err}`);
-        }
+    async countRows(id: string, token: string, factory: string) {
+        return firstValueFrom(
+            this.httpService
+                .get(`${this.prepareUrl(factory)}/tables/count_rows`, {
+                    headers: getHeaders(token),
+                    params: [
+                        {
+                            assetUUID: id,
+                        },
+                    ],
+                })
+                .pipe(
+                    map(async (res) => {
+                        return res.data['Number of rows'];
+                    }),
+                    // Catch any error occurred during rows retrieval
+                    catchError((err) => {
+                        this.logger.error(`Count rows error: ${err}`);
+                        throw new Error(`Count rows error: ${err}`);
+                    }),
+                ),
+        );
     }
 
     async getColumns(uuid: string, token: string, factory: string) {

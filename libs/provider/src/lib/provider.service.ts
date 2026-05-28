@@ -70,8 +70,34 @@ export class ProviderService {
                     const selectedColumns: string[] = querySelector.params?.['selectedColumns'] ?? [];
                     const dateRange: Record<string, any> = querySelector.params?.['dateRange'] ?? {};
 
-                    if (Object.keys(dateRange).length > 0) {
-                        // TODO: handle dateRange-based retrieval
+                    if (Object.keys(dateRange).length > 0 && configData.providerPrefix) {
+                        const rawColumns = await this.dataStorageService.getColumns(
+                            storageId[0],
+                            token,
+                            configData.providerPrefix,
+                        );
+                        const allColumns: any[] = rawColumns[0].data_model.columns.map((col: any) => ({
+                            name: col[0],
+                            dataType: col[1],
+                        }));
+
+                        const result = await this.dataStorageService.retrieveSqlDataByDateRange(
+                            token,
+                            configData.providerPrefix,
+                            {
+                                asset_uuid: storageId[0],
+                                column_name: dateRange['dateColumn'],
+                                column_datatype: 'date',
+                                start_date: dateRange['fromDate'],
+                                end_date: dateRange['toDate'],
+                            },
+                        );
+
+                        returnedValue = {
+                            data: result && 'data' in result ? result['data'] : { rows: [] },
+                            metadata: { id: metadataName },
+                            data_model: { columns: allColumns },
+                        };
                     } else {
                         returnedValue = await this.retrieveSqlData(
                             token,
@@ -91,7 +117,7 @@ export class ProviderService {
         } else if (metadata.distributions[0].title.en !== 'Kafka Stream') {
             try {
                 if (configData.providerPrefix)
-                    data = await this.dataStorageService.retrieveFile(storageId, token, configData.providerPrefix);
+                    data = await this.dataStorageService.retrieveFile(storageId[0], token, configData.providerPrefix);
 
                 returnedValue = {
                     data,
