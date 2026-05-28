@@ -47,7 +47,7 @@ export class ProviderService {
                         const url = new URL(access_url[0]);
                         return url.searchParams.get('asset_uuid');
                     } catch (error) {
-                        console.error('Invalid URL:', access_url[0]);
+                        this.logger.error(`Invalid URL: ${access_url[0]}`);
                         return null;
                     }
                 }
@@ -64,34 +64,63 @@ export class ProviderService {
             throw new BadRequestException('Distribution format not found');
         }
 
-        const querySelector = await this.repo.findOne({ cloudAssetId: assetId });
-
         if (format[0] === 'SQL') {
             try {
-                //FIXME: Refactor this when we have the new endpoint from data storage to avoid crash if sql is too big
-                // In case the consumer asked for columns and metadata
-                // (if columns were not send in dto (during first retrieval), the provider needs to retrieve them below)
-                if (!querySelector) {
+                const querySelector = await this.repo.findOne({ cloudAssetId: assetId });
+                if (querySelector) {
+                    const selectedColumns: string[] = querySelector.params?.['selectedColumns'] ?? [];
+
                     if (configData.providerPrefix && columnsInfo.length === 0 && configData.offset === 0) {
-                        columnsInfo = await this.dataStorageService.getColumns(
+                        const rawColumns = await this.dataStorageService.getColumns(
                             storageId[0],
                             token,
                             configData.providerPrefix,
                         );
+                        columnsInfo = rawColumns[0].data_model.columns
+                            .filter((col: any) => selectedColumns.includes(col[0]))
+                            .map((col: any) => ({ name: col[0], dataType: col[1] }));
                     }
 
-                    //transform this into the object needed for columns , for retrieving paginated data
                     const columnsForPagination: Record<string, null> = Object.fromEntries(
-                        columnsInfo[0].data_model.columns.map((column: any) => [column[0], null]),
+                        columnsInfo.map((col: any) => [col.name, null]),
                     );
+                    const columnsForNewTable = columnsInfo;
 
-                    //transform columns to send to consumer for table creation
-                    const columnsForNewTable: Record<string, null> = columnsInfo[0].data_model.columns.map(
-                        (column: any) => {
+                    if (configData.providerPrefix)
+                        data = await this.dataStorageService.retrievePaginatedData(
+                            storageId,
+                            token,
+                            configData.offset || 0,
+                            configData.batchSize || 1000,
+                            columnsForPagination,
+                            configData.providerPrefix,
+                        );
+
+                    returnedValue = {
+                        data: data && 'data' in data ? data['data'] : { rows: [] },
+                        metadata: { id: metadataName },
+                        data_model: { columns: columnsForNewTable },
+                    };
+                } else {
+                    //FIXME: Refactor this when we have the new endpoint from data storage to avoid crash if sql is too big
+                    // In case the consumer asked for columns and metadata
+                    // (if columns were not send in dto (during first retrieval), the provider needs to retrieve them below)
+                    if (configData.providerPrefix && columnsInfo.length === 0 && configData.offset === 0) {
+                        const rawColumns = await this.dataStorageService.getColumns(
+                            storageId[0],
+                            token,
+                            configData.providerPrefix,
+                        );
+                        columnsInfo = rawColumns[0].data_model.columns.map((column: any) => {
                             const [name, dataType] = column;
                             return { name, dataType };
-                        },
+                        });
+                    }
+
+                    const columnsForPagination: Record<string, null> = Object.fromEntries(
+                        columnsInfo.map((col: any) => [col.name, null]),
                     );
+                    const columnsForNewTable = columnsInfo;
 
                     //use data storage functions
                     if (configData.providerPrefix)
@@ -105,12 +134,10 @@ export class ProviderService {
                         );
 
                     returnedValue = {
-                        data: data,
+                        data: data && 'data' in data ? data['data'] : { rows: [] },
                         metadata: { id: metadataName },
                         data_model: { columns: columnsForNewTable },
                     };
-                } else {
-                    //TODO: add here the logic to retrieve from data storage upon to query and send them to consumer
                 }
             } catch (err) {
                 this.logger.error('Provider SQL retrieval error:', err);

@@ -17,62 +17,52 @@ export class DataStorageService {
     }
 
     async updateTableInStorage(assetId: string, results: any, token: string, factory: string) {
-        try {
-            return await firstValueFrom(
-                this.httpService
-                    .post(`${this.prepareUrl(factory)}/tables/add_rows`, JSON.stringify(results), {
-                        headers: getHeaders(token),
-                        params: {
-                            asset_uuid: assetId,
-                        },
-                    })
-                    .pipe(
-                        map(async (res) => {
-                            return res.data;
-                        }),
-                        // Catch any error occurred during update
-                        catchError((error) => {
-                            this.logger.error('Data update in storage error:', error);
-                            return of({ error: 'Error occurred during data update in storage' });
-                        }),
-                    ),
-            );
-        } catch (err) {
-            this.logger.error('Update table in storage error:', err);
-            throw new Error(`Update table in storage error: ${err}`);
-        }
+        return firstValueFrom(
+            this.httpService
+                .post(`${this.prepareUrl(factory)}/tables/add_rows`, results, {
+                    headers: getHeaders(token),
+                    params: {
+                        asset_uuid: assetId,
+                    },
+                })
+                .pipe(
+                    map(async (res) => {
+                        return res.data;
+                    }),
+                    // Catch any error occurred during update
+                    catchError((error) => {
+                        this.logger.error(`Data update in storage error: ${error}`);
+                        throw new Error(`Update table in storage error: ${error}`);
+                    }),
+                ),
+        );
     }
 
     async createTableInStorage(results: any, token: string, factory: string) {
-        try {
-            return await firstValueFrom(
-                this.httpService
-                    .post(
-                        `${this.prepareUrl(factory)}/tables/create_table`,
-                        {
-                            data: results.data.data,
-                            metadata: { id: results.metadata.id[0] },
-                            data_model: results.data_model,
-                        },
-                        {
-                            headers: getHeaders(token),
-                        },
-                    )
-                    .pipe(
-                        map(async (res) => {
-                            return res.data;
-                        }),
-                        // Catch any error occurred during creation
-                        catchError((error) => {
-                            this.logger.error('Data creation in storage error:', error);
-                            return of({ error: 'Error occurred during data creation in storage' });
-                        }),
-                    ),
-            );
-        } catch (err) {
-            this.logger.error('Create table in storage error:', err);
-            throw new Error(`Create table in storage error: ${err}`);
-        }
+        return firstValueFrom(
+            this.httpService
+                .post(
+                    `${this.prepareUrl(factory)}/tables/create_table`,
+                    {
+                        data: results.data,
+                        metadata: { id: results.metadata.id[0] },
+                        data_model: results.data_model,
+                    },
+                    {
+                        headers: getHeaders(token),
+                    },
+                )
+                .pipe(
+                    map(async (res) => {
+                        return res.data;
+                    }),
+                    // Catch any error occurred during creation
+                    catchError((error) => {
+                        this.logger.error(`Data creation in storage error: ${error}`);
+                        throw new Error(`Data creation in storage error: ${error}`);
+                    }),
+                ),
+        );
     }
 
     async retrievePaginatedData(

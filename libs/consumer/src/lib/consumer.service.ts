@@ -33,8 +33,6 @@ export class ConsumerService {
         private readonly kafkaService: KafkaService,
     ) {}
 
-    //TODO: Org name inside job
-
     async retrieveData(em: EntityManager, assetId: string, user: any, token: string, data: RetrieveDataDTO) {
         let factory: any;
         let metadata;
@@ -81,8 +79,8 @@ export class ConsumerService {
             }
         });
 
-        const storageUrl = `https://${factory.factoryPrefix}.pistis-market.eu/srv/factory-data-storage/api`;
         let assetInfo: AssetRetrievalInfo | null;
+
         const format = metadata.distributions
             .map(({ format }: any) => format?.id ?? null)
             .filter((id: any) => id !== null);
@@ -92,7 +90,6 @@ export class ConsumerService {
         }
 
         const isStreamingData = metadata.distributions[0].title.en === 'Kafka Stream';
-
         const isNFT = metadata.monetization[0].purchase_offer[0].type === 'nft';
 
         try {
@@ -104,7 +101,7 @@ export class ConsumerService {
         }
 
         if (format[0] === 'SQL') {
-            this.logger.debug('Starting SQL data transfer...');
+            this.logger.log('Starting SQL data transfer...');
             try {
                 let results: any;
                 let storeResult: any;
@@ -120,6 +117,7 @@ export class ConsumerService {
                 }
 
                 // first retrieval of data
+                this.logger.log('Retrieving first retrieval of data...');
                 results = await this.getDataFromProvider(assetId, token, {
                     offset,
                     batchSize: 1000,
@@ -127,6 +125,7 @@ export class ConsumerService {
                 });
 
                 if (offset === 0 && 'data' in results) {
+                    this.logger.log('Creating table in storage...');
                     // store data in data store
                     storeResult = await this.dataStorageService.createTableInStorage(
                         results,
@@ -134,7 +133,7 @@ export class ConsumerService {
                         factory.factoryPrefix,
                     );
                     storageAssetUUID = storeResult.asset_uuid;
-                    offset += results.data.data.rows.length;
+                    offset += results.data.rows.length;
 
                     // store asset retrieval info in consumer's database
                     assetInfo = em.create(AssetRetrievalInfo, {
@@ -148,30 +147,33 @@ export class ConsumerService {
 
                 // loop to retrieve data in batches
                 // eslint-disable-next-line no-constant-condition
-                while (true) {
+                this.logger.log('Getting data from provider...');
+                const INF = true;
+                while (INF) {
                     const currentRows = results.data.rows;
                     const rowCount = currentRows.length;
                     if (rowCount === 0) break;
-                    if ('columns' in results) {
+                    if ('columns' in results.data_model) {
                         results = await this.getDataFromProvider(assetId, token, {
                             offset,
                             batchSize: this.options.downloadBatchSize,
-                            columns: results.columns,
+                            columns: results.data_model.columns,
                             consumerPrefix: factory.factoryPrefix,
                             providerPrefix: providerFactory.factoryPrefix,
                         });
                     }
 
-                    if (!('data' in results) || !('columns' in results) || results.data.rows.length === 0) break;
+                    if (!('data' in results) || !('columns' in results.data_model) || results.data.rows.length === 0)
+                        break;
 
                     await this.dataStorageService.updateTableInStorage(
                         assetId,
                         {
-                            columns: results.columns,
+                            data_model: results.data_model,
                             data: results.data,
                         },
                         token,
-                        storageUrl,
+                        factory.factoryPrefix,
                     );
                     offset += rowCount;
 
@@ -181,7 +183,7 @@ export class ConsumerService {
                     if (rowCount < this.options.downloadBatchSize) break;
                 }
             } catch (err) {
-                this.logger.error('Transfer SQL data error:', err);
+                this.logger.error(`Transfer SQL data error: ${err}`);
                 throw new BadGatewayException('Transfer SQL data error');
             }
         } else if (metadata.distributions[0].title.en !== 'Kafka Stream') {

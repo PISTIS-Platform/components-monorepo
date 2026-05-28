@@ -13,7 +13,7 @@ export class QuerySelector {
     cloudAssetId!: string;
 
     @Property({ type: 'json' })
-    params!: Record<string, any>[];
+    params!: Record<string, any>;
 
     @Property({ type: 'timestamptz' })
     createdAt: Date = new Date();
