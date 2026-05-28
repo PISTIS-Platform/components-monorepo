@@ -29,7 +29,6 @@ export class ProviderService {
         let returnedValue;
         let metadata;
 
-        let columnsInfo = configData.columns || [];
         try {
             metadata = await this.metadataRepositoryService.retrieveMetadata(assetId);
         } catch (err) {
@@ -69,75 +68,21 @@ export class ProviderService {
                 const querySelector = await this.repo.findOne({ cloudAssetId: assetId });
                 if (querySelector) {
                     const selectedColumns: string[] = querySelector.params?.['selectedColumns'] ?? [];
+                    const dateRange: Record<string, any> = querySelector.params?.['dateRange'] ?? {};
 
-                    if (configData.providerPrefix && columnsInfo.length === 0 && configData.offset === 0) {
-                        const rawColumns = await this.dataStorageService.getColumns(
+                    if (Object.keys(dateRange).length > 0) {
+                        // TODO: handle dateRange-based retrieval
+                    } else {
+                        returnedValue = await this.retrieveSqlData(
+                            token,
+                            configData,
                             storageId[0],
-                            token,
-                            configData.providerPrefix,
+                            metadataName,
+                            selectedColumns,
                         );
-                        columnsInfo = rawColumns[0].data_model.columns
-                            .filter((col: any) => selectedColumns.includes(col[0]))
-                            .map((col: any) => ({ name: col[0], dataType: col[1] }));
                     }
-
-                    const columnsForPagination: Record<string, null> = Object.fromEntries(
-                        columnsInfo.map((col: any) => [col.name, null]),
-                    );
-                    const columnsForNewTable = columnsInfo;
-
-                    if (configData.providerPrefix)
-                        data = await this.dataStorageService.retrievePaginatedData(
-                            storageId,
-                            token,
-                            configData.offset || 0,
-                            configData.batchSize || 1000,
-                            columnsForPagination,
-                            configData.providerPrefix,
-                        );
-
-                    returnedValue = {
-                        data: data && 'data' in data ? data['data'] : { rows: [] },
-                        metadata: { id: metadataName },
-                        data_model: { columns: columnsForNewTable },
-                    };
                 } else {
-                    //FIXME: Refactor this when we have the new endpoint from data storage to avoid crash if sql is too big
-                    // In case the consumer asked for columns and metadata
-                    // (if columns were not send in dto (during first retrieval), the provider needs to retrieve them below)
-                    if (configData.providerPrefix && columnsInfo.length === 0 && configData.offset === 0) {
-                        const rawColumns = await this.dataStorageService.getColumns(
-                            storageId[0],
-                            token,
-                            configData.providerPrefix,
-                        );
-                        columnsInfo = rawColumns[0].data_model.columns.map((column: any) => {
-                            const [name, dataType] = column;
-                            return { name, dataType };
-                        });
-                    }
-
-                    const columnsForPagination: Record<string, null> = Object.fromEntries(
-                        columnsInfo.map((col: any) => [col.name, null]),
-                    );
-                    const columnsForNewTable = columnsInfo;
-
-                    //use data storage functions
-                    if (configData.providerPrefix)
-                        data = await this.dataStorageService.retrievePaginatedData(
-                            storageId,
-                            token,
-                            configData.offset || 0,
-                            configData.batchSize || 1000,
-                            columnsForPagination,
-                            configData.providerPrefix,
-                        );
-
-                    returnedValue = {
-                        data: data && 'data' in data ? data['data'] : { rows: [] },
-                        metadata: { id: metadataName },
-                        data_model: { columns: columnsForNewTable },
-                    };
+                    returnedValue = await this.retrieveSqlData(token, configData, storageId[0], metadataName);
                 }
             } catch (err) {
                 this.logger.error('Provider SQL retrieval error:', err);
@@ -166,6 +111,43 @@ export class ProviderService {
             }
         }
         return returnedValue;
+    }
+
+    private async retrieveSqlData(
+        token: string,
+        configData: ConfigDataDto,
+        storageId: string,
+        metadataName: string[],
+        selectedColumns?: string[],
+    ) {
+        let columnsInfo: any[] = configData.columns || [];
+        if (configData.providerPrefix && columnsInfo.length === 0 && configData.offset === 0) {
+            const rawColumns = await this.dataStorageService.getColumns(storageId, token, configData.providerPrefix);
+            columnsInfo = rawColumns[0].data_model.columns
+                .filter((col: any) => !selectedColumns?.length || selectedColumns.includes(col[0]))
+                .map((col: any) => ({ name: col[0], dataType: col[1] }));
+        }
+
+        const columnsForPagination: Record<string, null> = Object.fromEntries(
+            columnsInfo.map((col: any) => [col.name, null]),
+        );
+
+        let data;
+        if (configData.providerPrefix)
+            data = await this.dataStorageService.retrievePaginatedData(
+                storageId,
+                token,
+                configData.offset || 0,
+                configData.batchSize || 1000,
+                columnsForPagination,
+                configData.providerPrefix,
+            );
+
+        return {
+            data: data && 'data' in data ? data['data'] : { rows: [] },
+            metadata: { id: metadataName },
+            data_model: { columns: columnsInfo },
+        };
     }
 
     async createKafkaUserAndTopic(assetId: string) {
