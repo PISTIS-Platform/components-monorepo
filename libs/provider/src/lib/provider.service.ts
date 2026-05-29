@@ -7,7 +7,7 @@ import { MetadataRepositoryService } from '@pistis/metadata-repository';
 import { v4 as uuidV4 } from 'uuid';
 
 import { QuerySelectorDTO } from './dto';
-import { ConfigDataDto } from './dto/configurationData.dto';
+import { ColumnDto, ConfigDataDto } from './dto/configurationData.dto';
 import { StreamingDataDto } from './dto/streaming-data.dto';
 import { PROVIDER_MODULE_OPTIONS } from './provider.module-definition';
 import { ProviderModuleOptions } from './provider-module-options.interface';
@@ -97,24 +97,16 @@ export class ProviderService {
                 const querySelector = await this.repo.findOne({ cloudAssetId: assetId });
                 let res: { data: any; data_model: { columns: any[] } };
 
-                if (querySelector) {
-                    const selectedColumns: string[] = querySelector.params?.['selectedColumns'] ?? [];
-                    const dateRange: Record<string, any> = querySelector.params?.['dateRange'] ?? {};
+                const selectedColumns: string[] = querySelector?.params?.['selectedColumns'] ?? [];
+                const dateRange: Record<string, any> = querySelector?.params?.['dateRange'] ?? {};
+                const resolvedColumns = columns?.length
+                    ? columns
+                    : await this.fetchColumns(storageId, token, providerPrefix, selectedColumns);
 
-                    if (Object.keys(dateRange).length > 0) {
-                        res = await this.retrieveSqlDataByDateRange(token, providerPrefix, storageId, dateRange);
-                    } else {
-                        res = await this.retrieveSqlData(
-                            token,
-                            providerPrefix,
-                            storageId,
-                            { offset, batchSize },
-                            columns,
-                            selectedColumns,
-                        );
-                    }
+                if (querySelector && Object.keys(dateRange).length > 0) {
+                    res = await this.fetchRowsByDateRange(token, providerPrefix, storageId, dateRange, resolvedColumns);
                 } else {
-                    res = await this.retrieveSqlData(token, providerPrefix, storageId, { offset, batchSize }, columns);
+                    res = await this.fetchRows(token, providerPrefix, storageId, offset, batchSize, resolvedColumns);
                 }
 
                 returnedValue = { ...res, metadata: { id: metadataId } };
@@ -242,24 +234,23 @@ export class ProviderService {
         await this.kafkaService.deleteMM2ConnectorsBySourceId(assetId);
     }
 
-    private async retrieveSqlData(
+    private async fetchColumns(storageId: string, token: string, providerPrefix: string, selectedColumns?: string[]) {
+        const rawColumns = await this.dataStorageService.getColumns(storageId, token, providerPrefix);
+        return rawColumns[0].data_model.columns
+            .filter((col: any) => !selectedColumns?.length || selectedColumns.includes(col[0]))
+            .map((col: any) => ({ name: col[0], dataType: col[1] }));
+    }
+
+    private async fetchRows(
         token: string,
         providerPrefix: string,
         storageId: string,
-        { offset, batchSize }: { offset?: number; batchSize?: number },
-        columns?: any[],
-        selectedColumns?: string[],
+        offset: number | undefined,
+        batchSize: number | undefined,
+        columns: ColumnDto[],
     ) {
-        let columnsInfo: any[] = columns || [];
-        if (columnsInfo.length === 0 && offset === 0) {
-            const rawColumns = await this.dataStorageService.getColumns(storageId, token, providerPrefix);
-            columnsInfo = rawColumns[0].data_model.columns
-                .filter((col: any) => !selectedColumns?.length || selectedColumns.includes(col[0]))
-                .map((col: any) => ({ name: col[0], dataType: col[1] }));
-        }
-
         const columnsForPagination: Record<string, null> = Object.fromEntries(
-            columnsInfo.map((col: any) => [col.name, null]),
+            columns.map((col: ColumnDto) => [col.name, null]),
         );
 
         const data = await this.dataStorageService.retrievePaginatedData(
@@ -273,22 +264,17 @@ export class ProviderService {
 
         return {
             data: data && 'data' in data ? data['data'] : { rows: [] },
-            data_model: { columns: columnsInfo },
+            data_model: { columns },
         };
     }
 
-    private async retrieveSqlDataByDateRange(
+    private async fetchRowsByDateRange(
         token: string,
         providerPrefix: string,
         storageId: string,
         dateRange: Record<string, any>,
+        columns: ColumnDto[],
     ) {
-        const rawColumns = await this.dataStorageService.getColumns(storageId, token, providerPrefix);
-        const allColumns: any[] = rawColumns[0].data_model.columns.map((col: any) => ({
-            name: col[0],
-            dataType: col[1],
-        }));
-
         const result = await this.dataStorageService.retrieveSqlDataByDateRange(token, providerPrefix, {
             asset_uuid: storageId,
             column_name: dateRange['dateColumn'],
@@ -299,7 +285,7 @@ export class ProviderService {
 
         return {
             data: result && 'data' in result ? result['data'] : { rows: [] },
-            data_model: { columns: allColumns },
+            data_model: { columns },
         };
     }
 }
