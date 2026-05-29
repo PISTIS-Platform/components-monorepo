@@ -81,10 +81,12 @@ export class ConsumerService {
 
         let assetInfo: AssetRetrievalInfo | null;
 
-        const format = metadata.distributions
-            .map(({ format }: any) => format?.id ?? null)
-            .filter((id: any) => id !== null);
-        if (format.length === 0) {
+        const format: string | null =
+            metadata.distributions
+                .map(({ format }: any) => format?.id ?? null)
+                .find((id: string | null) => id !== null) ?? null;
+
+        if (!format) {
             this.logger.error('Format not found');
             throw new BadRequestException('Distribution format not found');
         }
@@ -100,7 +102,7 @@ export class ConsumerService {
             this.logger.error('Lineage tracker retrieval error:', err);
         }
 
-        if (format[0] === 'SQL') {
+        if (format === 'SQL') {
             this.logger.log('Starting SQL data transfer...');
             try {
                 let results: any;
