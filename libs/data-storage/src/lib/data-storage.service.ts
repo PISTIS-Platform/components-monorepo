@@ -8,9 +8,7 @@ import { catchError, firstValueFrom, lastValueFrom, map, of } from 'rxjs';
 @Injectable()
 export class DataStorageService {
     private readonly logger = new Logger(DataStorageService.name);
-    constructor(
-        private readonly httpService: HttpService, // @Inject(MODULE_OPTIONS_TOKEN) private options: DataStorageModuleOptions,
-    ) {}
+    constructor(private readonly httpService: HttpService) {}
 
     private prepareUrl(factory: string) {
         return `https://${factory}.pistis-market.eu/srv/factory-data-storage/api`;
@@ -29,7 +27,6 @@ export class DataStorageService {
                     map(async (res) => {
                         return res.data;
                     }),
-                    // Catch any error occurred during update
                     catchError((error) => {
                         this.logger.error(`Data update in storage error: ${error}`);
                         throw new Error(`Update table in storage error: ${error}`);
@@ -45,7 +42,7 @@ export class DataStorageService {
                     `${this.prepareUrl(factory)}/tables/create_table`,
                     {
                         data: results.data,
-                        metadata: { id: results.metadata.id[0] },
+                        metadata: { id: results.metadata.id },
                         data_model: results.data_model,
                     },
                     {
@@ -56,7 +53,6 @@ export class DataStorageService {
                     map(async (res) => {
                         return res.data;
                     }),
-                    // Catch any error occurred during creation
                     catchError((error) => {
                         this.logger.error(`Data creation in storage error: ${error}`);
                         throw new Error(`Data creation in storage error: ${error}`);
@@ -73,7 +69,7 @@ export class DataStorageService {
         columnsForPagination: Record<string, null>,
         factory: string,
     ) {
-        return await firstValueFrom(
+        return firstValueFrom(
             this.httpService
                 .post(
                     `${this.prepareUrl(
@@ -92,7 +88,6 @@ export class DataStorageService {
                             },
                         };
                     }),
-                    // Catch any error occurred during data retrieval
                     catchError((error) => {
                         this.logger.error('Data retrieval error:', error);
                         return of({ error: 'Error occurred during data retrieval' });
@@ -147,7 +142,6 @@ export class DataStorageService {
                     map(async (res) => {
                         return res.data['Number of rows'];
                     }),
-                    // Catch any error occurred during rows retrieval
                     catchError((err) => {
                         this.logger.error(`Count rows error: ${err}`);
                         throw new Error(`Count rows error: ${err}`);
@@ -166,89 +160,30 @@ export class DataStorageService {
                 .then((res) => res.json())
                 .then((response) => response);
         } catch (err) {
-            console.error('Get columns error:', err);
             this.logger.error('Get columns error:', err);
             throw new Error(`Get columns error: ${err}`);
         }
     }
 
-    // async transferFile(assetId: string, token: string, consumerPrefix: string, providerPrefix: string) {
-    //     try {
-    //         //Fetch the file as a Blob
-    //         const fileResponse = await fetch(
-    //             `${this.prepareUrl(providerPrefix)}/files/get_file?asset_uuid=${assetId}`,
-    //             {
-    //                 headers: {
-    //                     Authorization: `Bearer ${token}`,
-    //                 },
-    //             }
-    //         );
-
-    //         if (!fileResponse.ok) {
-    //             throw new Error(`Error fetching the file: ${fileResponse.statusText}`);
-    //         }
-
-    //         //Convert response to Blob
-    //         const blob = await fileResponse.blob();
-
-    //         //Create FormData and append the file (blob)
-    //         const formData = new FormData();
-    //         formData.append('file', blob, 'filename');
-
-    //         //POST the file to create a new file
-    //         const uploadResponse = await fetch(
-    //             `${this.prepareUrl(consumerPrefix)}/files/create_file`,
-    //             {
-    //                 method: 'POST',
-    //                 body: formData,
-    //                 headers: {
-    //                     Authorization: `Bearer ${token}`,
-    //                 },
-    //             }
-    //         );
-
-    //         if (!uploadResponse.ok) {
-    //             throw new Error(`Error uploading the file: ${uploadResponse.statusText}`);
-    //         }
-
-    //         // Parse and return the JSON response
-    //         const jsonResponse = await uploadResponse.json();
-
-    //         return jsonResponse;
-    //     } catch (error) {
-    //         console.error(`Error during file transfer:${error}`);
-    //         throw new Error(`Error during file transfer:${error}`)
-    //     }
-    // }
-
     async retrieveFile(assetId: string, token: string, providerPrefix: string): Promise<Blob> {
-        try {
-            // Fetch the file as a Blob
-            const fileResponse = await lastValueFrom(
-                this.httpService
-                    .get(`${this.prepareUrl(providerPrefix)}/files/get_file?asset_uuid=${assetId}`, {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                        responseType: 'arraybuffer',
-                    })
-                    .pipe(
-                        map(async (res) => {
-                            return res.data;
-                        }),
-                        // Catch any error occurred during update
-                        catchError((error) => {
-                            this.logger.error('Data fetching from storage error:', error);
-                            return of({ error: 'Error fetching the file' });
-                        }),
-                    ),
-            );
-
-            return fileResponse;
-        } catch (error) {
-            console.error(`Error retrieving file: ${error}`);
-            throw new Error(`Error retrieving file: ${error}`);
-        }
+        return lastValueFrom(
+            this.httpService
+                .get(`${this.prepareUrl(providerPrefix)}/files/get_file?asset_uuid=${assetId}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                    responseType: 'arraybuffer',
+                })
+                .pipe(
+                    map(async (res) => {
+                        return res.data;
+                    }),
+                    catchError((error) => {
+                        this.logger.error(`Error retrieving file: ${error}`);
+                        throw new Error(`Error retrieving file: ${error}`);
+                    }),
+                ),
+        );
     }
 
     async createFile(data: any, filename: string, token: string, consumerPrefix: string): Promise<any> {

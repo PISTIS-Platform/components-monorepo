@@ -36,10 +36,26 @@ export class ProviderService {
             throw new BadGatewayException('Metadata retrieval error');
         }
 
-        const metadataName = metadata.distributions
-            .map(({ title }: any) => title?.en ?? null)
-            .filter((en: any) => en !== null);
+        const isKafkaStream = metadata.distributions[0]?.title?.en === 'Kafka Stream';
+        if (isKafkaStream) {
+            if (configData.kafkaConfig && configData.originalId) {
+                return await this.kafkaService.createMM2Connector({
+                    source: { id: configData.originalId },
+                    target: configData.kafkaConfig,
+                });
+            }
+            return;
+        }
 
+        const metadataId: string | null =
+            metadata.distributions
+                .map(({ title }: any) => title?.en ?? null)
+                .find((en: string | null) => en !== null) ?? null;
+
+        if (!metadataId) {
+            this.logger.error('Metadata ID not found');
+            throw new BadRequestException('Metadata ID not found');
+        }
         const storageId: string | null =
             metadata.distributions
                 .map(({ access_url }: any) => {
@@ -69,117 +85,58 @@ export class ProviderService {
             throw new BadRequestException('Distribution format not found');
         }
 
+        if (!configData.providerPrefix) {
+            this.logger.error('Provider prefix not found');
+            throw new BadRequestException('Provider prefix not found');
+        }
+
+        const { providerPrefix, offset, batchSize, columns } = configData;
+
         if (format === 'SQL') {
             try {
                 const querySelector = await this.repo.findOne({ cloudAssetId: assetId });
+                let res: { data: any; data_model: { columns: any[] } };
+
                 if (querySelector) {
                     const selectedColumns: string[] = querySelector.params?.['selectedColumns'] ?? [];
                     const dateRange: Record<string, any> = querySelector.params?.['dateRange'] ?? {};
 
-                    if (Object.keys(dateRange).length > 0 && configData.providerPrefix) {
-                        const rawColumns = await this.dataStorageService.getColumns(
-                            storageId,
-                            token,
-                            configData.providerPrefix,
-                        );
-                        const allColumns: any[] = rawColumns[0].data_model.columns.map((col: any) => ({
-                            name: col[0],
-                            dataType: col[1],
-                        }));
-
-                        const result = await this.dataStorageService.retrieveSqlDataByDateRange(
-                            token,
-                            configData.providerPrefix,
-                            {
-                                asset_uuid: storageId,
-                                column_name: dateRange['dateColumn'],
-                                column_datatype: 'date',
-                                start_date: dateRange['fromDate'],
-                                end_date: dateRange['toDate'],
-                            },
-                        );
-
-                        returnedValue = {
-                            data: result && 'data' in result ? result['data'] : { rows: [] },
-                            metadata: { id: metadataName },
-                            data_model: { columns: allColumns },
-                        };
+                    if (Object.keys(dateRange).length > 0) {
+                        res = await this.retrieveSqlDataByDateRange(token, providerPrefix, storageId, dateRange);
                     } else {
-                        returnedValue = await this.retrieveSqlData(
+                        res = await this.retrieveSqlData(
                             token,
-                            configData,
+                            providerPrefix,
                             storageId,
-                            metadataName,
+                            { offset, batchSize },
+                            columns,
                             selectedColumns,
                         );
                     }
                 } else {
-                    returnedValue = await this.retrieveSqlData(token, configData, storageId, metadataName);
+                    res = await this.retrieveSqlData(token, providerPrefix, storageId, { offset, batchSize }, columns);
                 }
+
+                returnedValue = { ...res, metadata: { id: metadataId } };
             } catch (err) {
                 this.logger.error('Provider SQL retrieval error:', err);
                 throw new BadGatewayException('Provider SQL retrieval error');
             }
-        } else if (metadata.distributions[0].title.en !== 'Kafka Stream') {
+        } else {
             try {
-                if (configData.providerPrefix)
-                    data = await this.dataStorageService.retrieveFile(storageId, token, configData.providerPrefix);
+                data = await this.dataStorageService.retrieveFile(storageId, token, providerPrefix);
 
                 returnedValue = {
                     data,
-                    metadata: { id: metadataName },
+                    metadata: { id: metadataId },
                     data_model: 'columnsInfo',
                 };
             } catch (err) {
                 this.logger.error('Provider File retrieval error:', err);
                 throw new BadGatewayException('Provider File retrieval error');
             }
-        } else {
-            if (configData.kafkaConfig && configData.originalId) {
-                returnedValue = await this.kafkaService.createMM2Connector({
-                    source: { id: configData.originalId },
-                    target: configData.kafkaConfig,
-                });
-            }
         }
         return returnedValue;
-    }
-
-    private async retrieveSqlData(
-        token: string,
-        configData: ConfigDataDto,
-        storageId: string,
-        metadataName: string[],
-        selectedColumns?: string[],
-    ) {
-        let columnsInfo: any[] = configData.columns || [];
-        if (configData.providerPrefix && columnsInfo.length === 0 && configData.offset === 0) {
-            const rawColumns = await this.dataStorageService.getColumns(storageId, token, configData.providerPrefix);
-            columnsInfo = rawColumns[0].data_model.columns
-                .filter((col: any) => !selectedColumns?.length || selectedColumns.includes(col[0]))
-                .map((col: any) => ({ name: col[0], dataType: col[1] }));
-        }
-
-        const columnsForPagination: Record<string, null> = Object.fromEntries(
-            columnsInfo.map((col: any) => [col.name, null]),
-        );
-
-        let data;
-        if (configData.providerPrefix)
-            data = await this.dataStorageService.retrievePaginatedData(
-                storageId,
-                token,
-                configData.offset || 0,
-                configData.batchSize || 1000,
-                columnsForPagination,
-                configData.providerPrefix,
-            );
-
-        return {
-            data: data && 'data' in data ? data['data'] : { rows: [] },
-            metadata: { id: metadataName },
-            data_model: { columns: columnsInfo },
-        };
     }
 
     async createKafkaUserAndTopic(assetId: string) {
@@ -283,5 +240,66 @@ export class ProviderService {
         await this.kafkaService.deleteTopic(assetId);
         await this.kafkaService.deleteUser(assetId);
         await this.kafkaService.deleteMM2ConnectorsBySourceId(assetId);
+    }
+
+    private async retrieveSqlData(
+        token: string,
+        providerPrefix: string,
+        storageId: string,
+        { offset, batchSize }: { offset?: number; batchSize?: number },
+        columns?: any[],
+        selectedColumns?: string[],
+    ) {
+        let columnsInfo: any[] = columns || [];
+        if (columnsInfo.length === 0 && offset === 0) {
+            const rawColumns = await this.dataStorageService.getColumns(storageId, token, providerPrefix);
+            columnsInfo = rawColumns[0].data_model.columns
+                .filter((col: any) => !selectedColumns?.length || selectedColumns.includes(col[0]))
+                .map((col: any) => ({ name: col[0], dataType: col[1] }));
+        }
+
+        const columnsForPagination: Record<string, null> = Object.fromEntries(
+            columnsInfo.map((col: any) => [col.name, null]),
+        );
+
+        const data = await this.dataStorageService.retrievePaginatedData(
+            storageId,
+            token,
+            offset || 0,
+            batchSize || 1000,
+            columnsForPagination,
+            providerPrefix,
+        );
+
+        return {
+            data: data && 'data' in data ? data['data'] : { rows: [] },
+            data_model: { columns: columnsInfo },
+        };
+    }
+
+    private async retrieveSqlDataByDateRange(
+        token: string,
+        providerPrefix: string,
+        storageId: string,
+        dateRange: Record<string, any>,
+    ) {
+        const rawColumns = await this.dataStorageService.getColumns(storageId, token, providerPrefix);
+        const allColumns: any[] = rawColumns[0].data_model.columns.map((col: any) => ({
+            name: col[0],
+            dataType: col[1],
+        }));
+
+        const result = await this.dataStorageService.retrieveSqlDataByDateRange(token, providerPrefix, {
+            asset_uuid: storageId,
+            column_name: dateRange['dateColumn'],
+            column_datatype: 'date',
+            start_date: dateRange['fromDate'],
+            end_date: dateRange['toDate'],
+        });
+
+        return {
+            data: result && 'data' in result ? result['data'] : { rows: [] },
+            data_model: { columns: allColumns },
+        };
     }
 }
