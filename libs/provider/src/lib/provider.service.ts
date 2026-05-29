@@ -39,31 +39,37 @@ export class ProviderService {
         const metadataName = metadata.distributions
             .map(({ title }: any) => title?.en ?? null)
             .filter((en: any) => en !== null);
-        const storageId = metadata.distributions
-            .map(({ access_url }: any) => {
-                if (access_url && access_url[0]) {
+
+        const storageId: string | null =
+            metadata.distributions
+                .map(({ access_url }: any) => {
+                    const [url] = Array.isArray(access_url) ? access_url : [];
+                    if (!url) return null;
                     try {
-                        const url = new URL(access_url[0]);
-                        return url.searchParams.get('asset_uuid');
-                    } catch (error) {
-                        this.logger.error(`Invalid URL: ${access_url[0]}`);
+                        return new URL(url).searchParams.get('asset_uuid');
+                    } catch {
+                        this.logger.error(`Invalid URL: ${url}`);
                         return null;
                     }
-                }
-                return null;
-            })
-            .filter((storageId: string | null) => storageId !== null);
+                })
+                .find((id: string | null) => id !== null) ?? null;
 
-        const format = metadata.distributions
-            .map(({ format }: any) => format?.id ?? null)
-            .filter((id: any) => id !== null);
+        if (!storageId) {
+            this.logger.error('Storage ID not found');
+            throw new BadRequestException('Storage ID not found');
+        }
 
-        if (format.length === 0) {
+        const format: string | null =
+            metadata.distributions
+                .map(({ format }: any) => format?.id ?? null)
+                .find((id: string | null) => id !== null) ?? null;
+
+        if (!format) {
             this.logger.error('Format not found');
             throw new BadRequestException('Distribution format not found');
         }
 
-        if (format[0] === 'SQL') {
+        if (format === 'SQL') {
             try {
                 const querySelector = await this.repo.findOne({ cloudAssetId: assetId });
                 if (querySelector) {
@@ -72,7 +78,7 @@ export class ProviderService {
 
                     if (Object.keys(dateRange).length > 0 && configData.providerPrefix) {
                         const rawColumns = await this.dataStorageService.getColumns(
-                            storageId[0],
+                            storageId,
                             token,
                             configData.providerPrefix,
                         );
@@ -85,7 +91,7 @@ export class ProviderService {
                             token,
                             configData.providerPrefix,
                             {
-                                asset_uuid: storageId[0],
+                                asset_uuid: storageId,
                                 column_name: dateRange['dateColumn'],
                                 column_datatype: 'date',
                                 start_date: dateRange['fromDate'],
@@ -102,13 +108,13 @@ export class ProviderService {
                         returnedValue = await this.retrieveSqlData(
                             token,
                             configData,
-                            storageId[0],
+                            storageId,
                             metadataName,
                             selectedColumns,
                         );
                     }
                 } else {
-                    returnedValue = await this.retrieveSqlData(token, configData, storageId[0], metadataName);
+                    returnedValue = await this.retrieveSqlData(token, configData, storageId, metadataName);
                 }
             } catch (err) {
                 this.logger.error('Provider SQL retrieval error:', err);
@@ -117,7 +123,7 @@ export class ProviderService {
         } else if (metadata.distributions[0].title.en !== 'Kafka Stream') {
             try {
                 if (configData.providerPrefix)
-                    data = await this.dataStorageService.retrieveFile(storageId[0], token, configData.providerPrefix);
+                    data = await this.dataStorageService.retrieveFile(storageId, token, configData.providerPrefix);
 
                 returnedValue = {
                     data,
