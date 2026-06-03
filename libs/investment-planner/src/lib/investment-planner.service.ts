@@ -34,7 +34,7 @@ export class InvestmentPlannerService {
         };
         return await firstValueFrom(
             this.httpService
-                .post(`${this.options.authServerUrl}/realms/PISTIS/protocol/openid-connect/token`, tokenData, {
+                .post(`${this.options.authServerUrl}/realms/${this.options.realm}/protocol/openid-connect/token`, tokenData, {
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                     },
@@ -80,52 +80,68 @@ export class InvestmentPlannerService {
     }
 
     async updateInvestmentPlan(id: string, data: any, user: any) {
-        const investmentPlan = await this.repo.findOneOrFail({ id: id });
-        if (investmentPlan.remainingShares === null) {
-            investmentPlan.remainingShares = investmentPlan.totalShares - data.numberOfShares;
-        } else {
-            investmentPlan.remainingShares -= data.numberOfShares;
+        const numberOfShares = data.numberOfShares;
+        if (!Number.isInteger(numberOfShares) || numberOfShares <= 0) {
+            throw new BadRequestException('numberOfShares must be a positive integer');
         }
 
-        const userInvestment = await this.userInvestmentRepo.findOne({
-            cloudAssetId: investmentPlan.cloudAssetId,
-            userId: user.id,
-        });
-        if (userInvestment) {
-            throw new BadRequestException('User already has an investment plan for this asset');
-        }
+        // Token retrieval and factory lookup happen before the transaction (no rollback needed,
+        // and we avoid holding the DB transaction open across network calls we don't roll back).
+        const token = (await this.retrieveToken()) as string;
+        const factory = await this.retreiveFactory(token, user.organizationId);
 
-        await this.repo.getEntityManager().persistAndFlush(investmentPlan);
-        return await this.createUserInvestmentPlan(investmentPlan, data.numberOfShares, user.organizationId, user.id);
-    }
+        return await this.repo.getEntityManager().transactional(async (em) => {
+            const investmentPlan = await em.findOneOrFail(InvestmentPlanner, { id });
 
-    private async createUserInvestmentPlan(data: any, numberOfShares: number, factoryId: string, userId: string) {
-        const userInvestment = this.userInvestmentRepo.create({
-            cloudAssetId: data.cloudAssetId,
-            userId: userId,
-            shares: numberOfShares,
-            investmentPlan: data,
-        });
-        const factory = await this.retreiveFactory((await this.retrieveToken()) as string, factoryId);
-        try {
+            if (investmentPlan.status !== true) {
+                throw new BadRequestException('Investment plan is not active');
+            }
+            if (dayjs(investmentPlan.dueDate).isBefore(dayjs().startOf('day'))) {
+                throw new BadRequestException('Investment plan has expired');
+            }
+
+            const remainingShares = investmentPlan.remainingShares ?? investmentPlan.totalShares;
+            if (numberOfShares > remainingShares) {
+                throw new BadRequestException('Requested shares exceed the remaining available shares');
+            }
+            if (numberOfShares > investmentPlan.maxShares) {
+                throw new BadRequestException('Requested shares exceed the maximum allowed per investor');
+            }
+
+            const existingInvestment = await em.findOne(UserInvestment, {
+                cloudAssetId: investmentPlan.cloudAssetId,
+                userId: user.id,
+            });
+            if (existingInvestment) {
+                throw new BadRequestException('User already has an investment plan for this asset');
+            }
+
+            investmentPlan.remainingShares = remainingShares - numberOfShares;
+            em.persist(investmentPlan);
+
+            const userInvestment = em.create(UserInvestment, {
+                cloudAssetId: investmentPlan.cloudAssetId,
+                userId: user.id,
+                shares: numberOfShares,
+                investmentPlan,
+            });
+            em.persist(userInvestment);
+
             const invest = {
-                assetId: data.cloudAssetId,
-                percentage: (data.percentageOffer / data.totalShares) * numberOfShares,
-                assetFactory: factoryId,
-                ownerId: data.sellerId,
-                price: data.price,
+                assetId: investmentPlan.cloudAssetId,
+                percentage: (investmentPlan.percentageOffer / investmentPlan.totalShares) * numberOfShares,
+                assetFactory: user.organizationId,
+                ownerId: investmentPlan.sellerId,
+                price: investmentPlan.price,
             };
-            await this.storeInvestToScee(invest, factory.factoryPrefix);
-            await this.userInvestmentRepo.getEntityManager().persistAndFlush(userInvestment);
-        } catch (error) {
-            this.logger.error(`Error creating user investment plan: ${error}`);
-            throw new Error(`Error creating user investment plan: ${error}`);
-        }
+            // If SCEE fails, the thrown error rolls back the share decrement and the new investment.
+            await this.storeInvestToScee(invest, factory.factoryPrefix, token);
 
-        return userInvestment;
+            return userInvestment;
+        });
     }
 
-    private async storeInvestToScee(data: any, factoryPrefix: string) {
+    private async storeInvestToScee(data: any, factoryPrefix: string, token: string) {
         return await firstValueFrom(
             this.httpService
                 .post(
@@ -134,7 +150,7 @@ export class InvestmentPlannerService {
                         ...data,
                     },
                     {
-                        headers: getHeaders((await this.retrieveToken()) as string),
+                        headers: getHeaders(token),
                     },
                 )
                 .pipe(
@@ -188,7 +204,8 @@ export class InvestmentPlannerService {
                 const orgId = await this.metadataRepositoryService.updateInvestmentPlanMetadata(
                     investment.cloudAssetId,
                 );
-                await this.informSCEEForFinalization(investment.assetId, orgId);
+                const token = (await this.retrieveToken()) as string;
+                await this.informSCEEForFinalization(investment.assetId, orgId, token);
 
                 this.logger.log(`Investment plan with id ${investment.id} has been deactivated`);
             }
@@ -197,8 +214,8 @@ export class InvestmentPlannerService {
         }
     }
 
-    private async informSCEEForFinalization(assetId: string, orgId: string) {
-        const factory = await this.retreiveFactory((await this.retrieveToken()) as string, orgId);
+    private async informSCEEForFinalization(assetId: string, orgId: string, token: string) {
+        const factory = await this.retreiveFactory(token, orgId);
         return await firstValueFrom(
             this.httpService
                 .post(
@@ -207,7 +224,7 @@ export class InvestmentPlannerService {
                         assetId: assetId,
                     },
                     {
-                        headers: getHeaders((await this.retrieveToken()) as string),
+                        headers: getHeaders(token),
                     },
                 )
                 .pipe(
@@ -231,12 +248,10 @@ export class InvestmentPlannerService {
                     headers: getHeaders(token),
                 })
                 .pipe(
-                    map(async (res) => {
-                        return res.data;
-                    }),
+                    map((res) => res.data),
                     catchError((error) => {
                         this.logger.error('Factory retrieval error:', error);
-                        return of({ error: 'Error occurred during retrieving factory' });
+                        return throwError(() => new BadRequestException('Error occurred during retrieving factory'));
                     }),
                 ),
         );

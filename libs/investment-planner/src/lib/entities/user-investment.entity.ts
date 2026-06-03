@@ -4,6 +4,7 @@ import { v4 as uuidV4 } from 'uuid';
 import { InvestmentPlanner } from './investment-planner.entity';
 
 @Entity({ tableName: 'userInvestment' })
+@Unique({ properties: ['cloudAssetId', 'userId'] })
 export class UserInvestment {
     [OptionalProps]?: 'id' | 'createdAt' | 'updatedAt';
 
@@ -11,7 +12,6 @@ export class UserInvestment {
     id: string = uuidV4();
 
     @Property()
-    @Unique()
     cloudAssetId!: string;
 
     @Property()

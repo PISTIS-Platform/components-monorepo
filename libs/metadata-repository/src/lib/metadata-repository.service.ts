@@ -359,7 +359,7 @@ export class MetadataRepositoryService {
                 'Content-Type': 'application/json',
                 'X-API-Key': this.options.apiKey,
             },
-            body: updatedMetadata,
+            body: JSON.stringify(updatedMetadata),
         });
 
         if (!response.ok) {

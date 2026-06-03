@@ -246,10 +246,11 @@
       "indexes": [
         {
           "columnNames": [
-            "cloud_asset_id"
+            "cloud_asset_id",
+            "user_id"
           ],
-          "composite": false,
-          "keyName": "userInvestment_cloud_asset_id_unique",
+          "composite": true,
+          "keyName": "userInvestment_cloud_asset_id_user_id_unique",
           "constraint": true,
           "primary": false,
           "unique": true

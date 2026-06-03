@@ -8,7 +8,6 @@ describe('InvestmentPlannerService', () => {
     let options: any;
     let investmentPlan: any;
     let authUser: any;
-    let userInvestmentPlan: any;
 
     beforeEach(async () => {
         investmentPlan = {
@@ -41,13 +40,6 @@ describe('InvestmentPlannerService', () => {
                     description: 'Everyone can Read/Trade this asset',
                 },
             ],
-        };
-
-        userInvestmentPlan = {
-            cloud_asset_id: 'c74d8d5f-9351-428d-9c86-b7356526bf32',
-            user_id: 'user.id',
-            shares: 10,
-            investment_plan_id: 'a4ce90e4-8c88-4510-9f39-04246c6cc555',
         };
 
         authUser = {

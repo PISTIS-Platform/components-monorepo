@@ -3,7 +3,6 @@ import { IAppConfig } from '@pistis/shared';
 
 export type IInvestmentPlannerConfig = IAppConfig & {
     notificationsUrl: string;
-    sceeUrl: string;
     marketplaceKey: string;
     metadataRepositoryUrl: string;
     cloudURL: string;
@@ -31,7 +30,6 @@ export const AppConfig = registerAs(
         notificationsUrl: process.env.NOTIFICATIONS_URL,
         isDevelopment: process.env.NODE_ENV !== 'production',
         swaggerBaseUrl: process.env.SWAGGER_BASE_URL ?? '/',
-        sceeUrl: process.env.SCEE_URL,
         marketplaceKey: process.env.MARKETPLACE_API_KEY,
         metadataRepositoryUrl: process.env.METADATA_REPOSITORY_URL,
         cloudURL: process.env.CLOUD_URL,

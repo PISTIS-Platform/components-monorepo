@@ -3,7 +3,7 @@ export interface InvestmentPlannerModuleOptions {
     clientId: string;
     secret: string;
     authServerUrl: string;
-    sceeUrl: string;
+    realm: string;
     marketplaceKey: string;
     metadataRepositoryUrl: string;
     cloudURL?: string;
