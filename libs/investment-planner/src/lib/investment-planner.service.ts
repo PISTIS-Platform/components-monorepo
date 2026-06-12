@@ -34,11 +34,15 @@ export class InvestmentPlannerService {
         };
         return await firstValueFrom(
             this.httpService
-                .post(`${this.options.authServerUrl}/realms/${this.options.realm}/protocol/openid-connect/token`, tokenData, {
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
+                .post(
+                    `${this.options.authServerUrl}/realms/${this.options.realm}/protocol/openid-connect/token`,
+                    tokenData,
+                    {
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
                     },
-                })
+                )
                 .pipe(
                     map(({ data }) => {
                         return data.access_token;
@@ -79,16 +83,15 @@ export class InvestmentPlannerService {
         return investmentPlan;
     }
 
-    async updateInvestmentPlan(id: string, data: any, user: any) {
+    async updateInvestmentPlan(id: string, data: any, user: any, token: string) {
         const numberOfShares = data.numberOfShares;
         if (!Number.isInteger(numberOfShares) || numberOfShares <= 0) {
             throw new BadRequestException('numberOfShares must be a positive integer');
         }
 
-        // Token retrieval and factory lookup happen before the transaction (no rollback needed,
+        // Factory lookup happen before the transaction (no rollback needed,
         // and we avoid holding the DB transaction open across network calls we don't roll back).
-        const token = (await this.retrieveToken()) as string;
-        const factory = await this.retreiveFactory(token, user.organizationId);
+        const factory = await this.retrieveFactory(token, user.organizationId);
 
         return await this.repo.getEntityManager().transactional(async (em) => {
             const investmentPlan = await em.findOneOrFail(InvestmentPlanner, { id });
@@ -215,7 +218,7 @@ export class InvestmentPlannerService {
     }
 
     private async informSCEEForFinalization(assetId: string, orgId: string, token: string) {
-        const factory = await this.retreiveFactory(token, orgId);
+        const factory = await this.retrieveFactory(token, orgId);
         return await firstValueFrom(
             this.httpService
                 .post(
@@ -241,7 +244,7 @@ export class InvestmentPlannerService {
         );
     }
 
-    private async retreiveFactory(token: string, factoryId: string) {
+    private async retrieveFactory(token: string, factoryId: string) {
         return await firstValueFrom(
             this.httpService
                 .get(`${this.options.factoryRegistryUrl}/api/factories/organization/${factoryId}`, {

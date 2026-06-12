@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, Post, Put } from '@nestjs/common';
 import { ApiBearerAuth, ApiNotFoundResponse, ApiOkResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
-import { ParseUserInfoPipe, UserInfo } from '@pistis/shared';
+import { AuthToken, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
 import { AuthenticatedUser } from 'nest-keycloak-connect';
 
 import { CreateInvestmentPlanDTO } from './create-investment-plan.dto';
@@ -136,9 +136,10 @@ export class InvestmentPlannerController {
     })
     async updateInvestmentPlan(
         @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
+        @AuthToken() token: string,
         @Param('planId') planId: string,
         @Body() data: any,
     ) {
-        return await this.investmentPlannerService.updateInvestmentPlan(planId, data, user);
+        return await this.investmentPlannerService.updateInvestmentPlan(planId, data, user, token);
     }
 }
