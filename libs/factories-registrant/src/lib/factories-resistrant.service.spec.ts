@@ -21,6 +21,9 @@ describe('FactoriesRegistrantService', () => {
             get: jest.fn(),
             put: jest.fn(),
             post: jest.fn(),
+            axiosRef: {
+                get: jest.fn(),
+            },
         };
 
         servicesMappingService = {
@@ -51,6 +54,7 @@ describe('FactoriesRegistrantService', () => {
         options = {
             notificationsUrl: 'url1',
             identityAccessManagementUrl: 'url1',
+            livenessTimeoutMs: 5000,
         };
         service = new FactoriesRegistrantService(repo, clientRepo, httpService, servicesMappingService, options);
     });
@@ -81,7 +85,7 @@ describe('FactoriesRegistrantService', () => {
             .mockImplementationOnce(() => of(response1))
             .mockImplementationOnce(() => of(response2));
 
-        const result = await service.checkClient(organizationId);
+        const result = await service.checkClient(organizationId, 'token');
 
         const expected = [
             { clientId: 'client-1', clientSecret: 'client-1-secret' },
@@ -275,7 +279,7 @@ describe('FactoriesRegistrantService', () => {
         jest.spyOn(clientRepo.getEntityManager(), 'persistAndFlush').mockImplementation();
 
         const token = 'token';
-        const result = await service.createFactory(createData, token);
+        const result = await service.createFactory(createData as any, token);
         expect(result).toEqual(factory);
 
         const clients = {
@@ -323,5 +327,72 @@ describe('FactoriesRegistrantService', () => {
         const result = factories.map(({ factoryPrefix }) => `https://${factoryPrefix}.pistis-market.eu`);
 
         expect(await service.retrieveAcceptedFactories()).toEqual(result);
+    });
+
+    it('should return a lean liveness projection for all factories', async () => {
+        const lastSeenAt = new Date();
+        const factories = [
+            {
+                id: 'factory1',
+                organizationId: 'org1',
+                factoryPrefix: 'prefix1',
+                status: 'online',
+                lastSeenAt,
+                country: 'Greece',
+            },
+            {
+                id: 'factory2',
+                organizationId: 'org2',
+                factoryPrefix: 'prefix2',
+                status: 'offline',
+                lastSeenAt: null,
+                country: 'Greece',
+            },
+        ];
+        jest.spyOn(repo, 'find').mockResolvedValue(factories as any);
+
+        const result = await service.getFactoriesLiveness();
+        // Only online/offline factories are queried; pending/suspended are excluded.
+        expect(repo.find).toHaveBeenCalledWith({ status: { $in: ['online', 'offline'] } });
+        expect(result).toEqual([
+            { id: 'factory1', organizationId: 'org1', factoryPrefix: 'prefix1', status: 'online', lastSeenAt },
+            { id: 'factory2', organizationId: 'org2', factoryPrefix: 'prefix2', status: 'offline', lastSeenAt: null },
+        ]);
+    });
+
+    it('should mark a reachable factory online and set lastSeenAt, and an unreachable one offline', async () => {
+        const onlineFactory = { factoryPrefix: 'alive', status: 'online', lastSeenAt: null };
+        const offlineFactory = { factoryPrefix: 'dead', status: 'online', lastSeenAt: new Date('2020-01-01') };
+        jest.spyOn(repo, 'findAll').mockResolvedValue([onlineFactory, offlineFactory] as any);
+        jest.spyOn(repo.getEntityManager(), 'flush').mockImplementation();
+
+        jest.spyOn(httpService.axiosRef, 'get').mockImplementation((url: any) => {
+            if (url.includes('alive')) {
+                return Promise.resolve({ status: 200 });
+            }
+            return Promise.reject(new Error('ECONNREFUSED'));
+        });
+
+        await service.syncFactories();
+
+        expect(onlineFactory.status).toBe('online');
+        expect(onlineFactory.lastSeenAt).toBeInstanceOf(Date);
+        expect(offlineFactory.status).toBe('offline');
+        // lastSeenAt is left untouched on failure
+        expect(offlineFactory.lastSeenAt).toEqual(new Date('2020-01-01'));
+    });
+
+    it('should not probe factories in administrative states (pending / suspended)', async () => {
+        const pendingFactory = { factoryPrefix: 'pending-one', status: 'pending', lastSeenAt: null };
+        const suspendedFactory = { factoryPrefix: 'suspended-one', status: 'suspended', lastSeenAt: null };
+        jest.spyOn(repo, 'findAll').mockResolvedValue([pendingFactory, suspendedFactory] as any);
+        jest.spyOn(repo.getEntityManager(), 'flush').mockImplementation();
+        const probeSpy = jest.spyOn(httpService.axiosRef, 'get');
+
+        await service.syncFactories();
+
+        expect(probeSpy).not.toHaveBeenCalled();
+        expect(pendingFactory.status).toBe('pending');
+        expect(suspendedFactory.status).toBe('suspended');
     });
 });

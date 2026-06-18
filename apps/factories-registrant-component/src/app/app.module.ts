@@ -3,6 +3,7 @@ import { PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
 import { FactoriesRegistrantModule } from '@pistis/factories-registrant';
 import { IAppConfig, MorganMiddleware } from '@pistis/shared';
 import {
@@ -21,6 +22,7 @@ import { AppConfig, IFactoryConfig } from './app.config';
     imports: [
         ConfigModule.forRoot({ isGlobal: true }),
         ConfigModule.forFeature(AppConfig),
+        ScheduleModule.forRoot(),
         MikroOrmModule.forRootAsync({
             imports: [ConfigModule.forFeature(AppConfig)],
             useFactory: async (options: IAppConfig) => ({
@@ -38,6 +40,7 @@ import { AppConfig, IFactoryConfig } from './app.config';
                 clientId: options.keycloak.clientId,
                 secret: options.keycloak.clientSecret,
                 authServerUrl: options.keycloak.url,
+                livenessTimeoutMs: options.livenessTimeoutMs,
             }),
             inject: [AppConfig.KEY],
         }),

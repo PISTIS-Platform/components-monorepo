@@ -26,9 +26,11 @@ describe('FactoriesRegistrantController', () => {
             activateFactory: jest.fn(),
             suspendFactory: jest.fn(),
             checkClient: jest.fn(),
+            getClientsSecret: jest.fn(),
             retrieveAcceptedFactories: jest.fn(),
             findLoggedInUserFactory: jest.fn(),
             setFactoryIp: jest.fn(),
+            getFactoriesLiveness: jest.fn(),
         };
 
         servicesMappingService = {
@@ -83,14 +85,14 @@ describe('FactoriesRegistrantController', () => {
         } as any;
 
         const clients = { clientsIds: ['client1', 'client2'] };
-        jest.spyOn(service, 'checkClient').mockResolvedValue(clients);
+        jest.spyOn(service, 'getClientsSecret').mockResolvedValue(clients);
 
         await controller.downloadKeycloakClients(mockRes, {
             id: '123',
             organizationId: '345',
         });
 
-        expect(service.checkClient).toHaveBeenCalled();
+        expect(service.getClientsSecret).toHaveBeenCalled();
 
         expect(mockRes.setHeader).toHaveBeenCalledWith('Content-Type', 'application/yaml');
         expect(mockRes.setHeader).toHaveBeenCalledWith(
@@ -168,7 +170,7 @@ describe('FactoriesRegistrantController', () => {
         const factory = { id: 'factory123', ...createData } as FactoriesRegistrant;
         jest.spyOn(service, 'createFactory').mockResolvedValue(factory);
 
-        expect(await controller.createFactory('token', createData)).toBe(factory);
+        expect(await controller.createFactory('token', createData as any)).toBe(factory);
     });
 
     it('should activate a factory', async () => {
@@ -192,6 +194,16 @@ describe('FactoriesRegistrantController', () => {
         jest.spyOn(service, 'retrieveAcceptedFactories').mockResolvedValue(result);
 
         expect(await controller.findAcceptedFactories()).toBe(result);
+    });
+
+    it('should return the liveness of all factories', async () => {
+        const result = [
+            { id: 'factory1', organizationId: 'org1', factoryPrefix: 'prefix1', status: 'online', lastSeenAt: new Date() },
+            { id: 'factory2', organizationId: 'org2', factoryPrefix: 'prefix2', status: 'offline', lastSeenAt: null },
+        ];
+        jest.spyOn(service, 'getFactoriesLiveness').mockResolvedValue(result);
+
+        expect(await controller.findFactoriesLiveness()).toBe(result);
     });
 
     it('should return services for general users', async () => {
@@ -219,6 +231,8 @@ describe('FactoriesRegistrantController', () => {
         const createData: CreateServiceMappingDTO = {
             serviceName: 'Service Name',
             serviceUrl: 'service-url',
+            sar: false,
+            clientAuthentication: false,
         };
         const service = { id: '123', ...createData } as RegisteredService;
         jest.spyOn(servicesMappingService, 'create').mockResolvedValue(service);

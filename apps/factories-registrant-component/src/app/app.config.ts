@@ -4,6 +4,7 @@ import { IAppConfig } from '@pistis/shared';
 export type IFactoryConfig = IAppConfig & {
     identityAccessManagementUrl: string;
     notificationsUrl: string;
+    livenessTimeoutMs: number;
 };
 
 export const AppConfig = registerAs(
@@ -27,6 +28,7 @@ export const AppConfig = registerAs(
         isDevelopment: process.env.NODE_ENV !== 'production',
         notificationsUrl: process.env.NOTIFICATIONS_URL,
         identityAccessManagementUrl: process.env.IDENTITY_ACCESS_MANAGEMENT_URL,
+        livenessTimeoutMs: +(process.env.FACTORY_LIVENESS_TIMEOUT_MS ?? 5000),
         swaggerBaseUrl: process.env.SWAGGER_BASE_URL ?? '/',
     }),
 );

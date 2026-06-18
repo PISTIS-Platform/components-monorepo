@@ -31,6 +31,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": 255,
           "mappedType": "string"
         },
         "created_at": {
@@ -90,6 +91,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": 255,
           "mappedType": "string"
         },
         "organization_id": {
@@ -99,6 +101,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": 255,
           "mappedType": "string"
         },
         "ip": {
@@ -108,6 +111,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": 255,
           "mappedType": "string"
         },
         "factory_prefix": {
@@ -117,6 +121,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": 255,
           "mappedType": "string"
         },
         "country": {
@@ -126,6 +131,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": 255,
           "mappedType": "string"
         },
         "status": {
@@ -135,6 +141,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": 255,
           "mappedType": "string"
         },
         "is_accepted": {
@@ -156,6 +163,16 @@
           "nullable": false,
           "default": "false",
           "mappedType": "boolean"
+        },
+        "last_seen_at": {
+          "name": "last_seen_at",
+          "type": "timestamptz",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "length": 6,
+          "mappedType": "datetime"
         },
         "created_at": {
           "name": "created_at",
@@ -234,6 +251,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": 255,
           "mappedType": "string"
         },
         "service_url": {
@@ -243,6 +261,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": 255,
           "mappedType": "string"
         },
         "sar": {

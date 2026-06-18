@@ -4,4 +4,5 @@ export interface FactoryModuleOptions {
     clientId: string;
     secret: string;
     authServerUrl: string;
+    livenessTimeoutMs: number;
 }

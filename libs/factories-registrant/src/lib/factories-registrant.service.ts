@@ -2,9 +2,9 @@ import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityRepository, Loaded } from '@mikro-orm/postgresql';
 import { HttpService } from '@nestjs/axios';
 import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { getHeaders } from '@pistis/shared';
 import dayjs from 'dayjs';
-import isBetween from 'dayjs/plugin/isBetween';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import { catchError, firstValueFrom, map, mergeMap, of, tap, toArray } from 'rxjs';
@@ -13,6 +13,7 @@ import { CreateFactoryDTO, UpdateFactoryDTO, UpdateFactoryIpDTO } from './dto';
 import { FactoryCreationDTO } from './dto/factory-creation.dto';
 import { ClientInfo } from './entities';
 import { FactoriesRegistrant } from './entities/factories-registrant.entity';
+import { Status } from './enums';
 import { MODULE_OPTIONS_TOKEN } from './factories-registrant.module-definition';
 import { FactoryModuleOptions } from './factories-registrant-module-options.interface';
 import { ServicesMappingService } from './services-mapping.service';
@@ -577,16 +578,62 @@ export class FactoriesRegistrantService {
         );
     }
 
-    // @Cron('0 01 * * * *')
+    async getFactoriesLiveness() {
+        // Only factories in a liveness-relevant state. Administrative states
+        // ('pending', 'suspended') are not probed, so their status is not a liveness signal.
+        const factories = await this.repo.find({ status: { $in: [Status.ONLINE, Status.OFFLINE] } });
+        return factories.map((factory) => ({
+            id: factory.id,
+            organizationId: factory.organizationId,
+            factoryPrefix: factory.factoryPrefix,
+            status: factory.status,
+            lastSeenAt: factory.lastSeenAt ?? null,
+        }));
+    }
+
+    @Cron(CronExpression.EVERY_5_MINUTES)
     async syncFactories() {
-        dayjs.extend(isBetween);
-        //TODO Add call to factories registration Service, below is a first assumption of the flow
-        const factories = await this.retrieveFactories();
-        factories.filter((factory: any) => {
-            return dayjs(factory.createdAt).isBetween(dayjs(new Date()).subtract(1, 'hour'), dayjs(new Date()));
-        });
-        //TODO Add call to Data factory Backend in Data Factory for details
-        //Notify Identity manager for changes
+        const factories = await this.repo.findAll();
+
+        // Only probe factories already in a liveness state. Administrative states
+        // ('pending', 'suspended') must not be overwritten by reachability checks.
+        const probeable = factories.filter(
+            (factory) => factory.status === Status.ONLINE || factory.status === Status.OFFLINE,
+        );
+
+        const results = await Promise.allSettled(
+            probeable.map(async (factory) => {
+                const reachable = await this.probeFactory(factory.factoryPrefix);
+                if (reachable) {
+                    factory.status = Status.ONLINE;
+                    factory.lastSeenAt = new Date();
+                } else {
+                    factory.status = Status.OFFLINE;
+                }
+                return reachable;
+            }),
+        );
+
+        await this.repo.getEntityManager().flush();
+
+        const online = results.filter((result) => result.status === 'fulfilled' && result.value).length;
+        this.logger.debug(`Factory liveness sync complete: online=${online} offline=${probeable.length - online}`);
+    }
+
+    private async probeFactory(factoryPrefix: string): Promise<boolean> {
+        try {
+            const response = await this.httpService.axiosRef.get(
+                `https://${factoryPrefix}.pistis-market.eu/ping`,
+                {
+                    timeout: this.options.livenessTimeoutMs,
+                    validateStatus: () => true,
+                },
+            );
+            return response.status >= 200 && response.status < 300;
+        } catch (error) {
+            this.logger.debug(`Liveness probe failed for '${factoryPrefix}': ${(error as Error).message}`);
+            return false;
+        }
     }
 
     private async notifications(data: any) {

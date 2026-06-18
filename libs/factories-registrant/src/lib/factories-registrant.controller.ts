@@ -73,7 +73,7 @@ export class FactoriesRegistrantController {
                     organizationId: '8aff8e9b-1322-4395-a53e-c445d159eb80',
                     ip: '192.168.1.1',
                     country: 'Greece',
-                    status: 'live',
+                    status: 'online',
                     isAccepted: false,
                     isActive: false,
                     createdAt: new Date(),
@@ -111,6 +111,25 @@ export class FactoriesRegistrantController {
         return this.factoriesService.retrieveAcceptedFactories();
     }
 
+    @Get('liveness')
+    @ApiOkResponse({
+        description: 'Liveness status of all factories',
+        schema: {
+            example: [
+                {
+                    id: '768004e7-33b1-4248-bafe-04688f49f161',
+                    organizationId: '8aff8e9b-1322-4395-a53e-c445d159eb80',
+                    factoryPrefix: 'test-prefix',
+                    status: 'online',
+                    lastSeenAt: new Date(),
+                },
+            ],
+        },
+    })
+    async findFactoriesLiveness() {
+        return this.factoriesService.getFactoriesLiveness();
+    }
+
     @Get('user-factory')
     @ApiOkResponse({
         description: 'Retrieved the Factory of the logged in user',
@@ -122,7 +141,7 @@ export class FactoriesRegistrantController {
                 factoryPrefix: 'test-prefix',
                 ip: '192.168.1.1',
                 country: 'Greece',
-                status: 'live',
+                status: 'online',
                 isAccepted: false,
                 isActive: false,
                 createdAt: new Date(),
@@ -298,7 +317,7 @@ export class FactoriesRegistrantController {
                 organizationId: '8aff8e9b-1322-4395-a53e-c445d159eb80',
                 ip: '192.168.1.1',
                 country: 'Greece',
-                status: 'live',
+                status: 'online',
                 isAccepted: false,
                 isActive: false,
                 createdAt: new Date(),
@@ -322,7 +341,7 @@ export class FactoriesRegistrantController {
                 organizationId: '8aff8e9b-1322-4395-a53e-c445d159eb80',
                 ip: '192.168.1.1',
                 country: 'Greece',
-                status: 'live',
+                status: 'online',
                 isAccepted: false,
                 isActive: false,
                 createdAt: new Date(),
@@ -346,7 +365,7 @@ export class FactoriesRegistrantController {
                 organizationId: '8aff8e9b-1322-4395-a53e-c445d159eb80',
                 ip: '192.168.1.1',
                 country: 'Greece',
-                status: 'live',
+                status: 'online',
                 isAccepted: false,
                 isActive: false,
                 createdAt: new Date(),
@@ -368,7 +387,7 @@ export class FactoriesRegistrantController {
                 organizationId: '8aff8e9b-1322-4395-a53e-c445d159eb80',
                 ip: '192.168.1.4',
                 country: 'Greece',
-                status: 'live',
+                status: 'online',
                 isAccepted: false,
                 isActive: false,
                 createdAt: new Date(),
@@ -395,7 +414,7 @@ export class FactoriesRegistrantController {
                 organizationId: '8aff8e9b-1322-4395-a53e-c445d159eb80',
                 ip: '192.168.1.2',
                 country: 'Greece',
-                status: 'live',
+                status: 'online',
                 isAccepted: false,
                 isActive: false,
                 createdAt: new Date(),
@@ -423,7 +442,7 @@ export class FactoriesRegistrantController {
                 organizationId: '8aff8e9b-1322-4395-a53e-c445d159eb80',
                 ip: '192.168.1.1',
                 country: 'Greece',
-                status: 'live',
+                status: 'online',
                 isAccepted: false,
                 isActive: false,
                 createdAt: new Date(),

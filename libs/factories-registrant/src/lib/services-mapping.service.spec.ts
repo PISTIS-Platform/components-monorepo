@@ -126,6 +126,8 @@ describe('ServicesMappingService', () => {
         const createDto: CreateServiceMappingDTO = {
             serviceName: 'Service',
             serviceUrl: 'service-url',
+            sar: false,
+            clientAuthentication: false,
         };
 
         jest.spyOn(servicesMappingRepo, 'create').mockReturnValue(returnedService);
