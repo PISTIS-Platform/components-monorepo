@@ -15,6 +15,7 @@ describe('FactoriesRegistrantService', () => {
     let repo: any;
     let clientRepo: any;
     let options: any;
+    let forkedEm: any;
 
     beforeEach(async () => {
         httpService = {
@@ -30,6 +31,12 @@ describe('FactoriesRegistrantService', () => {
             findServicesMappingForAdmin: jest.fn(),
         };
 
+        // Forked EM used by the cron (syncFactories) to avoid the global-context error.
+        forkedEm = {
+            find: jest.fn(),
+            flush: jest.fn(),
+        };
+
         repo = {
             findOneOrFail: jest.fn(),
             findAll: jest.fn(),
@@ -38,6 +45,7 @@ describe('FactoriesRegistrantService', () => {
             getEntityManager: jest.fn().mockReturnValue({
                 persistAndFlush: () => jest.fn(),
                 flush: () => jest.fn(),
+                fork: () => forkedEm,
             }),
         };
 
@@ -368,8 +376,7 @@ describe('FactoriesRegistrantService', () => {
     it('should mark a reachable factory online and set lastSeenAt, and an unreachable one offline', async () => {
         const onlineFactory = { factoryPrefix: 'alive', status: 'online', lastSeenAt: null };
         const offlineFactory = { factoryPrefix: 'dead', status: 'online', lastSeenAt: new Date('2020-01-01') };
-        jest.spyOn(repo, 'findAll').mockResolvedValue([onlineFactory, offlineFactory] as any);
-        jest.spyOn(repo.getEntityManager(), 'flush').mockImplementation();
+        forkedEm.find.mockResolvedValue([onlineFactory, offlineFactory]);
 
         jest.spyOn(httpService.axiosRef, 'get').mockImplementation((url: any) => {
             if (url.includes('alive')) {
@@ -390,8 +397,7 @@ describe('FactoriesRegistrantService', () => {
     it('should not probe factories in administrative states (pending / suspended)', async () => {
         const pendingFactory = { factoryPrefix: 'pending-one', status: 'pending', lastSeenAt: null };
         const suspendedFactory = { factoryPrefix: 'suspended-one', status: 'suspended', lastSeenAt: null };
-        jest.spyOn(repo, 'findAll').mockResolvedValue([pendingFactory, suspendedFactory] as any);
-        jest.spyOn(repo.getEntityManager(), 'flush').mockImplementation();
+        forkedEm.find.mockResolvedValue([pendingFactory, suspendedFactory]);
         const probeSpy = jest.spyOn(httpService.axiosRef, 'get');
 
         await service.syncFactories();

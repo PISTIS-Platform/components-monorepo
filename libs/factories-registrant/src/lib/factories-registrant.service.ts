@@ -615,7 +615,10 @@ export class FactoriesRegistrantService {
 
     @Cron(CronExpression.EVERY_5_MINUTES)
     async syncFactories() {
-        const factories = await this.repo.findAll();
+        // The cron fires outside any HTTP request, so there is no request-scoped EntityManager.
+        // Fork a dedicated EM for this run (the global instance is disallowed for context-specific work).
+        const em = this.repo.getEntityManager().fork();
+        const factories = await em.find(FactoriesRegistrant, {});
 
         // Only probe factories already in a liveness state. Administrative states
         // ('pending', 'suspended') must not be overwritten by reachability checks.
@@ -636,7 +639,7 @@ export class FactoriesRegistrantService {
             }),
         );
 
-        await this.repo.getEntityManager().flush();
+        await em.flush();
 
         const online = results.filter((result) => result.status === 'fulfilled' && result.value).length;
         this.logger.debug(`Factory liveness sync complete: online=${online} offline=${probeable.length - online}`);
