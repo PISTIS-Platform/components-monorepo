@@ -195,12 +195,17 @@ describe('FactoriesRegistrantService', () => {
         expect(result).toEqual({ message: 'Notification created' });
     });
 
-    it('should return all factories', async () => {
-        const factories = [{ id: 'factory1' }, { id: 'factory2' }];
+    it('should return all factories including their iban', async () => {
+        const factories = [
+            { id: 'factory1', iban: 'GR1601101250000000012300695' },
+            { id: 'factory2', iban: null },
+        ];
         jest.spyOn(repo, 'findAll').mockResolvedValue(factories as any);
 
         const result = await service.retrieveFactories();
-        expect(result).toEqual(factories);
+        expect(result).toHaveLength(2);
+        expect(result[0]).toMatchObject({ id: 'factory1', iban: 'GR1601101250000000012300695' });
+        expect(result[1]).toMatchObject({ id: 'factory2', iban: null });
     });
 
     it('should return a factory by ID', async () => {
@@ -212,15 +217,15 @@ describe('FactoriesRegistrantService', () => {
         expect(result).toEqual(factory);
     });
 
-    it('should find logged in user factory', async () => {
+    it('should find logged in user factory including its iban', async () => {
         const factoryId = 'factory123';
-        const factory = { id: factoryId, organizationId: '123' };
+        const factory = { id: factoryId, organizationId: '123', iban: 'GR1601101250000000012300695' };
         jest.spyOn(repo, 'findOneOrFail').mockResolvedValue(factory as any);
 
         const result = await service.findLoggedInUserFactory(factory.organizationId);
         expect(repo.findOneOrFail).toHaveBeenCalledWith({ organizationId: factory.organizationId });
 
-        expect(result).toEqual(factory);
+        expect(result).toMatchObject({ id: factoryId, organizationId: '123', iban: 'GR1601101250000000012300695' });
     });
 
     it('should update a factory', async () => {

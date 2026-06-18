@@ -76,13 +76,14 @@ export class FactoriesRegistrantController {
                     status: 'online',
                     isAccepted: false,
                     isActive: false,
+                    iban: 'GR1601101250000000012300695',
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 },
             ],
         },
     })
-    async findFactories(): Promise<FactoriesRegistrant[]> {
+    async findFactories() {
         return this.factoriesService.retrieveFactories();
     }
 
@@ -144,14 +145,13 @@ export class FactoriesRegistrantController {
                 status: 'online',
                 isAccepted: false,
                 isActive: false,
+                iban: 'GR1601101250000000012300695',
                 createdAt: new Date(),
                 updatedAt: new Date(),
             },
         },
     })
-    async findLoggedInUserFactory(
-        @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
-    ): Promise<FactoriesRegistrant> {
+    async findLoggedInUserFactory(@AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo) {
         return this.factoriesService.findLoggedInUserFactory(user.organizationId);
     }
 

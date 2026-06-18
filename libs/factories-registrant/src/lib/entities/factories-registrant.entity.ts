@@ -3,7 +3,7 @@ import { v4 as uuidV4 } from 'uuid';
 
 @Entity({ tableName: 'factories' })
 export class FactoriesRegistrant {
-    [OptionalProps]?: 'id' | 'createdAt' | 'updatedAt' | 'isAccepted' | 'isActive' | 'lastSeenAt';
+    [OptionalProps]?: 'id' | 'createdAt' | 'updatedAt' | 'isAccepted' | 'isActive' | 'lastSeenAt' | 'iban';
 
     @PrimaryKey({ type: 'uuid' })
     id: string = uuidV4();
@@ -36,6 +36,9 @@ export class FactoriesRegistrant {
 
     @Property({ type: 'timestamptz', nullable: true })
     lastSeenAt?: Date | null;
+
+    @Property({ nullable: true, hidden: true })
+    iban?: string | null;
 
     @Property({ type: 'timestamptz' })
     createdAt: Date = new Date();

@@ -226,8 +226,29 @@ export class FactoriesRegistrantService {
         return await this.notifications(notification);
     }
 
-    async retrieveFactories(): Promise<FactoriesRegistrant[]> {
-        return this.repo.findAll();
+    // `iban` is `hidden` on the entity, so it is stripped from the raw-entity responses of every
+    // other endpoint. This explicit projection opts it back in for the owner / admin read paths.
+    private serializeWithIban(factory: FactoriesRegistrant) {
+        return {
+            id: factory.id,
+            organizationName: factory.organizationName,
+            organizationId: factory.organizationId,
+            ip: factory.ip,
+            factoryPrefix: factory.factoryPrefix,
+            country: factory.country,
+            status: factory.status,
+            isAccepted: factory.isAccepted,
+            isActive: factory.isActive,
+            lastSeenAt: factory.lastSeenAt ?? null,
+            iban: factory.iban ?? null,
+            createdAt: factory.createdAt,
+            updatedAt: factory.updatedAt,
+        };
+    }
+
+    async retrieveFactories() {
+        const factories = await this.repo.findAll();
+        return factories.map((factory) => this.serializeWithIban(factory));
     }
 
     async findFactoriesMapping() {
@@ -265,8 +286,9 @@ export class FactoriesRegistrantService {
         return this.repo.findOneOrFail({ factoryPrefix: name });
     }
 
-    async findLoggedInUserFactory(organizationId: string): Promise<FactoriesRegistrant> {
-        return this.repo.findOneOrFail({ organizationId });
+    async findLoggedInUserFactory(organizationId: string) {
+        const factory = await this.repo.findOneOrFail({ organizationId });
+        return this.serializeWithIban(factory);
     }
 
     async updateFactory(
