@@ -34,47 +34,131 @@ export class ConnectorProcessor extends WorkerHost {
     };
 
     async process(job: Job<any, any, string>): Promise<any> {
-        switch (job.name) {
-            case 'retrieveData': {
-                const forkedEm = this.em.fork();
-                const token = await this.getAccessToken();
-                return await this.consumerService.retrieveData(
-                    forkedEm,
-                    job.data.assetId,
-                    job.data.user,
-                    token,
-                    job.data.data,
-                );
-            }
-            case 'retrieveScheduledData': {
-                const forkedEm = this.em.fork();
-                if (job.data.endDate && new Date() > new Date(job.data.endDate)) {
-                    this.logger.verbose(`Job for ${job.data.assetId} reached endDate. Removing repeatable job.`);
-                    await job.remove(); // remove repeatable job
-                    return;
-                }
-                const token = await this.getAccessToken();
-                return await this.consumerService.retrieveData(
-                    forkedEm,
-                    job.data.assetId,
-                    job.data.user,
-                    token,
-                    job.data.data,
-                );
-            }
-            case 'deleteStreamingConnector': {
-                if (job.data.endDate && new Date() > new Date(job.data.endDate)) {
-                    this.logger.verbose(`Job for ${job.data.assetId} reached endDate. Removing repeatable job.`);
-                    await job.remove(); // remove repeatable job
-                    return;
-                }
-                return await this.consumerService.deleteKafkaStream(job.data.assetId, job.data.target);
-            }
+        if (this.isScheduledRetrieval(job.name)) {
+            if (await this.removeIfExpired(job)) return;
+            const token = await this.getAccessToken();
+            return await this.consumerService.retrieveData(
+                this.em.fork(),
+                job.data.assetId,
+                job.data.user,
+                token,
+                job.data.data,
+            );
+        } else if (job.name === 'retrieveData') {
+            const token = await this.getAccessToken();
+            return await this.consumerService.retrieveData(
+                this.em.fork(),
+                job.data.assetId,
+                job.data.user,
+                token,
+                job.data.data,
+            );
+        } else if (job.name === 'deleteStreamingConnector') {
+            if (await this.removeIfExpired(job)) return;
+            return await this.consumerService.deleteKafkaStream(job.data.assetId, job.data.target);
+        }
+    }
+
+    @OnWorkerEvent('active')
+    async onActive(job: Job) {
+        job.log(`📦 Job ${job.id} Active! (Date: ${this.getNow()} UTC)`);
+    }
+
+    @OnWorkerEvent('completed')
+    async onCompleted(job: Job) {
+        this.logger.log(`✅ Job ${job.id} Completed! (Date: ${this.getNow()} UTC)`);
+        await this.em.nativeUpdate(AssetRetrievalInfo, { cloudAssetId: job.data.assetId }, { updatedAt: new Date() });
+
+        // Avoid tou charge fee in scheduled jobs
+        const finalTransactionFee = this.isScheduledRetrieval(job.name) ? 0 : job.returnvalue.transactionFee;
+
+        const transaction = {
+            transactionId: job.returnvalue.transactionId,
+            transactionFee: finalTransactionFee,
+            amount: job.returnvalue.amount,
+            factoryBuyerId: job.returnvalue.factoryBuyerId,
+            factoryBuyerName: job.returnvalue.factoryBuyerName,
+            factorySellerId: job.returnvalue.factorySellerId,
+            factorySellerName: job.returnvalue.factorySellerName,
+            assetId: job.returnvalue.assetId,
+            assetName: job.returnvalue.assetName,
+            terms: job.returnvalue.terms,
+        };
+
+        const token = await this.getAccessToken();
+        const notifications = [
+            {
+                userId: job.data.user.id,
+                organizationId: job.data.user.organizationId,
+                type: job.data.format !== 'SQL' && job.data.format !== 'CSV' ? 'streaming_data' : 'asset_retrieved',
+                message: `A purchase of Asset with Title: ${job.returnvalue.assetName} has been completed successfully. Buyer: ${job.returnvalue.factoryBuyerName}, Seller: ${job.returnvalue.factorySellerName}.`,
+            },
+            {
+                userId: job.returnvalue.sellerId,
+                organizationId: job.returnvalue.factorySellerId,
+                type: job.data.format !== 'SQL' && job.data.format !== 'CSV' ? 'streaming_data' : 'asset_retrieved',
+                message: `A purchase of Asset with Title: ${job.returnvalue.assetName} has been completed successfully. Buyer: ${job.returnvalue.factoryBuyerName}, Seller: ${job.returnvalue.factorySellerName}.`,
+            },
+        ];
+
+        await this.createTransaction(transaction, token);
+        for (const n of notifications) {
+            await this.notifications(n, token);
+        }
+    }
+
+    @OnWorkerEvent('failed')
+    async onFailed(job: Job) {
+        this.logger.log(`❌ Job ${job.id} Failed (Date: ${this.getNow()} UTC) :`);
+        this.logger.log(job.failedReason || 'Unknown error');
+
+        const maxAttempts = job.opts?.attempts ?? 1;
+        if (job.attemptsMade < maxAttempts) {
+            this.logger.log(`Attempt ${job.attemptsMade}/${maxAttempts} — skipping notification, will retry.`);
+            return;
+        }
+
+        await this.em.nativeDelete(AssetRetrievalInfo, { cloudAssetId: job.data.assetId });
+
+        const token = await this.getAccessToken();
+        const metadata = await this.consumerService.retrieveMetadata(job.data.assetId, token);
+        const buyerFactory = await this.consumerService.retrieveFactory(token);
+        const sellerId = metadata?.monetization?.[0]?.seller_id;
+        const notifications = [
+            {
+                userId: job.data.user.id,
+                organizationId: job.data.user.organizationId,
+                type: 'asset_retrieval_failure',
+                message: `Asset retrieval failed for ${metadata.title.en}, please contact data provider`,
+            },
+            {
+                userId: sellerId,
+                organizationId: job.data.assetFactory,
+                type: 'asset_retrieval_failure',
+                message: `Asset provision failed for ${metadata.title.en} for buyer ${buyerFactory.organizationName}`,
+            },
+        ];
+
+        for (const n of notifications) {
+            await this.notifications(n, token);
         }
     }
 
     private getNow() {
         return dayjs(new Date()).format('DD/MM/YYYY HH:mm:ss');
+    }
+
+    private isScheduledRetrieval(name: string): boolean {
+        return name === 'retrieveScheduledData' || name.startsWith('scheduled-retrieval-');
+    }
+
+    private async removeIfExpired(job: Job<any, any, string>): Promise<boolean> {
+        if (job.data.endDate && new Date() > new Date(job.data.endDate)) {
+            this.logger.verbose(`Job for ${job.data.assetId} reached endDate. Removing repeatable job.`);
+            await job.remove();
+            return true;
+        }
+        return false;
     }
 
     private getAccessToken(): Promise<string> {
@@ -88,8 +172,7 @@ export class ConnectorProcessor extends WorkerHost {
         );
     }
 
-    private async notifications(notification: any): Promise<void> {
-        const token = await this.getAccessToken();
+    private async notifications(notification: any, token: string): Promise<void> {
         await firstValueFrom(
             this.httpService
                 .post(`${this.options.notificationsUrl}/api/notifications`, notification, {
@@ -105,8 +188,7 @@ export class ConnectorProcessor extends WorkerHost {
         );
     }
 
-    private async createTransaction(transaction: any): Promise<void> {
-        const token = await this.getAccessToken();
+    private async createTransaction(transaction: any, token: string): Promise<void> {
         await firstValueFrom(
             this.httpService
                 .post(`${this.options.transactionAuditorUrl}/api/transactions-auditor/`, transaction, {
@@ -120,91 +202,5 @@ export class ConnectorProcessor extends WorkerHost {
                     }),
                 ),
         );
-    }
-
-    @OnWorkerEvent('active')
-    async onActive(job: Job) {
-        job.log(`📦 Job ${job.id} Active! (Date: ${this.getNow()} UTC)`);
-    }
-
-    @OnWorkerEvent('completed')
-    async onCompleted(job: Job) {
-        this.logger.log(`✅ Job ${job.id} Completed! (Date: ${this.getNow()} UTC)`);
-        await this.em.nativeUpdate(AssetRetrievalInfo, { cloudAssetId: job.data.assetId }, { updatedAt: new Date() });
-
-        //Avoid tou charge fee in scheduled jobs
-        const finalTransactionFee = job.name === 'retrieveScheduledData' ? 0 : job.returnvalue.transactionFee;
-
-        const transaction = {
-            transactionId: job.returnvalue.transactionId,
-            transactionFee: finalTransactionFee,
-            amount: job.returnvalue.amount,
-            factoryBuyerId: job.returnvalue.factoryBuyerId,
-            factoryBuyerName: job.returnvalue.factoryBuyerName,
-            factorySellerId: job.returnvalue.factorySellerId,
-            factorySellerName: job.returnvalue.factorySellerName,
-            assetId: job.returnvalue.assetId,
-            assetName: job.returnvalue.assetName,
-            terms: job.returnvalue.terms,
-        };
-
-        await this.createTransaction(transaction);
-        const notification = [
-            {
-                userId: job.data.user.id,
-                organizationId: job.data.user.organizationId,
-                type: job.data.format !== 'SQL' && job.data.format !== 'CSV' ? 'streaming_data' : 'asset_retrieved',
-                message: `A purchase of Asset with Title: ${job.returnvalue.assetName} has been completed successfully. Buyer: ${job.returnvalue.factoryBuyerName}, Seller: ${job.returnvalue.factorySellerName}.`,
-            },
-            {
-                userId: job.returnvalue.sellerId,
-                organizationId: job.returnvalue.factorySellerId,
-                type: job.data.format !== 'SQL' && job.data.format !== 'CSV' ? 'streaming_data' : 'asset_retrieved',
-                message: `A purchase of Asset with Title: ${job.returnvalue.assetName} has been completed successfully. Buyer: ${job.returnvalue.factoryBuyerName}, Seller: ${job.returnvalue.factorySellerName}.`,
-            },
-        ];
-        for (const note of notification) {
-            await this.notifications(note);
-        }
-    }
-
-    @OnWorkerEvent('failed')
-    async onFailed(job: Job) {
-        this.logger.log(`❌ Job ${job.id} Failed (Date: ${this.getNow()} UTC) :`);
-        this.logger.log(job.failedReason || 'Unknown error');
-
-        const maxAttempts = job.opts?.attempts ?? 1;
-        if (job.attemptsMade < maxAttempts) {
-            this.logger.log(`Attempt ${job.attemptsMade}/${maxAttempts} — skipping notification, will retry.`);
-            return;
-        }
-
-        await this.em.nativeDelete(AssetRetrievalInfo, {
-            cloudAssetId: job.data.assetId,
-        });
-
-        const token = await this.getAccessToken();
-        const metadata = await this.consumerService.retrieveMetadata(job.data.assetId);
-        const buyerFactory = await this.consumerService.retrieveFactory(token);
-        const sellerId = metadata?.monetization?.[0]?.seller_id;
-
-        const notification = [
-            {
-                userId: job.data.user.id,
-                organizationId: job.data.user.organizationId,
-                type: 'asset_retrieval_failure',
-                message: `Asset retrieval failed for ${metadata.title.en}, please contact data provider`,
-            },
-            {
-                userId: sellerId,
-                organizationId: job.data.assetFactory,
-                type: 'asset_retrieval_failure',
-                message: `Asset provision failed for ${metadata.title.en} for buyer ${buyerFactory.organizationName}`,
-            },
-        ];
-
-        for (const note of notification) {
-            await this.notifications(note);
-        }
     }
 }

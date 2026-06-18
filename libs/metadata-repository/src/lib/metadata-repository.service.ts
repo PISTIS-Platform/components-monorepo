@@ -15,25 +15,20 @@ export class MetadataRepositoryService {
         @Inject(MODULE_OPTIONS_TOKEN) private options: MetadataRepositoryModuleOptions,
     ) {}
 
-    async retrieveMetadata(assetId: string) {
-        let metadata;
-        try {
-            metadata = await firstValueFrom(
-                this.httpService.get(`${this.options.cloudURL}/srv/search/datasets/${assetId}`).pipe(
+    async retrieveMetadata(assetId: string, token: string) {
+        return firstValueFrom(
+            this.httpService
+                .get(`${this.options.cloudURL}/srv/search/datasets/${assetId}`, { headers: getHeaders(token) })
+                .pipe(
                     map((res) => {
                         return res.data.result;
                     }),
                     catchError((error) => {
                         this.logger.error('Metadata retrieval error:', error);
-                        return of({ error: 'Error occurred during metadata retrieval' });
+                        throw error;
                     }),
                 ),
-            );
-        } catch (err) {
-            this.logger.error('Metadata retrieval from cloud error:', err);
-            throw new Error(`Metadata retrieval from cloud error: ${err}`);
-        }
-        return metadata;
+        );
     }
 
     async retrieveCatalog(catalogId: string, factoryPrefix: string) {
@@ -66,13 +61,14 @@ export class MetadataRepositoryService {
         isStreamingData: boolean,
         originalAssetId: string,
         streamingMetadata: any,
+        token: string,
     ) {
         let accessUrl: any;
         let metadata: any;
         if (isStreamingData && streamingMetadata && originalAssetId === '') {
             metadata = streamingMetadata;
         } else if (originalAssetId != '' && streamingMetadata === '') {
-            metadata = await this.retrieveMetadata(originalAssetId);
+            metadata = await this.retrieveMetadata(originalAssetId, token);
         }
         let byteSizeValue;
         let keywords: any;

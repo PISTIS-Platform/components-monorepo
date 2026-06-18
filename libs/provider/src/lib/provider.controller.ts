@@ -59,8 +59,8 @@ export class ProviderController {
         },
     })
     @ApiBody({ type: StreamingDataDto })
-    async createStreamingData(@Body() streamingData: StreamingDataDto) {
-        return await this.providerService.createStreamingMetadata(streamingData);
+    async createStreamingData(@AuthToken() token: string, @Body() streamingData: StreamingDataDto) {
+        return await this.providerService.createStreamingMetadata(streamingData, token);
     }
 
     @Post(':assetId')

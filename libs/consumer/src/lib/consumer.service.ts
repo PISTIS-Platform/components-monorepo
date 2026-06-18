@@ -48,7 +48,7 @@ export class ConsumerService {
         }
 
         try {
-            metadata = await this.retrieveMetadata(assetId);
+            metadata = await this.retrieveMetadata(assetId, token);
         } catch (err) {
             this.logger.error('Metadata retrieval error:', err);
             throw new BadGatewayException('Metadata retrieval error');
@@ -212,14 +212,24 @@ export class ConsumerService {
                     token,
                     factory.factoryPrefix,
                 );
-                storageAssetUUID = createFile.asset_uuid;
-                assetInfo = em.create(AssetRetrievalInfo, {
-                    id: createFile.asset_uuid,
-                    cloudAssetId: assetId,
-                    version: '',
-                    offset: 0,
-                });
-                await em.upsert(AssetRetrievalInfo, assetInfo);
+
+                assetInfo = await em.findOne(AssetRetrievalInfo, { cloudAssetId: assetId });
+                if (!assetInfo) {
+                    storageAssetUUID = createFile.asset_uuid;
+                    assetInfo = em.create(AssetRetrievalInfo, {
+                        id: createFile.asset_uuid,
+                        cloudAssetId: assetId,
+                        version: '',
+                        offset: 0,
+                    });
+                    await em.upsert(AssetRetrievalInfo, assetInfo);
+                } else {
+                    // On a scheduled re-run the record already exists; reuse its id so
+                    // lineage is tracked against the original storage asset, not a new one.
+                    storageAssetUUID = assetInfo.id as string;
+                    // Update the record so the updatedAt column reflects this re-run.
+                    await em.nativeUpdate(AssetRetrievalInfo, { cloudAssetId: assetId }, { updatedAt: new Date() });
+                }
             } catch (err) {
                 this.logger.error('Transfer file data error:', err);
                 throw new BadGatewayException('Transfer file data error');
@@ -269,6 +279,7 @@ export class ConsumerService {
                 isStreamingData,
                 assetId,
                 '',
+                token,
             );
         } catch (err) {
             this.logger.error('Metadata creation error:', err);
@@ -391,8 +402,8 @@ export class ConsumerService {
         );
     }
 
-    async retrieveMetadata(assetId: string) {
-        return await this.metadataRepositoryService.retrieveMetadata(assetId);
+    async retrieveMetadata(assetId: string, token: string) {
+        return await this.metadataRepositoryService.retrieveMetadata(assetId, token);
     }
     async createKafkaUserAndTopic(assetId: string) {
         this.logger.log(`Creating Kafka user and topic. AssetId: ${assetId}`);

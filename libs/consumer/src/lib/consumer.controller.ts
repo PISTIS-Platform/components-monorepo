@@ -2,7 +2,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Body, Controller, Get, Logger, Param, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiNotFoundResponse, ApiOkResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { CONNECTOR_QUEUE } from '@pistis/bullMq';
-import { ParseUserInfoPipe, UserInfo } from '@pistis/shared';
+import { AuthToken, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
 import { Queue } from 'bullmq';
 import { AuthenticatedUser } from 'nest-keycloak-connect';
 
@@ -44,10 +44,11 @@ export class ConsumerController {
     })
     async retrieveData(
         @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
+        @AuthToken() token: string,
         @Param('assetId') assetId: string,
         @Body() data: RetrieveDataDTO,
     ) {
-        const metadata = await this.consumerService.retrieveMetadata(assetId);
+        const metadata = await this.consumerService.retrieveMetadata(assetId, token);
         const frequency = metadata.monetization[0].purchase_offer[0].update_frequency;
         let updatePattern = '';
         const termDate = metadata.monetization[0].purchase_offer[0].duration;
@@ -79,7 +80,6 @@ export class ConsumerController {
                     endDate: endDate,
                 },
                 {
-                    name: `scheduled-retrieval-sync-for-${assetId}`,
                     data: { assetId, user, data, format },
                 },
             );

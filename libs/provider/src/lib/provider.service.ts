@@ -30,7 +30,7 @@ export class ProviderService {
         let metadata;
 
         try {
-            metadata = await this.metadataRepositoryService.retrieveMetadata(assetId);
+            metadata = await this.metadataRepositoryService.retrieveMetadata(assetId, token);
         } catch (err) {
             this.logger.error('Metadata retrieval error:', err);
             throw new BadGatewayException('Metadata retrieval error');
@@ -144,7 +144,7 @@ export class ProviderService {
         }
     }
 
-    async createStreamingMetadata(data: StreamingDataDto) {
+    async createStreamingMetadata(data: StreamingDataDto, token: string) {
         const assetId = uuidV4();
 
         const metadata = {
@@ -198,6 +198,7 @@ export class ProviderService {
                 true,
                 '',
                 metadata,
+                token,
             );
         } catch (e) {
             this.logger.error(`Error creating streaming metadata:${e}`);

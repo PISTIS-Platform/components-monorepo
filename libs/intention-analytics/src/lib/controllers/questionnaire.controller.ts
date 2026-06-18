@@ -20,7 +20,7 @@ import {
     ApiTags,
     ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { ADMIN_ROLE, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
+import { ADMIN_ROLE, AuthToken, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
 import { AuthenticatedUser, Roles } from 'nest-keycloak-connect';
 
 import { CreateAnswerDto } from '../dto/create-answer.dto';
@@ -282,8 +282,9 @@ export class QuestionnaireController {
         @Param('assetId') assetId: string,
         @Param('verifiedBuyers', ParseBoolPipe) verifiedBuyers: boolean,
         @AuthenticatedUser(new ParseUserInfoPipe()) user: UserInfo,
+        @AuthToken() token: string,
     ) {
-        return this.answersService.getAnswers(assetId, user, verifiedBuyers);
+        return this.answersService.getAnswers(assetId, user, verifiedBuyers, token);
     }
 
     @Post()

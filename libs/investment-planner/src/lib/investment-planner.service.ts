@@ -83,15 +83,25 @@ export class InvestmentPlannerService {
         return investmentPlan;
     }
 
-    async updateInvestmentPlan(id: string, data: any, user: any, token: string) {
+    async updateInvestmentPlan(id: string, data: any, user: UserInfo, token: string) {
         const numberOfShares = data.numberOfShares;
         if (!Number.isInteger(numberOfShares) || numberOfShares <= 0) {
             throw new BadRequestException('numberOfShares must be a positive integer');
         }
 
+        // Resolve the asset owner's organization from the cloud metadata. The owner (publisher),
+        // not the investing user, determines which factory/wallet receives the investment — otherwise
+        // a cross-cluster investment resolves the owner wallet to the investor's factory.
+        const { cloudAssetId } = await this.repo.findOneOrFail({ id });
+        const metadata = await this.metadataRepositoryService.retrieveMetadata(cloudAssetId, token);
+        const ownerOrganizationId = metadata?.monetization?.[0]?.purchase_offer?.[0]?.publisher?.organization_id;
+        if (!ownerOrganizationId) {
+            throw new BadRequestException('Could not determine asset owner organization from metadata');
+        }
+
         // Factory lookup happen before the transaction (no rollback needed,
         // and we avoid holding the DB transaction open across network calls we don't roll back).
-        const factory = await this.retrieveFactory(token, user.organizationId);
+        const ownerFactory = await this.retrieveFactory(token, ownerOrganizationId);
 
         return await this.repo.getEntityManager().transactional(async (em) => {
             const investmentPlan = await em.findOneOrFail(InvestmentPlanner, { id });
@@ -133,22 +143,22 @@ export class InvestmentPlannerService {
             const invest = {
                 assetId: investmentPlan.cloudAssetId,
                 percentage: (investmentPlan.percentageOffer / investmentPlan.totalShares) * numberOfShares,
-                assetFactory: user.organizationId,
+                assetFactory: ownerOrganizationId,
                 ownerId: investmentPlan.sellerId,
                 price: investmentPlan.price,
             };
             // If SCEE fails, the thrown error rolls back the share decrement and the new investment.
-            await this.storeInvestToScee(invest, factory.factoryPrefix, token);
+            await this.storeInvestToScee(invest, ownerFactory.factoryPrefix, token);
 
             return userInvestment;
         });
     }
 
-    private async storeInvestToScee(data: any, factoryPrefix: string, token: string) {
+    private async storeInvestToScee(data: any, ownerFactoryPrefix: string, token: string) {
         return await firstValueFrom(
             this.httpService
                 .post(
-                    `https://${factoryPrefix}.pistis-market.eu/srv/smart-contract-execution-engine/api/scee/StoreInvestmentPlanInvestor`,
+                    `https://${ownerFactoryPrefix}.pistis-market.eu/srv/smart-contract-execution-engine/api/scee/StoreInvestmentPlanInvestor`,
                     {
                         ...data,
                     },

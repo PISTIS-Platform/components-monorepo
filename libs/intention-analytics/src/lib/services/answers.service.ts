@@ -1,7 +1,8 @@
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityRepository } from '@mikro-orm/postgresql';
 import { HttpService } from '@nestjs/axios';
-import { BadRequestException, Inject, Injectable, Logger, ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, Logger } from '@nestjs/common';
+import { MetadataRepositoryService } from '@pistis/metadata-repository';
 import { getHeaders, UserInfo } from '@pistis/shared';
 import { catchError, firstValueFrom, map, switchMap, throwError } from 'rxjs';
 
@@ -9,7 +10,6 @@ import { CreateAnswerDto } from '../dto/create-answer.dto';
 import { Answer, Question, Questionnaire } from '../entities';
 import { INTENSION_ANALYTICS_MODULE_OPTIONS } from '../intension-analytics.module-definition';
 import { IntensionAnalyticsModuleOptions } from '../intension-analytics-module-options.interface';
-import { MetadataRepositoryService } from '@pistis/metadata-repository';
 
 @Injectable()
 export class AnswersService {
@@ -124,7 +124,7 @@ export class AnswersService {
         return answer;
     }
 
-    async getAnswers(assetId: string, user: UserInfo, forVerifiedBuyers: boolean) {
+    async getAnswers(assetId: string, user: UserInfo, forVerifiedBuyers: boolean, token: string) {
         const questionnaire = await this.findActiveVersion(forVerifiedBuyers);
 
         const answers = await this.answersRepo.find(
@@ -135,7 +135,7 @@ export class AnswersService {
             { fields: ['responses', 'createdAt'] },
         );
 
-        const metadata = await this.metadataRepositoryService.retrieveMetadata(assetId);
+        const metadata = await this.metadataRepositoryService.retrieveMetadata(assetId, token);
         const datasetOrgId = metadata.monetization[0].purchase_offer[0].publisher.organization_id;
 
         if (datasetOrgId === user.organizationId || !user.organizationId) {
