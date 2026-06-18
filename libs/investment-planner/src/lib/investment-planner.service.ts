@@ -205,7 +205,10 @@ export class InvestmentPlannerService {
     async deactivateInvestmentPlan() {
         const now = dayjs().startOf('day').toDate();
         try {
-            const investments = await this.repo.find({
+            // The cron fires outside any HTTP request, so there is no request-scoped EntityManager.
+            // Fork a dedicated EM for this run (the global instance is disallowed for context-specific work).
+            const em = this.repo.getEntityManager().fork();
+            const investments = await em.find(InvestmentPlanner, {
                 status: true,
                 dueDate: { $lte: now },
             });
@@ -213,7 +216,7 @@ export class InvestmentPlannerService {
                 const investment = investments[i];
 
                 investment.status = false;
-                await this.repo.getEntityManager().persistAndFlush(investment);
+                await em.persistAndFlush(investment);
                 const orgId = await this.metadataRepositoryService.updateInvestmentPlanMetadata(
                     investment.cloudAssetId,
                 );
