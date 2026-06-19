@@ -65,7 +65,7 @@
                     "load": true,
                     "labels": [
                         "org.opencontainers.image.authors=Suite5 Information Technology Solutions",
-                        "org.opencontainers.image.version=1.0.0"
+                        "org.opencontainers.image.version=1.6.12"
                     ],
                     "tags": ["1.6.12"]
                 }
