@@ -55,7 +55,7 @@ export class MetadataRepositoryService {
     }
 
     async createMetadata(
-        assetId: string | undefined,
+        assetId: string,
         catalogId: string,
         factoryPrefix: string,
         isStreamingData: boolean,
@@ -165,7 +165,7 @@ export class MetadataRepositoryService {
             @prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
             @prefix pst:                 <https://www.pistis-project.eu/ns/voc#> .     
 
-            <https://piveau.io/set/data/test-dataset>
+            <https://piveau.io/set/data/${metadata.id}>
                 a                   dcat:Dataset ;
                 dct:description     ${getValue(metadata.description)} ;
                 dct:title           ${getValue(metadata.title)} ;
@@ -189,58 +189,28 @@ export class MetadataRepositoryService {
             ${offer}
         `;
 
-        try {
-            if (isStreamingData) {
-                await firstValueFrom(
-                    this.httpService
-                        .put(
-                            `https://${factoryPrefix}.pistis-market.eu/srv/repo/catalogues/${catalogId}/datasets/origin?originalId=${metadata.id}`,
-                            rdfData,
-                            {
-                                headers: {
-                                    'Content-Type': 'text/turtle',
-                                    'X-API-Key': this.options.apiKey,
-                                },
-                            },
-                        )
-                        .pipe(
-                            map((res) => {
-                                return res;
-                            }),
-                            catchError((error) => {
-                                this.logger.error('Metadata creation error:', error);
-                                return of({ error: 'Error occurred during creation retrieval' });
-                            }),
-                        ),
-                );
-            } else {
-                await firstValueFrom(
-                    this.httpService
-                        .post(
-                            `https://${factoryPrefix}.pistis-market.eu/srv/repo/catalogues/${catalogId}/datasets`,
-                            rdfData,
-                            {
-                                headers: {
-                                    'Content-Type': 'text/turtle',
-                                    'X-API-Key': this.options.apiKey,
-                                },
-                            },
-                        )
-                        .pipe(
-                            map((res) => {
-                                return res;
-                            }),
-                            catchError((error) => {
-                                this.logger.error('Metadata creation error:', error);
-                                return of({ error: 'Error occurred during creation retrieval' });
-                            }),
-                        ),
-                );
-            }
-        } catch (err) {
-            this.logger.error('Metadata creation error:', err);
-            throw new Error(`Metadata creation error: ${err}`);
-        }
+        await firstValueFrom(
+            this.httpService
+                .put(
+                    `https://${factoryPrefix}.pistis-market.eu/srv/repo/catalogues/${catalogId}/datasets/origin?originalId=${metadata.id}`,
+                    rdfData,
+                    {
+                        headers: {
+                            'Content-Type': 'text/turtle',
+                            'X-API-Key': this.options.apiKey,
+                        },
+                    },
+                )
+                .pipe(
+                    map((res) => {
+                        return res;
+                    }),
+                    catchError((error) => {
+                        this.logger.error(`Metadata creation error: ${error}`);
+                        throw new Error('Error occurred during creation retrieval');
+                    }),
+                ),
+        );
     }
 
     //@deprecated

@@ -14,12 +14,12 @@ import { KafkaService } from '@pistis/kafka';
 import { MetadataRepositoryService } from '@pistis/metadata-repository';
 import { getHeaders } from '@pistis/shared';
 import { catchError, firstValueFrom, map, of } from 'rxjs';
+import { v4 as uuidV4 } from 'uuid';
 
 import { CONSUMER_MODULE_OPTIONS } from './consumer.module-definition';
 import { ConsumerModuleOptions } from './consumer-module-options.interface';
 import { RetrieveDataDTO } from './dto/retrieveData.dto';
 import { AssetRetrievalInfo } from './entities/asset-retrieval-info.entity';
-
 @Injectable()
 export class ConsumerService {
     private readonly logger = new Logger(ConsumerService.name);
@@ -273,7 +273,7 @@ export class ConsumerService {
 
         try {
             await this.metadataRepositoryService.createMetadata(
-                assetInfo?.id,
+                assetInfo?.id ?? uuidV4(),
                 this.options.catalogId,
                 factory.factoryPrefix,
                 isStreamingData,
