@@ -175,7 +175,7 @@ export class MetadataRepositoryService {
                                             foaf:name "${metadata.publisher.name}" ; ] ;
                 dcat:theme          <http://publications.europa.eu/resource/authority/data-theme/${category}> ;
                 dct:language        <http://publications.europa.eu/resource/authority/language/ENG> ;
-                dct:issued          "${new Date().toISOString()}"^^xsd:dateTime ;
+                dct:issued          "${metadata.issued ?? new Date().toISOString()}"^^xsd:dateTime ;
                 dct:modified        "${new Date().toISOString()}"^^xsd:dateTime ;
                 dcat:distribution   <https://piveau.io/set/distribution/1> ; 
                 pistis:offer		<http://pistis-market.eu/offer/1> .
