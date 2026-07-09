@@ -1,5 +1,5 @@
 import { ApiPaginate, Paginate, PaginateQuery } from '@emulienfou/nestjs-mikro-orm-paginate';
-import { Body, Controller, DefaultValuePipe, Get, Param, ParseEnumPipe, ParseIntPipe, Post, Query } from '@nestjs/common';
+import { Body, Controller, DefaultValuePipe, Get, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { ADMIN_ROLE, ParseUserInfoPipe, UserInfo } from '@pistis/shared';
 import { AuthenticatedUser, Roles } from 'nest-keycloak-connect';
@@ -10,8 +10,6 @@ import {
     PerformingAssetsDto,
     TimelinePointDto,
     TransactionAuditorDTO,
-    VolumeChangeByGranularityDto,
-    VolumeGranularity,
 } from './dto';
 import { TransactionsAuditorService } from './transactions-auditor.service';
 
@@ -60,20 +58,6 @@ export class TransactionsAuditorController {
     @ApiOkResponse({ type: MarketInsightsDto })
     async getMarketInsights() {
         return this.service.getMarketInsights();
-    }
-
-    @Get('/market-insights/volume-change')
-    @ApiOperation({
-        summary: 'Retrieve platform sales-volume change',
-        description:
-            'Change in number of sales for the most recent period versus the previous one. With a granularity, returns that single period; without one, returns the change for all granularities (day, week, month).',
-    })
-    @ApiQuery({ name: 'granularity', enum: VolumeGranularity, required: false })
-    @ApiOkResponse({ type: VolumeChangeByGranularityDto, isArray: true })
-    async getVolumeChange(
-        @Query('granularity', new ParseEnumPipe(VolumeGranularity, { optional: true })) granularity?: VolumeGranularity,
-    ) {
-        return this.service.getVolumeChange(granularity);
     }
 
     @Get('/market-insights/timeline')

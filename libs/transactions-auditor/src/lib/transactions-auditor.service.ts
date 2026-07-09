@@ -124,6 +124,7 @@ export class TransactionsAuditorService {
             totalMarketCap: Number(totals.totalMarketCap),
             averageSalesPerDay: Number(totals.averageSalesPerDay ?? 0),
             salesVolume: await this.getSalesVolume(),
+            volumeChanges: await this.getVolumeChange(),
         };
     }
 
@@ -182,23 +183,16 @@ export class TransactionsAuditorService {
     }
 
     /**
-     * Platform-wide change in sales volume for the requested granularity: buckets transactions per
-     * period (day/week/month) and compares the most recent period to the immediately preceding one.
-     * Returns the absolute change and the relative change (`volumeChangePct`), which is null when the
-     * preceding period had no sales.
+     * Platform-wide change in sales volume for every granularity (day, week, month). For each one,
+     * transactions are bucketed per period and the most recent period is compared to the immediately
+     * preceding one, yielding the absolute change and the relative change (`volumeChangePct`) — the
+     * latter is null when the preceding period had no sales.
      */
-    async getVolumeChange(
-        granularity?: VolumeGranularity,
-    ): Promise<VolumeChangeDto | VolumeChangeByGranularityDto[]> {
-        // No granularity → return the change for every granularity (day, week, month).
-        if (!granularity) {
-            const granularities = Object.values(VolumeGranularity);
-            return Promise.all(
-                granularities.map(async (value) => ({ granularity: value, ...(await this.computeVolumeChange(value)) })),
-            );
-        }
-
-        return this.computeVolumeChange(granularity);
+    async getVolumeChange(): Promise<VolumeChangeByGranularityDto[]> {
+        const granularities = Object.values(VolumeGranularity);
+        return Promise.all(
+            granularities.map(async (value) => ({ granularity: value, ...(await this.computeVolumeChange(value)) })),
+        );
     }
 
     private async computeVolumeChange(granularity: VolumeGranularity): Promise<VolumeChangeDto> {

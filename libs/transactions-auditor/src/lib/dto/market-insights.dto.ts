@@ -32,6 +32,9 @@ export class MarketInsightsDto {
 
     @ApiProperty({ type: SalesVolumeDto })
     salesVolume!: SalesVolumeDto;
+
+    @ApiProperty({ type: () => VolumeChangeByGranularityDto, isArray: true })
+    volumeChanges!: VolumeChangeByGranularityDto[];
 }
 
 export class AssetPerformanceDto {
